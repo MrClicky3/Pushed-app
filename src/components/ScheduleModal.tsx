@@ -33,7 +33,7 @@ interface Props {
   routines: Routine[];
   schedule: ScheduleDay[];
   exercises: Exercise[];
-  onAddRoutine: (name: string, exercise_ids: string[]) => Promise<Routine | null>;
+  onAddRoutine: (name: string, exercise_ids: string[]) => Routine;
   onUpdateRoutine: (id: string, name: string, exercise_ids: string[]) => void;
   onDeleteRoutine: (id: string) => void;
   onAssignDay: (day_of_week: number, routine_id: string | null) => void;
