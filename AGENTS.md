@@ -1,11 +1,112 @@
-This project is developed using 2 AI's – Claude Code and Bolt AI. The repository is shared between them and is the source of truth when switching between assistants.
+# Overload — agent instructions
 
-Only re-read the repository when I explicitly tell you to refresh or read it.
+A minimalistic gym logging + analytics app (progressive overload tracker).
 
-When refreshing:
-- Understand the current project state from the code and recent Git history.
-- Ignore previous conversation context if it conflicts with the repository.
+## Two assistants, one repository
 
-Before finishing work:
-- Ensure everything works.
-- Commit and push completed changes with a clear commit message.
+This project is developed by two AIs — **Claude Code** and **Bolt AI** — so work can
+continue when credits run out on one. **The Git repository is the single source of
+truth.** The other assistant may have changed anything since you last looked.
+
+**At the start of every session, read the repo before changing anything.** Understand
+the current state from the code and recent Git history. If your conversation memory
+conflicts with what is actually in the repo, the repo wins — discard the memory. Do
+not resume a stale session and start editing from files you loaded days ago; that is
+how one assistant silently overwrites the other's work.
+
+Within a single session, once you have read the repo you do not need to keep
+re-reading it. Re-read when the user says they have switched assistants, says
+"refresh", or when a file surprises you.
+
+**Before finishing work:**
+- Make sure it actually works — run `npm run typecheck` and `npm run build`, and
+  exercise the change in the browser. Do not report success without checking.
+- Commit and push with a clear message. Push early and often, not just at the end:
+  if the work is not pushed, the other assistant cannot see it.
+
+## Stack
+
+React 18 + TypeScript, Vite, Tailwind, Supabase. Deployed on Vercel.
+
+```
+npm run dev        # vite dev server (port 5173)
+npm run typecheck  # tsc --noEmit — must be clean
+npm run build      # production build
+npm run lint       # eslint
+```
+
+`tsconfig` sets `noUnusedLocals` and `noUnusedParameters`, so dead variables and
+unused parameters are build errors, not warnings. Keep the code clean.
+
+## Environment
+
+`.env` is gitignored and is **not** in the repo. Copy `.env.example` to `.env` (or set
+these in your host's environment panel) or the app will refuse to start:
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+
+Both are safe in a browser bundle: the anon key is a *publishable* key and every table
+is protected by row-level security. **`RESEND_API_KEY` is different** — it is a real
+server-side secret used only by `api/report.ts`, it lives in the Vercel dashboard, and
+it must never be committed or sent to the browser.
+
+`api/` holds Vercel serverless functions. They do not run in Bolt's WebContainer, so
+bug reporting is inert in a Bolt preview. That is expected — do not try to "fix" it.
+
+## Persistence — this split is deliberate
+
+**Supabase:** exercises, workout logs, auth, profiles, friends/leaderboards.
+
+**localStorage only:** routines, weekly schedule, settings. These are intentionally
+*not* in the database. Streaks are computed client-side from logs, not stored.
+
+Do not "helpfully" migrate routines or the schedule into Supabase. If a change seems to
+require it, ask first.
+
+Schema changes go in `supabase/migrations/`. Committing a migration does **not** apply
+it — someone must run it against the hosted project. Both assistants point at the same
+live database, so a destructive migration hits real data immediately.
+
+## Design system
+
+Dark, minimal, TE-inspired (hence the `te-*` prefix). Utility classes are defined in
+`src/index.css` — **use them instead of inventing new styles**: `te-panel`, `te-inset`,
+`te-mono`, `te-label`, `te-field`, `te-toggle-on` / `te-toggle-off`, `te-btn`, `te-fab`,
+`te-digit`.
+
+CSS variables (also in `index.css`):
+
+| Token | Value | Use |
+|---|---|---|
+| `--te-upper` | `#9b8cf2` | upper-body category |
+| `--te-lower` | `#f2c08c` | lower-body category |
+| `--te-pr` | `#7fd57f` | personal record / target hit |
+| `--te-warn` | `#e8a657` | warning |
+| `--te-accent` | `#ff453a` | app accent |
+
+Conventions that were arrived at deliberately — **keep them:**
+
+- Card / bento borders are `1px solid #202020`. Card backgrounds are `#141414`;
+  sheet backgrounds `#161617`; inset fields `#0b0b0b`.
+- Corner radius is `20px` on cards and fields, `28px` on bottom sheets.
+- App side margins are `max(16px, env(safe-area-inset-*))`.
+- Numbers use the mono face (`te-mono`) with tabular figures.
+- Bottom sheets (`Modal.tsx`) drag to dismiss iOS-style: the sheet tracks the finger
+  1:1 and only dismisses on release past a threshold — never mid-drag. There is no
+  border on the sheet. The gap to the screen edge is 2px.
+- Full-screen flows (e.g. the Exercise Library) use `FullPageSheet.tsx`, not `Modal`.
+
+Respect the existing visual language. If a change would alter spacing, radii, borders,
+or colors beyond what was asked, ask first rather than redesigning.
+
+## Layout
+
+```
+src/views/       ExercisesView, AnalyticsView (Progress), LogsView, AuthView
+src/components/  Modal, FullPageSheet, ExerciseCard, ExerciseModal, ScheduleModal, ...
+src/hooks/       useAuth, useWorkoutData, useSchedule, useSettings, useProfile, useFriends
+src/lib/         supabase, streak, accent, device, bugReport, image, feedback
+supabase/        SQL migrations
+api/             Vercel serverless functions
+```
