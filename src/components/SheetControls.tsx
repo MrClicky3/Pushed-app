@@ -1,0 +1,42 @@
+// Shared visual tokens for the redesigned bottom-sheet forms
+// (New exercise / Add log) — matches the Figma "menu" designs.
+import type { CSSProperties } from 'react';
+
+// Section heading — Geist Mono, uppercase, dim white.
+export const SECTION_LABEL: CSSProperties = {
+  fontFamily: "'Geist Mono', 'SF Mono', ui-monospace, monospace",
+  fontSize: 12,
+  lineHeight: '12px',
+  fontWeight: 500,
+  textTransform: 'uppercase',
+  color: 'rgba(255,255,255,0.22)',
+  letterSpacing: '-0.17px',
+};
+
+// White primary action pill (Add exercise / Log set).
+export const WHITE_BUTTON: CSSProperties = {
+  background: '#ffffff',
+  border: '1px solid #2c2c2c',
+  boxShadow: '0 0 7.5px rgba(0,0,0,0.25)',
+};
+
+// Segmented / choice pill — white when active, recessed dark when idle.
+export function ToggleButton({
+  active, onClick, label, className = '',
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`${active ? 'te-toggle-on te-toggle-mono' : 'te-toggle-off'} h-[45px] rounded-[15px] flex items-center justify-center text-[12px] font-semibold capitalize select-none ${className}`}
+      style={{ color: active ? '#0a0908' : 'rgba(255,255,255,0.4)' }}
+    >
+      {label}
+    </button>
+  );
+}
