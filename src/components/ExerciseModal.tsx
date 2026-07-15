@@ -112,8 +112,8 @@ export default function ExerciseModal({ open, onClose, onSave, onDelete, exercis
             ].map(({ label, value, onChange, min, step }) => (
               <div
                 key={label}
-                className="flex flex-col justify-center gap-[3px] h-[80px] rounded-[20px]"
-                style={{ background: '#0b0b0b', padding: '10px' }}
+                className="flex flex-col justify-between h-[80px] rounded-[20px]"
+                style={{ background: '#0b0b0b', padding: '13px' }}
               >
                 <p className="te-label">{label}</p>
                 <input
