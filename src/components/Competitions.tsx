@@ -149,10 +149,7 @@ function CompetitionSheet({
       <div className="space-y-4">
         <div className="flex items-center justify-between px-0.5">
           <div>
-            <p className="text-[17px] font-bold text-[#f4f1ec] tracking-tight" style={{ letterSpacing: '-0.02em' }}>
-              {comp.name}
-            </p>
-            <p className="te-label mt-1">
+            <p className="te-label">
               {trackLabel(comp.track)} · {comp.participant_count} {comp.participant_count === 2 ? 'duel' : 'players'}
             </p>
           </div>
