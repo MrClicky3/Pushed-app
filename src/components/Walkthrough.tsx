@@ -146,9 +146,8 @@ function HintLayer({ hint }: { hint: Hint }) {
   if (hint === 'swipeUp') {
     return (
       <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center" style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 26px)' }}>
-        <div className="wt-swipe-up flex flex-col items-center gap-1">
+        <div className="wt-swipe-up flex flex-col items-center">
           <Chevron dir="up" />
-          <Chevron dir="up" faint />
         </div>
         <div className="mt-3 rounded-full" style={{ width: 120, height: 5, background: 'rgba(244,241,236,0.5)' }} />
       </div>
@@ -165,7 +164,6 @@ function HintLayer({ hint }: { hint: Hint }) {
   if (hint === 'swipeRight') {
     return (
       <div className="absolute top-1/2 -translate-y-1/2 flex items-center wt-swipe-left" style={{ right: 30 }}>
-        <Chevron dir="left" faint />
         <Chevron dir="left" />
       </div>
     );
