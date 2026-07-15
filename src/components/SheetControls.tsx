@@ -16,7 +16,7 @@ export const SECTION_LABEL: CSSProperties = {
 // White primary action pill (Add exercise / Log set).
 export const WHITE_BUTTON: CSSProperties = {
   background: '#ffffff',
-  border: '1px solid #2c2c2c',
+  border: '1px solid #262626',
   boxShadow: '0 0 7.5px rgba(0,0,0,0.25)',
 };
 
