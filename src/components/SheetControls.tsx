@@ -22,19 +22,20 @@ export const WHITE_BUTTON: CSSProperties = {
 
 // Segmented / choice pill — white when active, recessed dark when idle.
 export function ToggleButton({
-  active, onClick, label, className = '',
+  active, onClick, label, className = '', heightPx = 45,
 }: {
   active: boolean;
   onClick: () => void;
   label: string;
   className?: string;
+  heightPx?: number;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`${active ? 'te-toggle-on te-toggle-mono' : 'te-toggle-off'} h-[45px] rounded-[15px] flex items-center justify-center text-[12px] font-semibold capitalize select-none ${className}`}
-      style={{ color: active ? '#0a0908' : 'rgba(255,255,255,0.4)' }}
+      className={`${active ? 'te-toggle-on te-toggle-mono' : 'te-toggle-off'} rounded-[15px] flex items-center justify-center text-[12px] font-semibold capitalize select-none ${className}`}
+      style={{ color: active ? '#0a0908' : 'rgba(255,255,255,0.4)', height: heightPx }}
     >
       {label}
     </button>
