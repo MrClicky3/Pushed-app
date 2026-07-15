@@ -1,3 +1,6 @@
+// How an exercise is loaded. 'weighted_bw' stores the *added* weight in `weight`.
+export type LoadType = 'weighted' | 'bodyweight' | 'weighted_bw';
+
 export interface Exercise {
   id: string;
   device_id: string;
@@ -6,6 +9,7 @@ export interface Exercise {
   target_reps: number;
   sets: number;
   weight: number;
+  load_type?: LoadType;
   created_at: string;
 }
 

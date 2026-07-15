@@ -10,6 +10,15 @@ interface Props {
   toDisplay: (kg: number) => number;
 }
 
+// Right-hand load label: "30kg" | "BW" | "BW +10kg"
+function loadLabel(ex: Exercise, unit: WeightUnit, toDisplay: (kg: number) => number): string {
+  if (ex.load_type === 'bodyweight') return 'BW';
+  if (ex.load_type === 'weighted_bw') {
+    return ex.weight > 0 ? `BW +${toDisplay(ex.weight)}${unit}` : 'BW';
+  }
+  return `${toDisplay(ex.weight)}${unit}`;
+}
+
 export default function ExerciseCard({ exercise, lastLog, onEdit, unit, toDisplay }: Props) {
   // Line: green if target hit, subtle grey otherwise
   const hit = lastLog && lastLog.reps_done >= exercise.target_reps;
@@ -37,7 +46,7 @@ export default function ExerciseCard({ exercise, lastLog, onEdit, unit, toDispla
         className="te-mono text-[22px] font-semibold text-white tabular-nums uppercase shrink-0 leading-none"
         style={{ letterSpacing: '-0.17px' }}
       >
-        {toDisplay(exercise.weight)}{unit}
+        {loadLabel(exercise, unit, toDisplay)}
       </span>
       <ChevronRightIcon className="w-[15px] h-[15px] text-white/25 shrink-0" />
     </button>
