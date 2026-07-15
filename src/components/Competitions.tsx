@@ -36,6 +36,11 @@ function fmtLeft(target: string, prefix: string): string {
   return `${prefix} ${m}m`;
 }
 
+function fmtStarted(startAt: string): string {
+  const d = new Date(startAt);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
 // A participant's own headline number — never a raw volume comparison.
 function scoreText(track: CompetitionTrack, s: CompetitionStanding): { text: string; color: string } {
   if (track === 'volume') {
@@ -150,7 +155,7 @@ function CompetitionSheet({
         <div className="flex items-center justify-between px-0.5">
           <div>
             <p className="te-label">
-              {trackLabel(comp.track)} · {comp.participant_count} {comp.participant_count === 2 ? 'duel' : 'players'}
+              {trackLabel(comp.track)} · {comp.participant_count} {comp.participant_count === 2 ? 'duel' : 'players'} · started {fmtStarted(comp.start_at)}
             </p>
           </div>
           {comp.status === 'active' && (
@@ -406,6 +411,7 @@ function CompetitionCard({ comp, comps, onOpen }: {
   onOpen: () => void;
 }) {
   const [me, setMe] = useState<CompetitionStanding | null>(null);
+  const [leader, setLeader] = useState<CompetitionStanding | null>(null);
   const [total, setTotal] = useState<number>(comp.participant_count);
 
   useEffect(() => {
@@ -415,6 +421,7 @@ function CompetitionCard({ comp, comps, onOpen }: {
       if (!alive) return;
       setTotal(rows.filter(r => r.status === 'accepted').length || rows.length);
       setMe(rows.find(r => r.is_self) ?? null);
+      setLeader(rows.find(r => r.rank === 1) ?? rows[0] ?? null);
     });
     return () => { alive = false; };
   }, [comp.id, comp.status, comps]);
@@ -422,6 +429,7 @@ function CompetitionCard({ comp, comps, onOpen }: {
   const active = comp.status === 'active';
   const sc = me ? scoreText(comp.track, me) : null;
   const rank = me?.rank ?? null;
+  const leaderSc = leader ? scoreText(comp.track, leader) : null;
 
   return (
     <button
@@ -432,7 +440,7 @@ function CompetitionCard({ comp, comps, onOpen }: {
         <div className="flex-1 min-w-0">
           <p className="text-[15px] font-semibold text-[#f4f1ec] tracking-tight truncate">{comp.name}</p>
           <p className="te-label mt-1">
-            {trackLabel(comp.track)} · {active ? fmtLeft(comp.end_at, '') : 'final'}
+            {trackLabel(comp.track)} · started {fmtStarted(comp.start_at)} · {active ? fmtLeft(comp.end_at, '') : 'final'}
           </p>
         </div>
         {rank !== null && (
@@ -445,6 +453,17 @@ function CompetitionCard({ comp, comps, onOpen }: {
         )}
         <ChevronRightIcon className="w-3.5 h-3.5 text-white/20 shrink-0" />
       </div>
+      {leader && leaderSc && (
+        <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-white/[0.05]">
+          <Trophy className="w-3 h-3 shrink-0" style={{ color: '#e8c15a' }} />
+          <span className="text-[12px] font-medium text-white/50 truncate">
+            {leader.display_name || leader.username} leading
+          </span>
+          <span className="te-mono text-[12px] tabular-nums shrink-0 ml-auto" style={{ color: leaderSc.color }}>
+            {leaderSc.text}
+          </span>
+        </div>
+      )}
     </button>
   );
 }
@@ -524,5 +543,68 @@ export function CompetitionsSection({ comps, friendsList }: {
         onRematch={onRematch}
       />
     </div>
+  );
+}
+
+// ── Mini widget for the Progress page ───────────────────────────
+// Shows a compact row of active competitions: who's leading and when it ends.
+// Tapping a row opens the full detail sheet (self-contained).
+export function CompetitionMiniWidget({ comps }: {
+  comps: CompetitionsApi;
+}) {
+  const [leaders, setLeaders] = useState<Record<string, CompetitionStanding | null>>({});
+  const [detail, setDetail] = useState<CompetitionSummary | null>(null);
+
+  const active = comps.competitions.filter(c => c.status === 'active');
+
+  useEffect(() => {
+    if (active.length === 0) return;
+    let alive = true;
+    Promise.all(active.map(c => comps.getStandings(c.id).then(rows => [c.id, rows.find(r => r.rank === 1) ?? rows[0] ?? null] as const)))
+      .then(entries => { if (alive) setLeaders(Object.fromEntries(entries)); });
+    return () => { alive = false; };
+  }, [active.map(c => c.id).join(','), comps]);
+
+  if (active.length === 0) return null;
+
+  return (
+    <>
+      <div className="space-y-2">
+        {active.map(comp => {
+          const ld = leaders[comp.id];
+          const sc = ld ? scoreText(comp.track, ld) : null;
+          return (
+            <button
+              key={comp.id}
+              onClick={() => setDetail(comp)}
+              className="te-panel w-full rounded-2xl px-4 py-3 text-left active:bg-white/[0.04] transition-colors"
+            >
+              <div className="flex items-center gap-2.5">
+                <Trophy className="w-3.5 h-3.5 shrink-0" style={{ color: '#e8c15a' }} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-semibold text-[#f4f1ec] tracking-tight truncate">{comp.name}</p>
+                  <p className="te-label mt-0.5">
+                    {ld ? `${ld.display_name || ld.username} leading` : 'Loading…'} · ends {fmtLeft(comp.end_at, '')}
+                  </p>
+                </div>
+                {sc && (
+                  <span className="te-mono text-[13px] tabular-nums shrink-0" style={{ color: sc.color }}>
+                    {sc.text}
+                  </span>
+                )}
+                <ChevronRightIcon className="w-3 h-3 text-white/20 shrink-0" />
+              </div>
+            </button>
+          );
+        })}
+      </div>
+      <CompetitionSheet
+        open={detail !== null}
+        comp={detail}
+        comps={comps}
+        onClose={() => setDetail(null)}
+        onRematch={() => {}}
+      />
+    </>
   );
 }
