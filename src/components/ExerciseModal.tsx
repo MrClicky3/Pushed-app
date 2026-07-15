@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { CheckIcon } from '@heroicons/react/24/outline';
 import Modal from './Modal';
 import { SECTION_LABEL, WHITE_BUTTON, ToggleButton } from './SheetControls';
+import SwipeStepper from './SwipeStepper';
 import type { Exercise, LoadType } from '../types';
 import type { WeightUnit } from '../hooks/useSettings';
 
@@ -38,6 +39,7 @@ export default function ExerciseModal({ open, onClose, onSave, onDelete, exercis
   const [sets, setSets] = useState('3');
   const [displayWeight, setDisplayWeight] = useState('0');
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const weightStep = unit === 'lbs' ? 1 : 0.5;
 
   useEffect(() => {
     if (!open) { setConfirmDelete(false); return; }
@@ -91,10 +93,28 @@ export default function ExerciseModal({ open, onClose, onSave, onDelete, exercis
           value={name}
           onChange={e => setName(e.target.value)}
           placeholder="Exercise name"
-          className="w-full h-[55px] rounded-[20px] px-5 text-white text-[15px] placeholder:text-[#5c5a58] focus:outline-none focus:border-white/[0.16] transition-colors"
-          style={{ background: '#0b0b0b', border: '1px solid #232323' }}
+          className="w-full h-[55px] rounded-[20px] px-5 text-white text-[15px] placeholder:text-[#5c5a58] focus:outline-none focus:border-white/[0.13] transition-colors"
+          style={{ background: '#0b0b0b', border: '1px solid #1d1d1d' }}
           autoFocus
         />
+
+        <div className="space-y-2.5">
+          <p style={SECTION_LABEL}>Target</p>
+          <div className={`grid gap-2.5 ${loadType === 'bodyweight' ? 'grid-cols-2' : 'grid-cols-3'}`}>
+            <SwipeStepper label="Reps" value={reps} onChange={setReps} min={1} step={1} />
+            <SwipeStepper label="Sets" value={sets} onChange={setSets} min={1} step={1} />
+            {loadType !== 'bodyweight' && (
+              <SwipeStepper
+                label={loadType === 'weighted_bw' ? `Added (${unit})` : `Weight (${unit})`}
+                value={displayWeight}
+                onChange={setDisplayWeight}
+                min={0}
+                step={weightStep}
+                fractional
+              />
+            )}
+          </div>
+        </div>
 
         <div className="space-y-2.5">
           <p style={SECTION_LABEL}>Muscle group</p>
@@ -119,37 +139,6 @@ export default function ExerciseModal({ open, onClose, onSave, onDelete, exercis
           <div className="grid grid-cols-3 gap-2.5">
             {LOAD_TYPES.map(({ key, label }) => (
               <ToggleButton key={key} active={loadType === key} onClick={() => setLoadType(key)} label={label} />
-            ))}
-          </div>
-        </div>
-
-        <div className="space-y-2.5">
-          <p style={SECTION_LABEL}>Target</p>
-          <div className={`grid gap-2.5 ${loadType === 'bodyweight' ? 'grid-cols-2' : 'grid-cols-3'}`}>
-            {[
-              { label: `Reps`, value: reps, onChange: setReps, min: 1, step: 1 },
-              { label: 'Sets', value: sets, onChange: setSets, min: 1, step: 1 },
-              ...(loadType === 'bodyweight' ? [] : [
-                { label: loadType === 'weighted_bw' ? `Added (${unit})` : `Weight (${unit})`, value: displayWeight, onChange: setDisplayWeight, min: 0, step: 0.5 },
-              ]),
-            ].map(({ label, value, onChange, min, step }) => (
-              <div
-                key={label}
-                className="flex flex-col justify-between h-[80px] rounded-[20px]"
-                style={{ background: '#0b0b0b', padding: '13px' }}
-              >
-                <p className="te-label">{label}</p>
-                <input
-                  type="number"
-                  value={value}
-                  onChange={e => onChange(e.target.value)}
-                  onFocus={e => e.target.select()}
-                  min={min}
-                  step={step}
-                  inputMode="decimal"
-                  className="w-full bg-transparent text-white !text-[42px] font-bold te-mono focus:outline-none tabular-nums !leading-[32px] tracking-[-1px] text-left"
-                />
-              </div>
             ))}
           </div>
         </div>

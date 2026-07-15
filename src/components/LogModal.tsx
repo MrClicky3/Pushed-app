@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { ChevronRightIcon, CheckIcon } from '@heroicons/react/24/outline';
+import { ChevronUpIcon, ChevronDownIcon } from '@heroicons/react/24/solid';
 import Model from '@phelian/react-body-highlighter';
 import Modal from './Modal';
 import { WHITE_BUTTON, ToggleButton } from './SheetControls';
@@ -160,13 +161,71 @@ function Stepper({
     if (!isNaN(parsed) && parsed >= min) onChange(clamp(parsed));
   }
 
+  // ── Swipe-to-change ──
+  const startY = useRef<number | null>(null);
+  const startVal = useRef(0);
+  const [animDir, setAnimDir] = useState<'' | 'up' | 'down'>('');
+  const SWIPE_THRESHOLD = 18;
+
+  const applyDelta = useCallback((delta: number) => {
+    const next = fractional
+      ? Math.round((startVal.current + delta) * 100) / 100
+      : Math.round(startVal.current + delta);
+    onChange(clamp(next));
+    setAnimDir(delta > 0 ? 'up' : 'down');
+    setTimeout(() => setAnimDir(''), 200);
+  }, [clamp, fractional, onChange]);
+
+  function handlePointerDown(e: React.PointerEvent) {
+    startY.current = e.clientY;
+    startVal.current = value;
+  }
+
+  function handlePointerMove(e: React.PointerEvent) {
+    if (startY.current === null) return;
+    const dy = startY.current - e.clientY;
+    if (Math.abs(dy) < SWIPE_THRESHOLD) return;
+
+    const steps = Math.floor(Math.abs(dy) / SWIPE_THRESHOLD);
+    const delta = (dy > 0 ? 1 : -1) * steps * step;
+    const next = fractional
+      ? Math.round((startVal.current + delta) * 100) / 100
+      : Math.round(startVal.current + delta);
+    onChange(clamp(next));
+
+    startY.current = e.clientY;
+    startVal.current = next;
+    setAnimDir(delta > 0 ? 'up' : 'down');
+    setTimeout(() => setAnimDir(''), 200);
+  }
+
+  function handlePointerUp() {
+    startY.current = null;
+  }
+
+  function handleWheel(e: React.WheelEvent) {
+    if (Math.abs(e.deltaY) < 10) return;
+    e.preventDefault();
+    applyDelta(e.deltaY < 0 ? step : -step);
+  }
+
+  const animClass = animDir === 'up' ? 'animate-slot-up' : animDir === 'down' ? 'animate-slot-down' : '';
+
   return (
     <div className="flex flex-col items-center gap-2.5 w-full">
       <span className="te-label" style={{ letterSpacing: '0.06em' }}>{label}</span>
       <div className="flex items-center justify-center gap-[15px] w-full">
         <StepperBtn label="–" onPress={() => onChange(clamp(value - step))} onLongPress={() => onChange(clamp(value - bigStep))} />
 
-        <div className="flex-1 flex items-center justify-center rounded-[20px]" style={{ background: '#0b0b0b', border: '1px solid #232323' }}>
+        <div
+          className="relative flex-1 flex items-center justify-center rounded-[20px] touch-none"
+          style={{ background: '#0b0b0b', border: '1px solid #1d1d1d' }}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerLeave={handlePointerUp}
+          onWheel={handleWheel}
+        >
           <input
             type="number"
             inputMode="decimal"
@@ -175,9 +234,13 @@ function Stepper({
             onFocus={e => e.target.select()}
             min={min}
             step="any"
-            className="te-mono !text-[52px] font-bold text-white tabular-nums !leading-[38px] bg-transparent border-none focus:outline-none w-full text-center"
-            style={{ letterSpacing: '-1px' }}
+            className={`te-mono !text-[52px] font-bold text-white tabular-nums !leading-[38px] bg-transparent border-none focus:outline-none w-full text-center ${animClass}`}
+            style={{ letterSpacing: '-1px', touchAction: 'none' }}
           />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex flex-col gap-0.5 pointer-events-none">
+            <ChevronUpIcon className="w-3 h-3 text-white/15" />
+            <ChevronDownIcon className="w-3 h-3 text-white/15" />
+          </div>
         </div>
 
         <StepperBtn label="+" onPress={() => onChange(clamp(value + step))} onLongPress={() => onChange(clamp(value + bigStep))} />
@@ -272,7 +335,7 @@ export default function LogModal({
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search exercises..."
-            className="te-field w-full rounded-xl px-4 py-3 text-white text-[15px] placeholder:text-white/25 focus:outline-none focus:border-white/[0.16] transition-colors"
+            className="te-field w-full rounded-xl px-4 py-3 text-white text-[15px] placeholder:text-white/25 focus:outline-none focus:border-white/[0.13] transition-colors"
             autoFocus
           />
           {filtered.length === 0 ? (
