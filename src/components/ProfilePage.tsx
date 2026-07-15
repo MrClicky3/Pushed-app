@@ -6,15 +6,18 @@ import {
 import { FireIcon } from '@heroicons/react/24/solid';
 import Modal from './Modal';
 import Avatar, { AVATAR_PRESETS, presetKeyOf } from './Avatar';
-import type { Profile, LeaderboardRow, VolumeRow } from '../types';
+import type { Profile, LeaderboardRow, VolumeRow, Badge } from '../types';
 import type { useFriends, ProfileLite } from '../hooks/useFriends';
 import type { useProfile } from '../hooks/useProfile';
+import type { useCompetitions } from '../hooks/useCompetitions';
 import type { WeightUnit } from '../hooks/useSettings';
 import ReportBugSheet from './ReportBugSheet';
 import { ToggleButton } from './SheetControls';
+import { CompetitionsSection, BadgeShelf } from './Competitions';
 
 type FriendsApi = ReturnType<typeof useFriends>;
 type ProfileApi = ReturnType<typeof useProfile>;
+type CompetitionsApi = ReturnType<typeof useCompetitions>;
 
 interface Props {
   open: boolean;
@@ -22,6 +25,7 @@ interface Props {
   profile: Profile | null;
   inviteUrl: string;
   friends: FriendsApi;
+  competitions: CompetitionsApi;
   unit: WeightUnit;
   toDisplay: (kg: number) => number;
   onOpenSettings: () => void;
@@ -492,13 +496,23 @@ function FriendsSection({ friends, inviteUrl }: { friends: FriendsApi; inviteUrl
 
 // ── Full-screen profile page ────────────────────────────────────
 export default function ProfilePage({
-  open, onClose, profile, inviteUrl, friends, unit, toDisplay, onOpenSettings,
+  open, onClose, profile, inviteUrl, friends, competitions, unit, toDisplay, onOpenSettings,
   setAvatar, uploadAvatarFile, updateBio,
 }: Props) {
   const name = profile?.display_name || profile?.username || 'You';
   const [pickerOpen, setPickerOpen] = useState(false);
   const [bioOpen, setBioOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [badges, setBadges] = useState<Badge[]>([]);
+
+  // Load the current user's badge shelf whenever the profile opens or a
+  // competition finishes (competitions list changes).
+  useEffect(() => {
+    if (!open || !profile?.id) return;
+    let alive = true;
+    competitions.loadBadges(profile.id).then(b => { if (alive) setBadges(b); });
+    return () => { alive = false; };
+  }, [open, profile?.id, competitions, competitions.competitions]);
 
   const [visible, setVisible] = useState(false);
   const [dismissing, setDismissing] = useState(false);
@@ -651,6 +665,10 @@ export default function ProfilePage({
             bio={profile?.bio ?? null}
             updateBio={updateBio}
           />
+
+          <CompetitionsSection comps={competitions} friendsList={friends.friendsList} />
+
+          <BadgeShelf badges={badges} />
 
           <Leaderboard
             friendCount={friends.friendCount}

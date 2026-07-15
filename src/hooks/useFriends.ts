@@ -55,6 +55,16 @@ export function useFriends(userId: string) {
     [friendships, userId],
   );
 
+  // Accepted friends with their profile info — used by the competition
+  // create flow to pick opponents.
+  const friendsList = useMemo<ProfileLite[]>(
+    () => Array.from(acceptedIds)
+      .map(id => profilesById.get(id))
+      .filter((p): p is ProfileLite => Boolean(p))
+      .sort((a, b) => (a.display_name || a.username).localeCompare(b.display_name || b.username)),
+    [acceptedIds, profilesById],
+  );
+
   const outgoingIds = useMemo(
     () => new Set(
       friendships.filter(f => f.status === 'pending' && f.requester_id === userId)
@@ -155,6 +165,7 @@ export function useFriends(userId: string) {
   return {
     loading,
     friendCount: acceptedIds.size,
+    friendsList,
     incoming,
     outgoing,
     relationFor,

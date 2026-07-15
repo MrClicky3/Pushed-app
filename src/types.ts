@@ -24,6 +24,10 @@ export interface WorkoutLog {
   sets: number;
   comment: string;
   set_type?: SetType;
+  // Outlier guard: sets far above the user's own rolling average for the
+  // exercise are flagged on insert and excluded from competition scoring.
+  is_flagged?: boolean;
+  flag_reason?: string | null;
   created_at: string;
   exercises?: Exercise;
 }
@@ -114,4 +118,49 @@ export interface VolumeRow {
   avatar_url: string | null;
   volume: number;
   is_self: boolean;
+}
+
+// ── Competitions ──────────────────────────────────────────────
+export type CompetitionTrack = 'consistency' | 'volume';
+export type CompetitionStatus = 'pending' | 'active' | 'completed' | 'cancelled';
+export type ParticipantStatus = 'invited' | 'accepted' | 'declined';
+export type BadgeTier = 'gold' | 'silver' | 'bronze' | 'finisher';
+
+// get_my_competitions() row — one card in the list.
+export interface CompetitionSummary {
+  id: string;
+  name: string;
+  track: CompetitionTrack;
+  timezone: string;
+  start_at: string;
+  end_at: string;
+  status: CompetitionStatus;
+  created_by: string;
+  is_creator: boolean;
+  my_status: ParticipantStatus;
+  participant_count: number;
+}
+
+// get_competition_standings() row. score is the ranking value: for the
+// consistency track it is a completion %, for volume it is the %Δ (also in
+// `delta`). Live rows carry rank; pre-start/cancelled rows leave it null.
+export interface CompetitionStanding {
+  user_id: string;
+  username: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  status: ParticipantStatus;
+  score: number | null;
+  delta: number | null;
+  scored_days: number;
+  rank: number | null;
+  is_self: boolean;
+}
+
+export interface Badge {
+  id: string;
+  user_id: string;
+  competition_id: string | null;
+  tier: BadgeTier;
+  awarded_at: string;
 }

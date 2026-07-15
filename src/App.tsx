@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   BoltIcon,
   QueueListIcon,
@@ -16,6 +16,7 @@ import { useAuth } from './hooks/useAuth';
 import { useSchedule } from './hooks/useSchedule';
 import { useProfile } from './hooks/useProfile';
 import { useFriends } from './hooks/useFriends';
+import { useCompetitions } from './hooks/useCompetitions';
 import ExercisesView from './views/ExercisesView';
 import LogsView from './views/LogsView';
 import AnalyticsView from './views/AnalyticsView';
@@ -240,6 +241,20 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
   const profileApi = useProfile(userId, userName);
   const friends = useFriends(userId);
   const { needsUsername, profile: profileRow, pushStats, createProfile, inviteUrl, setAvatar, uploadAvatarFile, updateBio } = profileApi;
+
+  // Weekdays (Mon=0…Sun=6) the user has a non-empty routine scheduled — frozen
+  // into a competition on create/accept so the consistency track can be scored
+  // server-side without the schedule (localStorage-only) living in the DB.
+  const scheduledDays = useMemo(
+    () => schedule
+      .filter(s => {
+        const r = s.routine_id ? routines.find(x => x.id === s.routine_id) : null;
+        return r && r.exercise_ids.length > 0;
+      })
+      .map(s => s.day_of_week),
+    [schedule, routines],
+  );
+  const competitions = useCompetitions(scheduledDays);
 
   const [tab, setTab] = useState<Tab>('log');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -870,6 +885,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
         profile={profileRow}
         inviteUrl={inviteUrl}
         friends={friends}
+        competitions={competitions}
         unit={unit}
         toDisplay={toDisplay}
         onOpenSettings={() => { setShowProfile(false); setScheduleOpen(true); }}
