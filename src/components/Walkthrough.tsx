@@ -72,7 +72,7 @@ export default function Walkthrough(props: Props) {
     onDemoAddLog, onDemoAddExercise, onDemoCloseAdd, onOpenProfile, onCloseProfile } = props;
 
   const [i, setI] = useState(0);
-  const [phase, setPhase] = useState<'prompt' | 'revealed'>('prompt');
+  const [phase, setPhase] = useState<'intro' | 'prompt' | 'revealed'>('prompt');
   const [closing, setClosing] = useState(false);
   const [rect, setRect] = useState<Rect | null>(null);      // spotlight hole
   const [lineRect, setLineRect] = useState<Rect | null>(null); // swipe-up line
@@ -86,8 +86,17 @@ export default function Walkthrough(props: Props) {
 
   useEffect(() => {
     if (!step) return;
+    // Steps that switch pages get an "intro" beat: the destination page is
+    // shown dimmed (not spotlit) with the message, so the user notices the
+    // switch before the swipe prompt appears — otherwise Add Log and Add
+    // Exercise are easy to confuse.
+    if (step.tab) {
+      onGoTab(step.tab);
+      setPhase('intro');
+      const t = window.setTimeout(() => setPhase('prompt'), 1200);
+      return () => window.clearTimeout(t);
+    }
     setPhase('prompt');
-    if (step.tab) onGoTab(step.tab);
   }, [i, open]);
 
   useLayoutEffect(() => {
@@ -115,6 +124,7 @@ export default function Walkthrough(props: Props) {
   const s = STEPS[i];
   const last = i === STEPS.length - 1;
   const revealed = phase === 'revealed';
+  const intro = phase === 'intro';
 
   function cleanupOutcome(st: Step) {
     if (st.outcome === 'addLog' || st.outcome === 'addExercise') onDemoCloseAdd();
@@ -136,10 +146,10 @@ export default function Walkthrough(props: Props) {
     window.setTimeout(onClose, 480);
   }
 
-  const hole = !revealed && s.target !== 'none' ? rect : null;
+  const hole = phase === 'prompt' && s.target !== 'none' ? rect : null;
   const message = revealed ? (s.reveal ?? '') : s.title;
   const body = revealed ? undefined : s.body;
-  const showButton = revealed || s.interaction === 'button';
+  const showButton = revealed || (s.interaction === 'button' && !intro);
   const buttonLabel = revealed ? (last ? 'Done' : 'Next') : 'Start';
 
   return (
@@ -149,7 +159,9 @@ export default function Walkthrough(props: Props) {
     >
       <style>{WT_CSS}</style>
 
-      {!revealed && <Spotlight hole={hole} />}
+      {phase === 'prompt' && <Spotlight hole={hole} />}
+      {/* Intro beat: dim (not blurred) so the user sees the page we switched to */}
+      {intro && <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.55)' }} />}
 
       {/* Skip */}
       <button
@@ -161,8 +173,8 @@ export default function Walkthrough(props: Props) {
       </button>
 
       {/* Prompt-phase hints + gesture catcher */}
-      {!revealed && !closing && <HintGlyph interaction={s.interaction} hole={hole} lineRect={lineRect} />}
-      {!revealed && !closing && s.interaction !== 'button' && (
+      {phase === 'prompt' && !closing && <HintGlyph interaction={s.interaction} hole={hole} lineRect={lineRect} />}
+      {phase === 'prompt' && !closing && s.interaction !== 'button' && (
         <GestureCatcher interaction={s.interaction} hole={hole} onDo={onGesture} />
       )}
 
@@ -172,13 +184,14 @@ export default function Walkthrough(props: Props) {
         className="absolute left-1/2 w-full max-w-[340px] px-[26px] z-20 flex flex-col items-center"
         style={{ top: '61%', transform: 'translate(-50%, -50%)', animation: 'wt-rise 0.32s cubic-bezier(0.22,1,0.36,1)', pointerEvents: 'none' }}
       >
-        {/* Readability gradient behind the text */}
+        {/* Readability gradient behind the text — strong enough to stay legible
+            over an opened menu */}
         <div
           aria-hidden
           className="absolute left-1/2 top-1/2"
           style={{
-            width: '150%', height: 320, transform: 'translate(-50%, -50%)',
-            background: 'radial-gradient(ellipse 50% 50% at 50% 50%, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.72) 45%, transparent 78%)',
+            width: '175%', height: 440, transform: 'translate(-50%, -50%)',
+            background: 'radial-gradient(ellipse 52% 50% at 50% 50%, rgba(0,0,0,0.97) 0%, rgba(0,0,0,0.9) 42%, rgba(0,0,0,0.55) 68%, transparent 88%)',
           }}
         />
         <div className="relative text-center">
@@ -263,7 +276,7 @@ function HintGlyph({ interaction, hole, lineRect }: { interaction: Interaction; 
         {bar && (
           <div
             className="absolute wt-lineglow z-10 pointer-events-none"
-            style={{ top: bar.top - 2, left: bar.left - 4, width: bar.width + 8, height: bar.height + 4, borderRadius: 99 }}
+            style={{ top: bar.top, left: bar.left, width: bar.width, height: bar.height, borderRadius: 99 }}
           />
         )}
         <div className="absolute left-1/2 -translate-x-1/2 wt-up z-10 pointer-events-none" style={{ bottom: chevronBottom }}><Chevron dir="up" /></div>
@@ -310,8 +323,8 @@ const WT_CSS = `
 @keyframes wt-left-k { 0%,100% { transform: translate(6px, -50%) } 50% { transform: translate(-10px, -50%) } }
 @keyframes wt-tap-k { 0%,100% { transform: scale(0.85); opacity: 0.5 } 50% { transform: scale(1.15); opacity: 1 } }
 @keyframes wt-line-k {
-  0%,100% { background: rgba(244,241,236,0.5); box-shadow: 0 0 0 0 rgba(244,241,236,0.35) }
-  50% { background: rgba(244,241,236,1); box-shadow: 0 0 10px 3px rgba(244,241,236,0.35) }
+  0%,100% { background: rgba(244,241,236,0.45); box-shadow: 0 0 0 0 rgba(244,241,236,0.3) }
+  50% { background: rgba(244,241,236,1); box-shadow: 0 0 7px 1px rgba(244,241,236,0.3) }
 }
 .wt-up { animation: wt-up-k 1.5s ease-in-out infinite }
 .wt-left { animation: wt-left-k 1.5s ease-in-out infinite }

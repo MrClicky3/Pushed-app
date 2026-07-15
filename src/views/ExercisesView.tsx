@@ -89,7 +89,7 @@ export default function ExercisesView({ exercises, logs, onAdd, onEdit, onOpenLi
       style={{ display: 'block', textAlign: 'left', position: 'relative', border: '1px solid #202020', boxShadow: '0 0 15px rgba(0,0,0,0.25)' }}
     >
       <div style={{
-        height: 153,
+        height: 164,
         background: 'linear-gradient(124.9deg, rgb(22,13,12) 8%, rgb(52,20,17) 52%, rgb(96,32,26) 92%, rgb(64,22,18) 120%)',
         position: 'relative', overflow: 'hidden',
       }}>
@@ -99,20 +99,20 @@ export default function ExercisesView({ exercises, logs, onAdd, onEdit, onOpenLi
           background: 'radial-gradient(ellipse 62% 88% at 78% 60%, rgba(150,46,38,0.40) 0%, rgba(120,36,30,0.14) 45%, transparent 72%)',
         }} />
 
-        {/* Top-left: label stack */}
-        <div style={{ position: 'absolute', top: 16, left: 18 }}>
-          <p style={{ fontFamily: "'Geist Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#f4f1ec', lineHeight: 1 }}>
+        {/* Top-left: label stack (Figma: 20px mono semibold title, 12px regular subtitle) */}
+        <div style={{ position: 'absolute', top: 20, left: 20 }}>
+          <p style={{ fontFamily: "'Geist Mono', monospace", fontSize: 18, fontWeight: 600, letterSpacing: '-0.17px', textTransform: 'uppercase', color: '#ffffff', lineHeight: 1 }}>
             Exercise Library
           </p>
-          <p style={{ fontFamily: "'Geist Mono', monospace", fontSize: 9, fontWeight: 500, letterSpacing: '0.09em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.30)', marginTop: 5, lineHeight: 1 }}>
+          <p style={{ fontFamily: "'Geist', sans-serif", fontSize: 12, fontWeight: 400, letterSpacing: '-0.1px', color: 'rgba(244,241,236,0.35)', marginTop: 9, lineHeight: 1 }}>
             Form guides, muscle maps
           </p>
         </div>
 
-        {/* Bottom-left: count */}
-        <div style={{ position: 'absolute', bottom: 16, left: 18 }}>
-          <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: 44, fontWeight: 700, color: 'rgba(244,241,236,0.92)', lineHeight: 1, letterSpacing: '-0.04em', display: 'block' }}>63</span>
-          <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: 14, fontWeight: 700, letterSpacing: '-0.04em', color: 'rgba(244,241,236,0.92)', marginTop: 1, display: 'block' }}>exercises</span>
+        {/* Bottom-left: count (Figma: 42px mono, uppercase 14px "exercises") */}
+        <div style={{ position: 'absolute', bottom: 20, left: 20 }}>
+          <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: 40, fontWeight: 600, color: 'rgba(244,241,236,0.92)', lineHeight: '42px', letterSpacing: '-1.76px', display: 'block' }}>63</span>
+          <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: 13, fontWeight: 600, letterSpacing: '-0.52px', textTransform: 'uppercase', color: 'rgba(244,241,236,0.92)', marginTop: 8, display: 'block' }}>exercises</span>
         </div>
 
         {/* Right: staggered muscle figures — back | hero | front */}
