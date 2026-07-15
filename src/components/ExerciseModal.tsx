@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { CheckIcon } from '@heroicons/react/24/outline';
 import Modal from './Modal';
 import { SECTION_LABEL, WHITE_BUTTON, ToggleButton } from './SheetControls';
-import type { Exercise } from '../types';
+import type { Exercise, LoadType } from '../types';
 import type { WeightUnit } from '../hooks/useSettings';
 
 const GROUPS = [
@@ -10,6 +10,12 @@ const GROUPS = [
   'chest', 'upper back', 'lower back', 'shoulders',
   'biceps', 'triceps', 'forearms',
   'quads', 'hamstrings', 'glutes', 'calves', 'core',
+];
+
+const LOAD_TYPES: { key: LoadType; label: string }[] = [
+  { key: 'weighted', label: 'Weighted' },
+  { key: 'bodyweight', label: 'Bodyweight' },
+  { key: 'weighted_bw', label: 'Weighted BW' },
 ];
 
 interface Props {
@@ -27,6 +33,7 @@ interface Props {
 export default function ExerciseModal({ open, onClose, onSave, onDelete, exercise, prefill, unit, toDisplay, fromDisplay }: Props) {
   const [name, setName] = useState('');
   const [group, setGroup] = useState('upper');
+  const [loadType, setLoadType] = useState<LoadType>('weighted');
   const [reps, setReps] = useState('12');
   const [sets, setSets] = useState('3');
   const [displayWeight, setDisplayWeight] = useState('0');
@@ -38,18 +45,21 @@ export default function ExerciseModal({ open, onClose, onSave, onDelete, exercis
     if (exercise) {
       setName(exercise.name);
       setGroup(exercise.muscle_group);
+      setLoadType(exercise.load_type ?? 'weighted');
       setReps(String(exercise.target_reps));
       setSets(String(exercise.sets));
       setDisplayWeight(String(toDisplay(exercise.weight)));
     } else if (prefill) {
       setName(prefill.name);
       setGroup(prefill.muscle_group);
+      setLoadType('weighted');
       setReps('');
       setSets('');
       setDisplayWeight('0');
     } else {
       setName('');
       setGroup('upper');
+      setLoadType('weighted');
       setReps('12');
       setSets('3');
       setDisplayWeight('0');
@@ -59,7 +69,9 @@ export default function ExerciseModal({ open, onClose, onSave, onDelete, exercis
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
-    onSave({ name: name.trim(), muscle_group: group, target_reps: Number(reps) || 0, sets: Number(sets) || 0, weight: fromDisplay(Number(displayWeight) || 0) });
+    // Pure bodyweight carries no external load.
+    const weight = loadType === 'bodyweight' ? 0 : fromDisplay(Number(displayWeight) || 0);
+    onSave({ name: name.trim(), muscle_group: group, target_reps: Number(reps) || 0, sets: Number(sets) || 0, weight, load_type: loadType });
     onClose();
   }
 
@@ -103,12 +115,23 @@ export default function ExerciseModal({ open, onClose, onSave, onDelete, exercis
         </div>
 
         <div className="space-y-2.5">
-          <p style={SECTION_LABEL}>Target</p>
+          <p style={SECTION_LABEL}>Type</p>
           <div className="grid grid-cols-3 gap-2.5">
+            {LOAD_TYPES.map(({ key, label }) => (
+              <ToggleButton key={key} active={loadType === key} onClick={() => setLoadType(key)} label={label} />
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-2.5">
+          <p style={SECTION_LABEL}>Target</p>
+          <div className={`grid gap-2.5 ${loadType === 'bodyweight' ? 'grid-cols-2' : 'grid-cols-3'}`}>
             {[
               { label: `Reps`, value: reps, onChange: setReps, min: 1, step: 1 },
               { label: 'Sets', value: sets, onChange: setSets, min: 1, step: 1 },
-              { label: `Weight (${unit})`, value: displayWeight, onChange: setDisplayWeight, min: 0, step: 0.5 },
+              ...(loadType === 'bodyweight' ? [] : [
+                { label: loadType === 'weighted_bw' ? `Added (${unit})` : `Weight (${unit})`, value: displayWeight, onChange: setDisplayWeight, min: 0, step: 0.5 },
+              ]),
             ].map(({ label, value, onChange, min, step }) => (
               <div
                 key={label}

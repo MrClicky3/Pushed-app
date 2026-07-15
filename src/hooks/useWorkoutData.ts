@@ -10,6 +10,12 @@ function isMissingSetTypeColumn(error: { message?: string } | null): boolean {
   return !!error?.message && /set_type/.test(error.message);
 }
 
+// True when the exercises.load_type migration hasn't been applied yet — writes
+// retry without the column so adding/editing exercises keeps working.
+function isMissingLoadType(error: { message?: string } | null): boolean {
+  return !!error?.message && /load_type/.test(error.message);
+}
+
 export function useWorkoutData(userId: string) {
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [logs, setLogs] = useState<WorkoutLog[]>([]);
@@ -38,22 +44,22 @@ export function useWorkoutData(userId: string) {
   }, [fetchExercises, fetchLogs]);
 
   async function addExercise(input: Omit<Exercise, 'id' | 'device_id' | 'created_at'>): Promise<Exercise | null> {
-    const { data } = await supabase
-      .from('exercises')
-      .insert({ ...input, device_id: deviceId, user_id: userId })
-      .select()
-      .single();
+    const row = { ...input, device_id: deviceId, user_id: userId };
+    let { data, error } = await supabase.from('exercises').insert(row).select().single();
+    if (error && isMissingLoadType(error)) {
+      const { load_type, ...rest } = row;
+      ({ data } = await supabase.from('exercises').insert(rest).select().single());
+    }
     if (data) setExercises(prev => [...prev, data]);
     return data ?? null;
   }
 
   async function updateExercise(id: string, input: Partial<Exercise>) {
-    const { data } = await supabase
-      .from('exercises')
-      .update(input)
-      .eq('id', id)
-      .select()
-      .single();
+    let { data, error } = await supabase.from('exercises').update(input).eq('id', id).select().single();
+    if (error && isMissingLoadType(error)) {
+      const { load_type, ...rest } = input;
+      ({ data } = await supabase.from('exercises').update(rest).eq('id', id).select().single());
+    }
     if (data) setExercises(prev => prev.map(e => e.id === id ? data : e));
   }
 
