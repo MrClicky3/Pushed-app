@@ -90,13 +90,13 @@ export default function ExercisesView({ exercises, logs, onAdd, onEdit, onOpenLi
     >
       <div style={{
         height: 153,
-        background: 'linear-gradient(124.9deg, rgb(28,16,16) 12%, rgb(96,36,33) 62%, rgb(210,60,52) 98%, rgb(255,69,58) 120%)',
+        background: 'linear-gradient(124.9deg, rgb(26,16,16) 12%, rgb(78,34,31) 62%, rgb(150,52,47) 98%, rgb(190,60,53) 120%)',
         position: 'relative', overflow: 'hidden',
       }}>
         {/* Hot glow behind the figures */}
         <div style={{
           position: 'absolute', inset: 0, pointerEvents: 'none',
-          background: 'radial-gradient(ellipse 55% 80% at 88% 100%, rgba(255,69,58,0.40) 0%, rgba(255,69,58,0.12) 45%, transparent 70%)',
+          background: 'radial-gradient(ellipse 55% 80% at 88% 100%, rgba(255,69,58,0.22) 0%, rgba(255,69,58,0.07) 45%, transparent 70%)',
         }} />
 
         {/* Top-left: label stack */}
