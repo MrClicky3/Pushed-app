@@ -174,10 +174,14 @@ AS $$
   );
 $$;
 
+-- DROP … IF EXISTS before each CREATE keeps this migration re-runnable
+-- (CREATE POLICY has no IF NOT EXISTS).
+DROP POLICY IF EXISTS "competitions member read" ON public.competitions;
 CREATE POLICY "competitions member read" ON public.competitions
   FOR SELECT TO authenticated
   USING (created_by = auth.uid() OR public.is_competition_member(id, auth.uid()));
 
+DROP POLICY IF EXISTS "participants member read" ON public.competition_participants;
 CREATE POLICY "participants member read" ON public.competition_participants
   FOR SELECT TO authenticated
   USING (public.is_competition_member(competition_id, auth.uid()));
@@ -186,6 +190,7 @@ CREATE POLICY "participants member read" ON public.competition_participants
 -- competition, and to accepted friends (so the badge shelf renders on a
 -- friend's profile). Non-competition badges (competition_id NULL) fall back
 -- to owner + friends.
+DROP POLICY IF EXISTS "badges visible read" ON public.badges;
 CREATE POLICY "badges visible read" ON public.badges
   FOR SELECT TO authenticated
   USING (
