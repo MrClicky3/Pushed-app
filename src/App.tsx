@@ -878,7 +878,18 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
         updateBio={updateBio}
       />
 
-      <Walkthrough open={showGuide} onClose={closeGuide} focusMode={focusMode} onToggleFocus={toggleFocus} />
+      <Walkthrough
+        open={showGuide}
+        onClose={closeGuide}
+        focusMode={focusMode}
+        onToggleFocus={toggleFocus}
+        onGoTab={switchTab}
+        onDemoAddLog={() => setLogModal({ open: true, exercise: null, editLog: null })}
+        onDemoAddExercise={() => { setExercisePrefill(undefined); setExerciseModal({ open: true, exercise: null }); }}
+        onDemoCloseAdd={() => { setLogModal({ open: false, exercise: null, editLog: null }); setExerciseModal({ open: false, exercise: null }); }}
+        onOpenProfile={() => setShowProfile(true)}
+        onCloseProfile={() => setShowProfile(false)}
+      />
 
       {needsUsername && <UsernameSetupModal onCreate={createProfile} />}
 

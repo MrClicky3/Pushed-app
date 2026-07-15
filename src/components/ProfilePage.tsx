@@ -277,7 +277,7 @@ function Leaderboard({
       {friendCount > 0 && (
         <div className="grid grid-cols-2 gap-2.5 mb-3">
           {(['streak', 'volume'] as const).map(t => (
-            <ToggleButton key={t} active={tab === t} onClick={() => setTab(t)} label={t} />
+            <ToggleButton key={t} active={tab === t} onClick={() => setTab(t)} label={t} heightPx={38} />
           ))}
         </div>
       )}
@@ -603,7 +603,7 @@ export default function ProfilePage({
           className="relative shrink-0 active:opacity-70 transition-opacity"
           aria-label="Change profile photo"
         >
-          <Avatar name={name} avatarUrl={profile?.avatar_url} size={76} />
+          <Avatar name={name} avatarUrl={profile?.avatar_url} size={88} />
           <span
             className="absolute flex items-center justify-center rounded-full"
             style={{ width: 24, height: 24, right: -2, bottom: -2, background: '#f4f1ec', border: '2.5px solid #0a0908' }}
