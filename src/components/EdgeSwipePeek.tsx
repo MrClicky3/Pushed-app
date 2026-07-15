@@ -97,7 +97,7 @@ export default function EdgeSwipePeek({
             className="absolute inset-0"
             style={{
               background: armed
-                ? 'linear-gradient(to left, rgba(20,10,4,0.97) 50%, transparent 100%)'
+                ? 'linear-gradient(to left, rgba(10,10,10,0.97) 50%, transparent 100%)'
                 : 'linear-gradient(to left, rgba(0,0,0,0.92) 45%, transparent 100%)',
               opacity: Math.max(0.15, progress),
               transition: 'background 0.15s ease',
