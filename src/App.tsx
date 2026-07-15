@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   BoltIcon,
   QueueListIcon,
@@ -26,6 +26,7 @@ import ScheduleModal from './components/ScheduleModal';
 import ProfilePage from './components/ProfilePage';
 import Avatar from './components/Avatar';
 import EdgeSwipePeek from './components/EdgeSwipePeek';
+import Walkthrough from './components/Walkthrough';
 import UsernameSetupModal from './components/UsernameSetupModal';
 import ExerciseLibraryModal from './components/ExerciseLibraryModal';
 import { calcStreak, calcConsistency } from './lib/streak';
@@ -307,6 +308,21 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
   const [prToast, setPrToast] = useState<{ exerciseName: string; detail: string } | null>(null);
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+
+  // First-run walkthrough. Auto-opens once for new users (data loaded, no
+  // exercises yet); re-openable from Settings. Flag is localStorage-only.
+  const WALKTHROUGH_KEY = 'overload_walkthrough_v1';
+  const [showGuide, setShowGuide] = useState(false);
+  useEffect(() => {
+    if (loading || needsUsername || !profileRow) return;
+    let seen = true;
+    try { seen = localStorage.getItem(WALKTHROUGH_KEY) === 'done'; } catch { /* ignore */ }
+    if (!seen && exercises.length === 0) setShowGuide(true);
+  }, [loading, needsUsername, profileRow, exercises.length]);
+  const closeGuide = useCallback(() => {
+    setShowGuide(false);
+    try { localStorage.setItem(WALKTHROUGH_KEY, 'done'); } catch { /* ignore */ }
+  }, []);
 
   const profileName = profileRow?.display_name || profileRow?.username || userName || 'You';
 
@@ -862,6 +878,8 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
         updateBio={updateBio}
       />
 
+      <Walkthrough open={showGuide} onClose={closeGuide} />
+
       {needsUsername && <UsernameSetupModal onCreate={createProfile} />}
 
       {inviteToast && (
@@ -886,6 +904,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
         onDeleteRoutine={deleteRoutine}
         onAssignDay={assignDay}
         onSignOut={onSignOut}
+        onReplayGuide={() => { setScheduleOpen(false); setShowGuide(true); }}
         userName={userName}
         onUpdateName={onUpdateName}
         timerDuration={timerDuration}
