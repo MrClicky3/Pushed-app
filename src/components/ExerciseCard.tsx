@@ -22,9 +22,9 @@ export default function ExerciseCard({ exercise, lastLog, onEdit, unit, toDispla
   return (
     <button
       onClick={onEdit}
-      className="w-full h-[64px] flex items-center gap-4 px-[18px] text-left active:opacity-80 transition-opacity min-w-0"
+      className="w-full h-[70px] flex items-center gap-4 px-[18px] text-left active:opacity-80 transition-opacity min-w-0"
     >
-      <div className="w-[3px] h-[34px] rounded-full shrink-0" style={{ background: lineColor }} />
+      <div className="w-[3px] h-[38px] rounded-full shrink-0" style={{ background: lineColor }} />
       <div className="flex-1 min-w-0">
         <p className="text-[16px] font-semibold text-white truncate" style={{ letterSpacing: '-0.17px' }}>
           {exercise.name}

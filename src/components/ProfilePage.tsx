@@ -11,6 +11,7 @@ import type { useFriends, ProfileLite } from '../hooks/useFriends';
 import type { useProfile } from '../hooks/useProfile';
 import type { WeightUnit } from '../hooks/useSettings';
 import ReportBugSheet from './ReportBugSheet';
+import { ToggleButton } from './SheetControls';
 
 type FriendsApi = ReturnType<typeof useFriends>;
 type ProfileApi = ReturnType<typeof useProfile>;
@@ -274,20 +275,9 @@ function Leaderboard({
       </p>
 
       {friendCount > 0 && (
-        <div className="flex items-center gap-5 mb-3 px-0.5">
+        <div className="grid grid-cols-2 gap-2.5 mb-3">
           {(['streak', 'volume'] as const).map(t => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className="select-none active:opacity-60 transition-opacity"
-            >
-              <span
-                className="text-[13px] font-bold tracking-wider uppercase"
-                style={{ color: tab === t ? '#f4f1ec' : 'rgba(255,255,255,0.35)' }}
-              >
-                {t}
-              </span>
-            </button>
+            <ToggleButton key={t} active={tab === t} onClick={() => setTab(t)} label={t} />
           ))}
         </div>
       )}
@@ -576,8 +566,8 @@ export default function ProfilePage({
     >
       {/* Identity band — top quarter of the page */}
       <div
-        className="shrink-0 relative flex flex-col items-center justify-center gap-3"
-        style={{ height: '25vh', minHeight: 200, paddingTop: 'env(safe-area-inset-top, 0px)' }}
+        className="shrink-0 relative flex flex-col items-center gap-3"
+        style={{ height: '25vh', minHeight: 200, paddingTop: 'calc(env(safe-area-inset-top, 0px) + 68px)' }}
       >
         <button
           onClick={onClose}
