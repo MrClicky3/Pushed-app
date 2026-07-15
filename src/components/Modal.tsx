@@ -165,7 +165,7 @@ export default function Modal({ open, onClose, title, children, onBack, noPadTop
       : 1;
 
   const isDragging = offsetY > 0;
-  const sheetTransform = dismissing ? 'translateY(105%)' : `translateY(${offsetY}px)`;
+  const sheetTransform = dismissing ? 'translateY(100%)' : `translateY(${offsetY}px)`;
 
   return (
     <div
@@ -173,7 +173,6 @@ export default function Modal({ open, onClose, title, children, onBack, noPadTop
       style={{
         paddingLeft: 'max(2px, env(safe-area-inset-left))',
         paddingRight: 'max(2px, env(safe-area-inset-right))',
-        paddingBottom: 'max(2px, env(safe-area-inset-bottom, 0px))',
       }}
     >
       <div
@@ -183,7 +182,7 @@ export default function Modal({ open, onClose, title, children, onBack, noPadTop
       />
       <div
         ref={sheetRef}
-        className={`relative w-full max-w-lg rounded-[28px] z-10 flex flex-col ${!dismissing && !isDragging ? 'animate-slide-up' : ''}`}
+        className={`relative w-full max-w-lg rounded-t-[28px] z-10 flex flex-col ${!dismissing && !isDragging ? 'animate-slide-up' : ''}`}
         style={{
           maxHeight: '90dvh',
           transform: sheetTransform,
@@ -208,7 +207,7 @@ export default function Modal({ open, onClose, title, children, onBack, noPadTop
         )}
         <div
           ref={contentRef}
-          className={`pl-[max(19px,env(safe-area-inset-left))] pr-[max(19px,env(safe-area-inset-right))] ${noPadTop ? 'pt-0' : 'pt-2.5'} ${noPadBottom ? 'pb-0' : 'pb-5'} overflow-y-auto overscroll-contain`}
+          className={`pl-[max(19px,env(safe-area-inset-left))] pr-[max(19px,env(safe-area-inset-right))] ${noPadTop ? 'pt-0' : 'pt-2.5'} ${noPadBottom ? 'pb-[env(safe-area-inset-bottom)]' : 'pb-[max(20px,env(safe-area-inset-bottom))]'} overflow-y-auto overscroll-contain`}
           style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
         >
           {children}
