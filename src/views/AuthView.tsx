@@ -33,7 +33,6 @@ function friendlyError(msg: string): string {
   return msg;
 }
 
-// ── Icons ─────────────────────────────────────────────────────
 function IconWave() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
@@ -79,7 +78,6 @@ function IconEye({ show }: { show: boolean }) {
   );
 }
 
-// ── Input with left icon ──────────────────────────────────────
 function FieldInput({
   icon, type, value, onChange, placeholder, autoComplete, right,
 }: {
@@ -116,7 +114,7 @@ const PRIMARY: React.CSSProperties = {
   background: '#ffffff',
   color: '#000000',
   boxShadow: '0 0 7.5px rgba(0,0,0,0.25)',
-  border: '1px solid #2c2c2c',
+  border: '1px solid #262626',
 };
 
 export default function AuthView({ onSignIn, onSignUp, onResend, onVerifyOtp, onResetPassword, onGoogle }: Props) {
@@ -133,10 +131,9 @@ export default function AuthView({ onSignIn, onSignUp, onResend, onVerifyOtp, on
   const [resendCooldown, setResendCooldown] = useState(0);
   const [resendMsg, setResendMsg] = useState<string | null>(null);
 
-  // ── Abuse protection (bot signup mitigation) ───────────────
-  const [honeypot, setHoneypot] = useState('');       // hidden field — humans never fill it
-  const formLoadedAt = useRef(Date.now());            // instant submits are bots
-  const lastSubmitAt = useRef(0);                     // block scripted rapid-fire
+  const [honeypot, setHoneypot] = useState('');
+  const formLoadedAt = useRef(Date.now());
+  const lastSubmitAt = useRef(0);
 
   function startCooldown() {
     setResendCooldown(60);
@@ -145,13 +142,10 @@ export default function AuthView({ onSignIn, onSignUp, onResend, onVerifyOtp, on
     }, 1000);
   }
 
-  // ── Submit sign in / sign up ──────────────────────────────
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!email.trim() || !password.trim()) return;
 
-    // Bot mitigations — fail quietly so we don't tip off scripts. Real users
-    // never trigger these (hidden field, sub-second submit, machine-gun submits).
     if (honeypot) return;
     if (mode === 'signup' && Date.now() - formLoadedAt.current < 1500) return;
     if (Date.now() - lastSubmitAt.current < 700) return;
@@ -166,7 +160,6 @@ export default function AuthView({ onSignIn, onSignUp, onResend, onVerifyOtp, on
     else if (mode === 'signup') setStep('verify');
   }
 
-  // ── OTP ──────────────────────────────────────────────────
   function handleOtpChange(raw: string) {
     const digits = raw.replace(/\D/g, '').slice(0, 6);
     setOtp(digits); setError(null);
@@ -179,7 +172,6 @@ export default function AuthView({ onSignIn, onSignUp, onResend, onVerifyOtp, on
     if (err) { setError(friendlyError(err)); setOtp(''); }
   }
 
-  // ── Resend ───────────────────────────────────────────────
   async function handleResend() {
     if (resendCooldown > 0) return;
     setResendMsg(null);
@@ -188,7 +180,6 @@ export default function AuthView({ onSignIn, onSignUp, onResend, onVerifyOtp, on
     else { setOtp(''); setError(null); setResendMsg('Sent!'); startCooldown(); }
   }
 
-  // ── Forgot password ──────────────────────────────────────
   async function handleForgot(e: React.FormEvent) {
     e.preventDefault();
     if (!forgotEmail.trim()) return;
@@ -199,7 +190,6 @@ export default function AuthView({ onSignIn, onSignUp, onResend, onVerifyOtp, on
     else setStep('forgot_sent');
   }
 
-  // ── Switch mode ──────────────────────────────────────────
   function switchMode() {
     setMode(m => m === 'signin' ? 'signup' : 'signin');
     setStep('form'); setError(null);
@@ -207,7 +197,6 @@ export default function AuthView({ onSignIn, onSignUp, onResend, onVerifyOtp, on
     setResendMsg(null); setResendCooldown(0);
   }
 
-  // ── Shared submit button ─────────────────────────────────
   function SubmitBtn({ label, disabled }: { label: string; disabled?: boolean }) {
     return (
       <button
@@ -226,8 +215,6 @@ export default function AuthView({ onSignIn, onSignUp, onResend, onVerifyOtp, on
     );
   }
 
-  // ── Main sign in / sign up form — matches the Figma design (no card,
-  // 80px logo, pill fields, white pill button) ──────────────────
   if (step === 'form') {
     return (
       <div
@@ -236,7 +223,6 @@ export default function AuthView({ onSignIn, onSignUp, onResend, onVerifyOtp, on
       >
         <form onSubmit={handleSubmit} className="w-full max-w-[355px] flex flex-col items-center gap-[50px]">
 
-          {/* Logo + heading */}
           <div className="flex flex-col items-center gap-2.5 w-full">
             <img
               src="/logo-mark.svg"
@@ -254,9 +240,7 @@ export default function AuthView({ onSignIn, onSignUp, onResend, onVerifyOtp, on
             </div>
           </div>
 
-          {/* Fields + actions */}
           <div className="w-full flex flex-col gap-3">
-            {/* Honeypot — hidden from humans, tempting to bots. */}
             <input
               type="text" tabIndex={-1} autoComplete="off" aria-hidden="true"
               value={honeypot} onChange={e => setHoneypot(e.target.value)}
@@ -302,19 +286,17 @@ export default function AuthView({ onSignIn, onSignUp, onResend, onVerifyOtp, on
                 disabled={!email.trim() || !password.trim()}
               />
 
-              {/* Divider */}
               <div className="flex items-center gap-3">
                 <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.08)' }} />
                 <span className="text-[12px]" style={{ color: '#5c5a58' }}>or</span>
                 <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.08)' }} />
               </div>
 
-              {/* Google */}
               <button
                 type="button"
                 onClick={async () => { const err = await onGoogle(); if (err) setError(friendlyError(err)); }}
                 className="w-full h-[52px] rounded-[16px] flex items-center justify-center gap-2.5 active:opacity-80 transition-opacity"
-                style={{ background: '#141414', border: '1px solid #232323' }}
+                style={{ background: '#141414', border: '1px solid #1d1d1d' }}
               >
                 <IconGoogle />
                 <span className="text-[15px] font-semibold text-white tracking-[-0.17px]">
@@ -335,7 +317,6 @@ export default function AuthView({ onSignIn, onSignUp, onResend, onVerifyOtp, on
     );
   }
 
-  // ── Secondary steps (OTP verify, forgot password) keep a card layout ──
   return (
     <div
       className="min-h-screen flex flex-col items-center justify-center pl-[max(16px,env(safe-area-inset-left))] pr-[max(16px,env(safe-area-inset-right))]"
@@ -346,7 +327,6 @@ export default function AuthView({ onSignIn, onSignUp, onResend, onVerifyOtp, on
     >
       <div className="w-full max-w-sm flex flex-col gap-4">
 
-        {/* ── Logo ── */}
         <div className="flex items-center justify-center gap-3">
           <div className="relative">
             <div
@@ -365,13 +345,11 @@ export default function AuthView({ onSignIn, onSignUp, onResend, onVerifyOtp, on
           </p>
         </div>
 
-        {/* ── Card ── */}
         <div
           className="rounded-2xl p-5 space-y-4"
           style={{ background: '#141414', border: '1px solid rgba(255,255,255,0.045)', boxShadow: '0 16px 48px rgba(0,0,0,0.45)' }}
         >
 
-          {/* ── Step: verify OTP ── */}
           {step === 'verify' && (
             <div className="space-y-4">
               <div className="text-center space-y-1">
@@ -406,7 +384,6 @@ export default function AuthView({ onSignIn, onSignUp, onResend, onVerifyOtp, on
             </div>
           )}
 
-          {/* ── Step: forgot password ── */}
           {step === 'forgot' && (
             <form onSubmit={handleForgot} className="space-y-4">
               <div className="text-center space-y-1">
@@ -425,7 +402,6 @@ export default function AuthView({ onSignIn, onSignUp, onResend, onVerifyOtp, on
             </form>
           )}
 
-          {/* ── Step: forgot_sent ── */}
           {step === 'forgot_sent' && (
             <div className="space-y-4 text-center">
               <div
