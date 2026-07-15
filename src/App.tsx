@@ -587,7 +587,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
           </h1>
           {/* Nudge down so the switch track sits on the title's baseline,
               compensating for the switch's own bottom padding. */}
-          <div style={{ transform: 'translateY(5px)' }}>
+          <div style={{ transform: 'translateY(5px)' }} data-guide="focus">
             <FocusModeSwitch active={focusMode} onToggle={toggleFocus} />
           </div>
         </div>
@@ -663,7 +663,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
         onTouchCancel={onDockTouchCancel}
       >
         {/* Relative wrapper anchors the swipe-up affordance above the bar. */}
-        <div style={{ position: 'relative' }}>
+        <div style={{ position: 'relative' }} data-guide="dock">
           {/* Swipe-up-to-add affordance — a faint gray "+" whose radial ring
               fills as you drag up; release past full to fire the add. Only
               visible mid-swipe. */}
@@ -878,7 +878,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
         updateBio={updateBio}
       />
 
-      <Walkthrough open={showGuide} onClose={closeGuide} />
+      <Walkthrough open={showGuide} onClose={closeGuide} focusMode={focusMode} onToggleFocus={toggleFocus} />
 
       {needsUsername && <UsernameSetupModal onCreate={createProfile} />}
 
