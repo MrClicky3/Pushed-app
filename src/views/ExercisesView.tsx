@@ -24,9 +24,9 @@ export default function ExercisesView({ exercises, logs, onAdd, onEdit, onOpenLi
 
   // Staggered figures: back | hero | legs — depth cascade
   const PREVIEW_FIGURES = [
-    { view: 'posterior' as const, muscles: ['upper-back', 'trapezius'] as never[], isUpper: true,  w: 52, h: 94,  opacity: 0.55 },
+    { view: 'posterior' as const, muscles: ['upper-back', 'trapezius'] as never[], isUpper: true,  w: 52, h: 94,  opacity: 0.72 },
     { view: 'anterior' as const,  muscles: ['chest', 'front-deltoids'] as never[], isUpper: true,  w: 66, h: 118, opacity: 1.00 },
-    { view: 'anterior' as const,  muscles: ['quadriceps', 'hamstring'] as never[], isUpper: false, w: 52, h: 90,  opacity: 0.60 },
+    { view: 'anterior' as const,  muscles: ['quadriceps', 'hamstring'] as never[], isUpper: false, w: 52, h: 90,  opacity: 0.72 },
   ];
 
   // iPod-style scroll depth effect — direct DOM manipulation for 60fps
@@ -90,13 +90,13 @@ export default function ExercisesView({ exercises, logs, onAdd, onEdit, onOpenLi
     >
       <div style={{
         height: 153,
-        background: 'linear-gradient(124.9deg, rgb(26,16,16) 12%, rgb(78,34,31) 62%, rgb(150,52,47) 98%, rgb(190,60,53) 120%)',
+        background: 'linear-gradient(124.9deg, rgb(22,13,12) 8%, rgb(52,20,17) 52%, rgb(96,32,26) 92%, rgb(64,22,18) 120%)',
         position: 'relative', overflow: 'hidden',
       }}>
         {/* Hot glow behind the figures */}
         <div style={{
           position: 'absolute', inset: 0, pointerEvents: 'none',
-          background: 'radial-gradient(ellipse 55% 80% at 88% 100%, rgba(255,69,58,0.22) 0%, rgba(255,69,58,0.07) 45%, transparent 70%)',
+          background: 'radial-gradient(ellipse 62% 88% at 78% 60%, rgba(150,46,38,0.40) 0%, rgba(120,36,30,0.14) 45%, transparent 72%)',
         }} />
 
         {/* Top-left: label stack */}
@@ -105,14 +105,9 @@ export default function ExercisesView({ exercises, logs, onAdd, onEdit, onOpenLi
             Exercise Library
           </p>
           <p style={{ fontFamily: "'Geist Mono', monospace", fontSize: 9, fontWeight: 500, letterSpacing: '0.09em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.30)', marginTop: 5, lineHeight: 1 }}>
-            Form guides & muscle maps
+            Form guides, muscle maps
           </p>
         </div>
-
-        {/* Top-right: arrow */}
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ position: 'absolute', top: 16, right: 16 }}>
-          <path d="M9 5l7 7-7 7" stroke="rgba(255,255,255,0.22)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
 
         {/* Bottom-left: count */}
         <div style={{ position: 'absolute', bottom: 16, left: 18 }}>

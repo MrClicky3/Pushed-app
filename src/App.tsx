@@ -715,7 +715,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
           {/* Tabs — hidden in focus mode */}
           {/* Swipe-up line — the grabber you drag up on to add. */}
           <div className="flex justify-center" style={{ paddingTop: 6, paddingBottom: 2 }}>
-            <div style={{ width: 68, height: 4, borderRadius: 99, background: 'rgba(255,255,255,0.16)' }} />
+            <div data-guide="swipeline" style={{ width: 68, height: 4, borderRadius: 99, background: 'rgba(255,255,255,0.16)' }} />
           </div>
 
           {/* Tabs — plain flat bar (no skeuomorphic panel), hidden in focus mode. */}
@@ -994,7 +994,7 @@ function PasswordResetScreen({ onUpdate }: { onUpdate: (pw: string) => Promise<s
 }
 
 export default function App() {
-  const { user, state, passwordRecovery, signIn, signUp, signOut, resendConfirmation, verifyOtp, resetPassword, updatePassword, userName, updateUserName } = useAuth();
+  const { user, state, passwordRecovery, signIn, signUp, signOut, signInWithGoogle, resendConfirmation, verifyOtp, resetPassword, updatePassword, userName, updateUserName } = useAuth();
 
   if (state === 'loading') {
     return (
@@ -1009,7 +1009,7 @@ export default function App() {
   }
 
   if (state === 'unauthenticated' || !user) {
-    return <AuthView onSignIn={signIn} onSignUp={signUp} onResend={resendConfirmation} onVerifyOtp={verifyOtp} onResetPassword={resetPassword} />;
+    return <AuthView onSignIn={signIn} onSignUp={signUp} onResend={resendConfirmation} onVerifyOtp={verifyOtp} onResetPassword={resetPassword} onGoogle={signInWithGoogle} />;
   }
 
   return <MainApp userId={user.id} onSignOut={signOut} userName={userName} onUpdateName={updateUserName} />;
