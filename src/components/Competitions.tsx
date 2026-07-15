@@ -173,8 +173,8 @@ function CompetitionSheet({
 
         {comp.status === 'pending' && (
           <div className="te-panel rounded-2xl px-4 py-6 text-center">
-            <p className="text-[15px] font-semibold text-[#f4f1ec]">{fmtLeft(comp.start_at, 'Starts in')}</p>
-            <p className="text-[13px] text-white/45 mt-1 leading-snug">Waiting on players to accept. Needs 2+ to run.</p>
+            <p className="text-[15px] font-semibold text-[#f4f1ec]">Waiting for friend</p>
+            <p className="text-[13px] text-white/45 mt-1 leading-snug">Starts the moment your friend accepts.</p>
           </div>
         )}
 
@@ -201,10 +201,10 @@ function CompetitionSheet({
 // ── Create sheet ────────────────────────────────────────────────
 const DURATIONS = [7, 14, 30] as const;
 
-function nextMidnight(): Date {
-  const d = new Date();
-  d.setHours(24, 0, 0, 0); // start of the next local day (creator's tz is locked)
-  return d;
+function nowDate(): Date {
+  // The server sets the real start_at when the 2nd player accepts. We just
+  // need a valid window whose duration the server will preserve.
+  return new Date();
 }
 
 function CreateSheet({
@@ -252,7 +252,7 @@ function CreateSheet({
     if (isCustom && effectiveDays < 1) { setError('Enter a valid duration.'); return; }
     setSaving(true);
     setError(null);
-    const start = nextMidnight();
+    const start = nowDate();
     const end = new Date(start.getTime() + effectiveDays * 86400000);
     const res = await comps.createCompetition({
       name: name.trim() || `${trackLabel(track)} challenge`,
@@ -356,7 +356,7 @@ function CreateSheet({
           {saving ? 'Creating…' : 'Start competition'}
         </button>
         <p className="te-label text-center" style={{ color: 'rgba(244,241,236,0.35)' }}>
-          Starts at midnight · locks when it begins
+          Starts when your friend accepts
         </p>
       </div>
     </Modal>
@@ -379,7 +379,7 @@ function InviteCard({ comp, comps }: { comp: CompetitionSummary; comps: Competit
         <Trophy className="w-4 h-4 shrink-0" style={{ color: '#e8c15a' }} />
         <div className="flex-1 min-w-0">
           <p className="text-[15px] font-semibold text-[#f4f1ec] tracking-tight truncate">{comp.name}</p>
-          <p className="te-label mt-0.5">{trackLabel(comp.track)} · {fmtLeft(comp.start_at, 'starts in')}</p>
+          <p className="te-label mt-0.5">{trackLabel(comp.track)} · waiting for friend</p>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2.5 mt-3">
