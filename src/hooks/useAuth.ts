@@ -83,6 +83,14 @@ export function useAuth() {
     return error?.message ?? null;
   }
 
+  async function signInWithGoogle(): Promise<string | null> {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin },
+    });
+    return error?.message ?? null;
+  }
+
   async function signOut() {
     await supabase.auth.signOut();
   }
@@ -97,7 +105,7 @@ export function useAuth() {
 
   return {
     user, state, passwordRecovery,
-    signIn, signUp, signOut,
+    signIn, signUp, signOut, signInWithGoogle,
     resendConfirmation, verifyOtp,
     resetPassword, updatePassword,
     userName, updateUserName,
