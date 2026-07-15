@@ -111,8 +111,8 @@ export default function ExercisesView({ exercises, logs, onAdd, onEdit, onOpenLi
 
         {/* Bottom-left: count (Figma: 42px mono, uppercase 14px "exercises") */}
         <div style={{ position: 'absolute', bottom: 20, left: 20 }}>
-          <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: 40, fontWeight: 600, color: 'rgba(244,241,236,0.92)', lineHeight: '42px', letterSpacing: '-1.76px', display: 'block' }}>63</span>
-          <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: 13, fontWeight: 600, letterSpacing: '-0.52px', textTransform: 'uppercase', color: 'rgba(244,241,236,0.92)', marginTop: 8, display: 'block' }}>exercises</span>
+          <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: 40, fontWeight: 600, color: 'rgba(244,241,236,0.92)', lineHeight: 1, letterSpacing: '-1.76px', display: 'block' }}>63</span>
+          <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: 13, fontWeight: 600, letterSpacing: '-0.52px', textTransform: 'uppercase', color: 'rgba(244,241,236,0.92)', marginTop: 8, display: 'block', lineHeight: 1 }}>exercises</span>
         </div>
 
         {/* Right: staggered muscle figures — back | hero | front */}
