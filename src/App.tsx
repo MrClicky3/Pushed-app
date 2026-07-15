@@ -721,7 +721,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
                   letterSpacing: '0.14em', textTransform: 'uppercase', whiteSpace: 'nowrap',
                   color: gray, transition: 'color 0.15s ease',
                 }}>
-                  {full ? 'Release to add' : (tab === 'exercises' ? 'Add exercise' : 'Add a log')}
+                  {full ? 'Add exercise' : (tab === 'exercises' ? 'Add exercise' : 'Add a log')}
                 </span>
               </div>
             );
