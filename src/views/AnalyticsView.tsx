@@ -67,7 +67,6 @@ function Card({ children }: { children: React.ReactNode }) {
 
 interface ChartPoint { value: number; label: string; shortLabel?: string; tooltipLabel?: string; }
 
-// Generate nice Y-axis ticks from data range
 function niceYTicks(dMin: number, dMax: number): number[] {
   const range = dMax - dMin || dMax * 0.2 || 10;
   const rough = range / 3;
@@ -88,24 +87,18 @@ function fmtYLabel(v: number): string {
   return Number.isInteger(v) ? String(v) : v.toFixed(1).replace(/\.0$/, '');
 }
 
-// ── Chart geometry (shared with the pager's x→index mapping) ──────────────
-const CW = 440;         // viewBox width
-const C_YLg = 46;       // left gutter for Y labels
-const C_PL = C_YLg + 4; // data starts here
-const C_PRg = 14;       // right inset
-const C_PT = 10;        // top padding
-const C_XH = 30;        // bottom space for X labels
-const C_CH = 176;       // chart drawing height
+const CW = 440;
+const C_YLg = 46;
+const C_PL = C_YLg + 4;
+const C_PRg = 14;
+const C_PT = 10;
+const C_XH = 30;
+const C_CH = 176;
 
 function chartX(i: number, n: number) {
   return C_PL + (i / Math.max(n - 1, 1)) * (CW - C_PL - C_PRg);
 }
 
-/**
- * Area chart with a white line, category-tinted gradient fill, and a
- * controlled white scrubber. Scrubbing is driven from the parent pager so the
- * page header can reflect the value at the touched point.
- */
 function ScrubChart({
   points, unit, fillColor, maxLabels, scrubIndex,
 }: {
@@ -130,9 +123,6 @@ function ScrubChart({
 
   const areaBot = C_PT + C_CH;
 
-  // ── Catmull-Rom spline → cubic beziers ──
-  // Rounder / softer than a monotone curve; control-point Y is clamped to the
-  // plot area so sharp spikes stay smooth without overshooting the chart.
   const lineD = (() => {
     const n = xs.length;
     if (n === 2) return `M ${xs[0].toFixed(1)} ${ys[0].toFixed(1)} L ${xs[1].toFixed(1)} ${ys[1].toFixed(1)}`;
@@ -151,14 +141,12 @@ function ScrubChart({
   })();
   const areaD = `${lineD} L ${xs[xs.length - 1].toFixed(1)} ${areaBot} L ${xs[0].toFixed(1)} ${areaBot} Z`;
 
-  // ── Y-axis ticks — up to 4 rails ──
   const yTicks = (() => {
     const all = niceYTicks(dMin, dMax).filter(t => py(t) >= C_PT - 2 && py(t) <= C_PT + C_CH + 2);
     if (all.length <= 4) return all;
     return [all[0], all[Math.round(all.length / 3)], all[Math.round((2 * all.length) / 3)], all[all.length - 1]];
   })();
 
-  // ── X-axis label positions ──
   const numLabels = Math.min(maxLabels ?? 6, points.length);
   const labelIdxs: number[] = (() => {
     const n = points.length;
@@ -189,7 +177,6 @@ function ScrubChart({
         </linearGradient>
       </defs>
 
-      {/* Y labels */}
       {yTicks.map(tick => {
         const ty = py(tick);
         const ly = Math.max(C_PT + 9, Math.min(C_PT + C_CH + 4, ty + 4));
@@ -209,16 +196,13 @@ function ScrubChart({
         );
       })}
 
-      {/* Area + line */}
       <path d={areaD} fill={`url(#fill${uid})`} />
       <path d={lineD} fill="none" stroke="#ffffff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
 
-      {/* Idle latest dot */}
       {hi === null && (
         <circle cx={latestX} cy={latestY} r="4.5" fill="#ffffff" />
       )}
 
-      {/* Scrubber */}
       {hi !== null && hx !== null && hy !== null && (
         <>
           <line x1={hx} x2={hx} y1={C_PT - 2} y2={C_PT + C_CH} stroke="rgba(255,255,255,0.22)" strokeWidth="1.25" />
@@ -227,7 +211,6 @@ function ScrubChart({
         </>
       )}
 
-      {/* X labels */}
       {labelIdxs.map((i, li) => {
         const first = li === 0;
         const last = li === labelIdxs.length - 1;
@@ -255,10 +238,10 @@ interface PageDef {
   key: string;
   title: string;
   points: ChartPoint[];
-  unit: string;                          // 'kg' | 'lbs' | '%'
+  unit: string;
   fillColor: string;
-  formatValue: (v: number) => string;    // counter text while scrubbing
-  idleCounter: React.ReactNode | null;   // counter text at rest (null → hidden)
+  formatValue: (v: number) => string;
+  idleCounter: React.ReactNode | null;
   rangeLabel: string;
   maxLabels: number;
 }
@@ -295,8 +278,6 @@ function ProgressPager({ pages, page, onPageChange }: {
 
   const nPts = pages[page]?.points.length ?? 0;
 
-  // While scrubbing, cancel native scrolling so the page can't move under the
-  // finger. Non-passive so preventDefault actually suppresses the scroll.
   useEffect(() => {
     const el = viewportRef.current;
     if (!el) return;
@@ -405,7 +386,6 @@ function ProgressPager({ pages, page, onPageChange }: {
         </div>
       </div>
 
-      {/* Page dots */}
       <div className="flex items-center justify-center gap-2 mt-2">
         {pages.map((def, i) => (
           <button
@@ -429,7 +409,7 @@ function StatCard({ label, value, sub }: { label: string; value: string; sub: st
   return (
     <div
       className="rounded-[20px] px-[18px] py-[12px] flex items-center justify-between gap-3"
-      style={{ background: '#141414', border: '1px solid #202020' }}
+      style={{ background: '#141414', border: '1px solid #1a1a1a' }}
     >
       <p className="text-[15px] font-semibold text-white tracking-tight">{label}</p>
       <div className="text-right shrink-0">
@@ -478,7 +458,7 @@ function CustomRangeSlider({ value, onChange }: { value: number; onChange: (v: n
         <div
           className="absolute inset-x-0 h-[5px] rounded-full"
           style={{
-            background: 'linear-gradient(180deg, #141416 0%, #1c1c1e 100%)',
+            background: 'linear-gradient(180deg, #121214 0%, #1a1a1c 100%)',
             boxShadow: 'inset 0 2px 3px rgba(0,0,0,0.7), inset 0 -1px 0 rgba(255,255,255,0.04)',
           }}
         />
@@ -496,7 +476,7 @@ function CustomRangeSlider({ value, onChange }: { value: number; onChange: (v: n
             left: `${pct}%`,
             background: 'linear-gradient(180deg, #f6f6f7 0%, #c9c9cc 100%)',
             boxShadow: '0 2px 5px rgba(0,0,0,0.6), 0 1px 2px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.9)',
-            border: '1px solid rgba(0,0,0,0.25)',
+            border: '1px solid rgba(0,0,0,0.2)',
           }}
         />
       </div>
@@ -672,7 +652,6 @@ function buildEntryOnlyChart(
   }));
 }
 
-// Per-day completion % for one exercise: sets logged that day vs target sets.
 function buildCompletionChart(
   exercise: Exercise,
   filteredLogs: WorkoutLog[],
@@ -1032,7 +1011,6 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
     ).exercise_id;
   }, [schedule, routines, withLogs, logs]);
 
-  // Warmup sets are excluded from strength analytics
   const workingLogs = useMemo(() => logs.filter(l => l.set_type !== 'warmup'), [logs]);
 
   const defaultId = withLogs.length
@@ -1053,7 +1031,6 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
 
     const rangeExLogs = filterLogsByRange(workingLogs, rangeDays).filter(l => l.exercise_id === selected.id);
 
-    // ── Weight chart ──
     let weightPoints: ChartPoint[];
     if (isAll) {
       weightPoints = buildEntryOnlyChart(rangeExLogs, toDisplay);
@@ -1068,10 +1045,8 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
       weightPoints = buildContinuousChart(buildAllDaysInRange(rangeDays), dailyBestMap, rangeDays);
     }
 
-    // ── Daily completion chart ──
     const completion = buildCompletionChart(selected, rangeExLogs, rangeDays);
 
-    // Previous-period completion avg (for the trend line)
     const prevLogs = (() => {
       const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - rangeDays); cutoff.setHours(0, 0, 0, 0);
       const prevCutoff = new Date(); prevCutoff.setDate(prevCutoff.getDate() - rangeDays * 2); prevCutoff.setHours(0, 0, 0, 0);
@@ -1087,7 +1062,6 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
       prevPerDay.set(k, (prevPerDay.get(k) ?? 0) + 1);
     }
     const targetSets = Math.max(selected.sets, 1);
-    // Average per-day completion over the previous period (for the trend line)
     const prevAvg = (() => {
       const days: number[] = [];
       const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -1099,7 +1073,6 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
       return days.length ? Math.round(days.reduce((a, b) => a + b, 0) / days.length) : 0;
     })();
 
-    // ── Estimated 1RM ──
     const e1rm = (() => {
       const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - rangeDays); cutoff.setHours(0, 0, 0, 0);
       const prevCutoff = new Date(); prevCutoff.setDate(prevCutoff.getDate() - rangeDays * 2); prevCutoff.setHours(0, 0, 0, 0);
@@ -1116,7 +1089,6 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
       return { value: `${cur}${unit}`, sub: signedPct(cur, prev), has: cur > 0 };
     })();
 
-    // ── Heaviest weight ──
     const heaviest = (() => {
       if (!rangeExLogs.length) return { value: `0${unit}`, sub: '—', has: false };
       const heaviestWeight = Math.max(...rangeExLogs.map(l => l.weight));
@@ -1213,12 +1185,10 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
         </div>
       )}
 
-      {/* Streak — slightly larger gap below it than the rest of the rhythm */}
       <div className="mb-[18px]">
         <StreakCard logs={logs} schedule={schedule} routines={routines} exercises={exercises} />
       </div>
 
-      {/* Exercise dropdown + time-frame selector — 10px between them */}
       <div className="space-y-[10px]">
         <CollapsibleSection
           open={exerciseOpen}
