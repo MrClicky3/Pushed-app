@@ -142,7 +142,7 @@ export default function ExercisesView({ exercises, logs, onAdd, onEdit, onOpenLi
           <div className="w-14 h-14 rounded-full te-panel flex items-center justify-center mb-4">
             <FireIcon className="w-7 h-7 text-apple-label-tertiary" />
           </div>
-          <p className="text-white font-semibold text-[16px] mb-1.5 tracking-tight">No exercises yet</p>
+          <p className="text-white font-semibold text-[16px] mb-1.5 tracking-tight">Your exercises will appear here</p>
           <p className="text-apple-label-tertiary text-[13px] leading-relaxed" style={{ maxWidth: 220 }}>
             Browse the library to find exercises, or add your own.
           </p>
