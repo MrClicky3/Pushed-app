@@ -6,6 +6,7 @@ import type { Exercise, WorkoutLog, Routine, ScheduleDay } from '../types';
 import type { WeightUnit } from '../hooks/useSettings';
 import type { useCompetitions } from '../hooks/useCompetitions';
 import { buildCompletedDays, calcStreak } from '../lib/streak';
+import { loadSkips } from '../lib/skips';
 import { accentHex } from '../lib/accent';
 
 interface Props {
@@ -984,11 +985,27 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
     const dow = (now.getDay() + 6) % 7;
     const entry = schedule.find(s => s.day_of_week === dow);
     const routineId = entry?.routine_id ?? null;
-    const scheduled = !!(routineId && routines.find(r => r.id === routineId));
-    if (!scheduled) return { todayIsScheduled: false, isTodayComplete: false };
+    const routine = routineId ? routines.find(r => r.id === routineId) : null;
+    if (!routine) return { todayIsScheduled: false, isTodayComplete: false };
     const todayKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
     const completed = buildCompletedDays(logs, schedule, routines, exercises);
-    return { todayIsScheduled: true, isTodayComplete: completed.has(todayKey) };
+    if (completed.has(todayKey)) return { todayIsScheduled: true, isTodayComplete: true };
+    // Also unlocked once every planned exercise is done OR skipped, so the
+    // recap appears on Progress when you finish the day by skipping too.
+    const skipped = loadSkips(todayKey);
+    const workingToday = new Map<string, number>();
+    for (const l of logs) {
+      if (l.set_type === 'warmup') continue;
+      const d = new Date(l.created_at);
+      if (`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}` !== todayKey) continue;
+      workingToday.set(l.exercise_id, (workingToday.get(l.exercise_id) ?? 0) + 1);
+    }
+    const allResolved = routine.exercise_ids.every(id => {
+      const ex = exercises.find(e => e.id === id);
+      if (!ex || ex.sets <= 0) return true;
+      return (workingToday.get(id) ?? 0) >= ex.sets || skipped.has(id);
+    });
+    return { todayIsScheduled: true, isTodayComplete: allResolved };
   }, [logs, schedule, routines, exercises]);
 
   const withLogs = useMemo(
