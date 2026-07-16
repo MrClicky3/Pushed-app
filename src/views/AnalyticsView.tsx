@@ -1,12 +1,13 @@
 import React, { useState, useMemo, useRef, useId, useEffect } from 'react';
-import { ChevronDownIcon, XMarkIcon, ChartBarSquareIcon } from '@heroicons/react/24/outline';
+import { ChevronDownIcon, XMarkIcon, ChartBarSquareIcon, TrophyIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import EmptyState from '../components/EmptyState';
+import Modal from '../components/Modal';
 import { CompetitionMiniWidget } from '../components/Competitions';
 import type { Exercise, WorkoutLog, Routine, ScheduleDay } from '../types';
 import type { WeightUnit } from '../hooks/useSettings';
 import type { useCompetitions } from '../hooks/useCompetitions';
 import { buildCompletedDays, calcStreak } from '../lib/streak';
-import { loadSkips } from '../lib/skips';
+import { loadSkips, loadDaySet } from '../lib/skips';
 import { accentHex } from '../lib/accent';
 
 interface Props {
@@ -977,8 +978,30 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
   const [customDays, setCustomDays] = useState(90);
   const [exerciseOpen, setExerciseOpen] = useState(false);
   const [chartPage, setChartPage] = useState(0);
+  const [prOpen, setPrOpen] = useState(false);
   const rangeDays = resolveRangeDays(range, customDays, logs);
   const isAll = range === 'all';
+
+  // All-time personal records: the heaviest working set per exercise (ties
+  // broken by more reps), with the date it was set.
+  const prs = useMemo(() => {
+    const map = new Map<string, { weight: number; reps: number; date: string }>();
+    for (const l of logs) {
+      if (l.set_type === 'warmup') continue;
+      const cur = map.get(l.exercise_id);
+      if (!cur || l.weight > cur.weight || (l.weight === cur.weight && l.reps_done > cur.reps)) {
+        map.set(l.exercise_id, { weight: l.weight, reps: l.reps_done, date: l.created_at });
+      }
+    }
+    return Array.from(map.entries())
+      .map(([id, pr]) => ({
+        id,
+        name: exercises.find(e => e.id === id)?.name ?? 'Unknown',
+        label: pr.weight > 0 ? `${Math.round(toDisplay(pr.weight))}${unit} × ${pr.reps}` : `${pr.reps} reps`,
+        date: pr.date,
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [logs, exercises, toDisplay, unit]);
 
   const { todayIsScheduled, isTodayComplete } = useMemo(() => {
     const now = new Date();
@@ -986,8 +1009,11 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
     const entry = schedule.find(s => s.day_of_week === dow);
     const routineId = entry?.routine_id ?? null;
     const routine = routineId ? routines.find(r => r.id === routineId) : null;
-    if (!routine) return { todayIsScheduled: false, isTodayComplete: false };
     const todayKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
+    // Manually finishing the workout (Complete workout button) unlocks the
+    // recap at any time — even on a purely manual, non-routine day.
+    if (loadDaySet('workoutdone', todayKey).size > 0) return { todayIsScheduled: true, isTodayComplete: true };
+    if (!routine) return { todayIsScheduled: false, isTodayComplete: false };
     const completed = buildCompletedDays(logs, schedule, routines, exercises);
     if (completed.has(todayKey)) return { todayIsScheduled: true, isTodayComplete: true };
     // Also unlocked once every planned exercise is done OR skipped, so the
@@ -1267,6 +1293,41 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
           </>
         )}
       </div>
+
+      {/* Personal records — bento at the very bottom, opens the full list */}
+      <button
+        onClick={() => setPrOpen(true)}
+        className="te-panel w-full rounded-2xl px-4 py-3.5 mt-3 flex items-center gap-3 active:bg-white/[0.04] transition-colors text-left"
+      >
+        <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: 'rgba(48,209,88,0.14)' }}>
+          <TrophyIcon className="w-4 h-4" style={{ color: '#30d158' }} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[15px] font-semibold text-[#f4f1ec] tracking-tight">Personal records</p>
+          <p className="te-label mt-0.5">
+            {prs.length > 0 ? `${prs.length} exercise${prs.length === 1 ? '' : 's'} · your heaviest lifts` : 'Log sets to set records'}
+          </p>
+        </div>
+        <ChevronRightIcon className="w-3.5 h-3.5 text-white/20 shrink-0" />
+      </button>
+
+      <Modal open={prOpen} onClose={() => setPrOpen(false)} title="Personal records">
+        {prs.length === 0 ? (
+          <div className="te-panel rounded-2xl px-4 py-8 text-center te-label">No records yet</div>
+        ) : (
+          <div className="te-panel rounded-2xl overflow-hidden divide-y divide-white/[0.05]">
+            {prs.map(pr => (
+              <div key={pr.id} className="flex items-center px-4 py-[14px] gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-[15px] font-semibold text-[#f4f1ec] tracking-tight truncate">{pr.name}</p>
+                  <p className="te-label mt-0.5">{fmtFullDate(new Date(pr.date))}</p>
+                </div>
+                <span className="te-digit text-[18px] font-bold tabular-nums text-[#f4f1ec] shrink-0">{pr.label}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

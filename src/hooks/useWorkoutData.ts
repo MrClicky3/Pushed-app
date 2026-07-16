@@ -1,6 +1,38 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase, deviceId } from '../lib/supabase';
-import type { Exercise, WorkoutLog, SetType } from '../types';
+import type { Exercise, WorkoutLog, SetType, LoadType } from '../types';
+
+// Client-side fallback for exercises.load_type: if that column isn't in the
+// database yet (migration not applied), writes strip it and the type would
+// revert to 'weighted' on edit. We mirror the chosen load_type in localStorage
+// keyed by exercise id so bodyweight / weighted-BW sticks regardless; the DB
+// value still wins whenever it is present.
+const LOAD_TYPE_KEY = 'exercise_load_types';
+
+function loadLoadTypeMap(): Record<string, LoadType> {
+  try {
+    return JSON.parse(localStorage.getItem(LOAD_TYPE_KEY) || '{}');
+  } catch {
+    return {};
+  }
+}
+
+function rememberLoadType(id: string, lt?: LoadType) {
+  if (!id || !lt) return;
+  try {
+    const m = loadLoadTypeMap();
+    m[id] = lt;
+    localStorage.setItem(LOAD_TYPE_KEY, JSON.stringify(m));
+  } catch {
+    /* ignore */
+  }
+}
+
+function withLoadType(e: Exercise): Exercise {
+  if (e.load_type) return e;
+  const lt = loadLoadTypeMap()[e.id];
+  return lt ? { ...e, load_type: lt } : e;
+}
 
 // True once we detect the set_type column is missing (migration not yet run) —
 // subsequent writes skip the column so logging keeps working.
@@ -27,7 +59,7 @@ export function useWorkoutData(userId: string) {
       .select('*')
       .eq('user_id', userId)
       .order('created_at');
-    if (data) setExercises(data);
+    if (data) setExercises((data as Exercise[]).map(withLoadType));
   }, [userId]);
 
   const fetchLogs = useCallback(async () => {
@@ -50,8 +82,13 @@ export function useWorkoutData(userId: string) {
       const { load_type, ...rest } = row;
       ({ data } = await supabase.from('exercises').insert(rest).select().single());
     }
-    if (data) setExercises(prev => [...prev, data]);
-    return data ?? null;
+    if (data) {
+      rememberLoadType(data.id, input.load_type);
+      const e = withLoadType(data as Exercise);
+      setExercises(prev => [...prev, e]);
+      return e;
+    }
+    return null;
   }
 
   async function updateExercise(id: string, input: Partial<Exercise>) {
@@ -60,7 +97,11 @@ export function useWorkoutData(userId: string) {
       const { load_type, ...rest } = input;
       ({ data } = await supabase.from('exercises').update(rest).eq('id', id).select().single());
     }
-    if (data) setExercises(prev => prev.map(e => e.id === id ? data : e));
+    if (data) {
+      if (input.load_type) rememberLoadType(id, input.load_type);
+      const e = withLoadType(data as Exercise);
+      setExercises(prev => prev.map(x => x.id === id ? e : x));
+    }
   }
 
   async function deleteExercise(id: string) {
