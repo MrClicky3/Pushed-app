@@ -126,14 +126,16 @@ export type CompetitionStatus = 'pending' | 'active' | 'completed' | 'cancelled'
 export type ParticipantStatus = 'invited' | 'accepted' | 'declined';
 export type BadgeTier = 'gold' | 'silver' | 'bronze' | 'finisher';
 
-// get_my_competitions() row — one card in the list.
+// get_my_competitions() row — one card in the list. start_at/end_at are null
+// until the roster becomes viable (creator + 1 accepted friend), at which
+// point the start is anchored to the next midnight in the locked timezone.
 export interface CompetitionSummary {
   id: string;
   name: string;
   track: CompetitionTrack;
   timezone: string;
-  start_at: string;
-  end_at: string;
+  start_at: string | null;
+  end_at: string | null;
   status: CompetitionStatus;
   created_by: string;
   is_creator: boolean;
@@ -163,4 +165,17 @@ export interface Badge {
   competition_id: string | null;
   tier: BadgeTier;
   awarded_at: string;
+}
+
+// get_friend_activity() — aggregate activity for a friend's profile view.
+export interface ActivityWindow {
+  volume: number;
+  sets: number;
+  active_days: number;
+}
+
+export interface FriendActivity {
+  d7: ActivityWindow;
+  d30: ActivityWindow;
+  d90: ActivityWindow;
 }

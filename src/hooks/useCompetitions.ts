@@ -6,8 +6,7 @@ export interface CreateCompetitionInput {
   name: string;
   track: CompetitionTrack;
   participantIds: string[];
-  startAt: Date;
-  endAt: Date;
+  durationDays: number;
 }
 
 export interface RpcResult {
@@ -49,8 +48,7 @@ export function useCompetitions(scheduledDays: number[]) {
       p_name: input.name,
       p_track: input.track,
       p_participant_ids: input.participantIds,
-      p_start_at: input.startAt.toISOString(),
-      p_end_at: input.endAt.toISOString(),
+      p_duration_days: input.durationDays,
       p_timezone: deviceTimezone(),
       p_scheduled_days: scheduledDays,
     });

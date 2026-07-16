@@ -14,6 +14,7 @@ import type { WeightUnit } from '../hooks/useSettings';
 import ReportBugSheet from './ReportBugSheet';
 import { ToggleButton } from './SheetControls';
 import { CompetitionsSection, BadgeShelf } from './Competitions';
+import FriendProfile, { type FriendProfileTarget } from './FriendProfile';
 
 type FriendsApi = ReturnType<typeof useFriends>;
 type ProfileApi = ReturnType<typeof useProfile>;
@@ -181,13 +182,16 @@ function AvatarPickerSheet({
 }
 
 // ── Leaderboard rows — enlarged, more prominent ─────────────────
-function StreakRows({ rows }: { rows: LeaderboardRow[] }) {
+function StreakRows({ rows, onSelect }: { rows: LeaderboardRow[]; onSelect: (r: FriendProfileTarget) => void }) {
   return (
     <div className="te-panel rounded-2xl overflow-hidden divide-y divide-white/[0.05]">
       {rows.map((r, i) => (
-        <div
+        <button
+          type="button"
           key={r.user_id}
-          className="flex items-center px-4 py-[18px] gap-3.5"
+          disabled={r.is_self}
+          onClick={() => onSelect(r)}
+          className="w-full text-left flex items-center px-4 py-[18px] gap-3.5 enabled:active:bg-white/[0.03] transition-colors"
           style={r.is_self ? { background: 'rgba(244,241,236,0.06)' } : undefined}
         >
           <span className="te-mono text-[14px] tabular-nums w-5 shrink-0" style={{ color: 'rgba(244,241,236,0.4)' }}>
@@ -208,21 +212,24 @@ function StreakRows({ rows }: { rows: LeaderboardRow[] }) {
               {r.current_streak}
             </span>
           </div>
-        </div>
+        </button>
       ))}
     </div>
   );
 }
 
-function VolumeRows({ rows, unit, toDisplay }: { rows: VolumeRow[]; unit: WeightUnit; toDisplay: (kg: number) => number }) {
+function VolumeRows({ rows, unit, toDisplay, onSelect }: { rows: VolumeRow[]; unit: WeightUnit; toDisplay: (kg: number) => number; onSelect: (r: FriendProfileTarget) => void }) {
   // Same people, resorted by volume — ranked like the streak tab, but no
   // medal coloring (motivational framing, not competitive).
   return (
     <div className="te-panel rounded-2xl overflow-hidden divide-y divide-white/[0.05]">
       {rows.map((r, i) => (
-        <div
+        <button
+          type="button"
           key={r.user_id}
-          className="flex items-center px-4 py-[18px] gap-3.5"
+          disabled={r.is_self}
+          onClick={() => onSelect(r)}
+          className="w-full text-left flex items-center px-4 py-[18px] gap-3.5 enabled:active:bg-white/[0.03] transition-colors"
           style={r.is_self ? { background: 'rgba(244,241,236,0.06)' } : undefined}
         >
           <span className="te-mono text-[14px] tabular-nums w-5 shrink-0" style={{ color: 'rgba(244,241,236,0.4)' }}>
@@ -241,14 +248,14 @@ function VolumeRows({ rows, unit, toDisplay }: { rows: VolumeRow[]; unit: Weight
             </span>
             <span className="te-label">{unit}</span>
           </div>
-        </div>
+        </button>
       ))}
     </div>
   );
 }
 
 function Leaderboard({
-  friendCount, unit, toDisplay, loadStreakBoard, loadVolumeBoard, reloadKey,
+  friendCount, unit, toDisplay, loadStreakBoard, loadVolumeBoard, reloadKey, onSelect,
 }: {
   friendCount: number;
   unit: WeightUnit;
@@ -256,6 +263,7 @@ function Leaderboard({
   loadStreakBoard: () => Promise<LeaderboardRow[]>;
   loadVolumeBoard: () => Promise<VolumeRow[]>;
   reloadKey: number;
+  onSelect: (r: FriendProfileTarget) => void;
 }) {
   const [tab, setTab] = useState<'streak' | 'volume'>('streak');
   const [streak, setStreak] = useState<LeaderboardRow[]>([]);
@@ -297,9 +305,9 @@ function Leaderboard({
       ) : loading ? (
         <div className="te-panel rounded-2xl px-4 py-8 text-center te-label">Loading…</div>
       ) : tab === 'streak' ? (
-        <StreakRows rows={streak} />
+        <StreakRows rows={streak} onSelect={onSelect} />
       ) : (
-        <VolumeRows rows={volume} unit={unit} toDisplay={toDisplay} />
+        <VolumeRows rows={volume} unit={unit} toDisplay={toDisplay} onSelect={onSelect} />
       )}
     </div>
   );
@@ -504,6 +512,7 @@ export default function ProfilePage({
   const [bioOpen, setBioOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [badges, setBadges] = useState<Badge[]>([]);
+  const [friendTarget, setFriendTarget] = useState<FriendProfileTarget | null>(null);
 
   // Load the current user's badge shelf whenever the profile opens or a
   // competition finishes (competitions list changes).
@@ -645,6 +654,16 @@ export default function ProfilePage({
 
       <ReportBugSheet open={reportOpen} onClose={() => setReportOpen(false)} context="Profile" />
 
+      <FriendProfile
+        open={friendTarget !== null}
+        onClose={() => setFriendTarget(null)}
+        target={friendTarget}
+        loadFriendProfile={friends.loadFriendProfile}
+        loadFriendActivity={friends.loadFriendActivity}
+        unit={unit}
+        toDisplay={toDisplay}
+      />
+
       {/* Remaining three quarters — leaderboard-first, scrollable */}
       <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
         <div className="max-w-lg mx-auto pl-[max(16px,env(safe-area-inset-left))] pr-[max(16px,env(safe-area-inset-right))] space-y-6" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 32px)' }}>
@@ -677,6 +696,7 @@ export default function ProfilePage({
             loadStreakBoard={friends.loadStreakBoard}
             loadVolumeBoard={friends.loadVolumeBoard}
             reloadKey={friends.friendCount}
+            onSelect={setFriendTarget}
           />
 
           <FriendsSection friends={friends} inviteUrl={inviteUrl} />

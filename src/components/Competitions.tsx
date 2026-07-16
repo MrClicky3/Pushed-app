@@ -25,7 +25,8 @@ const TIER_META: Record<BadgeTier, { label: string; color: string; Icon: typeof 
 };
 
 // ── time helpers (durations — timezone-independent) ─────────────
-function fmtLeft(target: string, prefix: string): string {
+function fmtLeft(target: string | null, prefix: string): string {
+  if (!target) return '';
   const ms = new Date(target).getTime() - Date.now();
   if (ms <= 0) return 'ending…';
   const d = Math.floor(ms / 86400000);
@@ -173,8 +174,17 @@ function CompetitionSheet({
 
         {comp.status === 'pending' && (
           <div className="te-panel rounded-2xl px-4 py-6 text-center">
-            <p className="text-[15px] font-semibold text-[#f4f1ec]">{fmtLeft(comp.start_at, 'Starts in')}</p>
-            <p className="text-[13px] text-white/45 mt-1 leading-snug">Waiting on players to accept. Needs 2+ to run.</p>
+            {comp.start_at ? (
+              <>
+                <p className="text-[15px] font-semibold text-[#f4f1ec]">{fmtLeft(comp.start_at, 'Starts in')}</p>
+                <p className="text-[13px] text-white/45 mt-1 leading-snug">Roster locks when it begins. More friends can still accept.</p>
+              </>
+            ) : (
+              <>
+                <p className="text-[15px] font-semibold text-[#f4f1ec]">Waiting for players</p>
+                <p className="text-[13px] text-white/45 mt-1 leading-snug">Starts the midnight after your first friend accepts.</p>
+              </>
+            )}
           </div>
         )}
 
@@ -200,12 +210,6 @@ function CompetitionSheet({
 
 // ── Create sheet ────────────────────────────────────────────────
 const DURATIONS = [7, 14, 30] as const;
-
-function nextMidnight(): Date {
-  const d = new Date();
-  d.setHours(24, 0, 0, 0); // start of the next local day (creator's tz is locked)
-  return d;
-}
 
 function CreateSheet({
   open, onClose, comps, friendsList, seed,
@@ -252,14 +256,11 @@ function CreateSheet({
     if (isCustom && effectiveDays < 1) { setError('Enter a valid duration.'); return; }
     setSaving(true);
     setError(null);
-    const start = nextMidnight();
-    const end = new Date(start.getTime() + effectiveDays * 86400000);
     const res = await comps.createCompetition({
       name: name.trim() || `${trackLabel(track)} challenge`,
       track,
       participantIds: ids,
-      startAt: start,
-      endAt: end,
+      durationDays: effectiveDays,
     });
     setSaving(false);
     if (!res.ok) {
@@ -356,7 +357,7 @@ function CreateSheet({
           {saving ? 'Creating…' : 'Start competition'}
         </button>
         <p className="te-label text-center" style={{ color: 'rgba(244,241,236,0.35)' }}>
-          Starts at midnight · locks when it begins
+          Starts the midnight after your first friend accepts
         </p>
       </div>
     </Modal>
@@ -379,7 +380,9 @@ function InviteCard({ comp, comps }: { comp: CompetitionSummary; comps: Competit
         <Trophy className="w-4 h-4 shrink-0" style={{ color: '#e8c15a' }} />
         <div className="flex-1 min-w-0">
           <p className="text-[15px] font-semibold text-[#f4f1ec] tracking-tight truncate">{comp.name}</p>
-          <p className="te-label mt-0.5">{trackLabel(comp.track)} · {fmtLeft(comp.start_at, 'starts in')}</p>
+          <p className="te-label mt-0.5">
+            {trackLabel(comp.track)}{comp.start_at ? ` · ${fmtLeft(comp.start_at, 'starts in')}` : ''}
+          </p>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2.5 mt-3">
@@ -425,6 +428,11 @@ function CompetitionCard({ comp, comps, onOpen }: {
   const active = comp.status === 'active';
   const sc = me ? scoreText(comp.track, me) : null;
   const rank = me?.rank ?? null;
+  const subtitle = active
+    ? fmtLeft(comp.end_at, '')
+    : comp.status === 'completed'
+      ? 'final'
+      : comp.start_at ? fmtLeft(comp.start_at, 'starts in') : 'waiting for players';
 
   return (
     <button
@@ -435,7 +443,7 @@ function CompetitionCard({ comp, comps, onOpen }: {
         <div className="flex-1 min-w-0">
           <p className="text-[15px] font-semibold text-[#f4f1ec] tracking-tight truncate">{comp.name}</p>
           <p className="te-label mt-1">
-            {trackLabel(comp.track)} · {active ? fmtLeft(comp.end_at, '') : 'final'}
+            {trackLabel(comp.track)} · {subtitle}
           </p>
         </div>
         {rank !== null && (
@@ -464,7 +472,9 @@ export function CompetitionsSection({ comps, friendsList }: {
   const openCreate = useCallback(() => { setSeed(null); setCreateOpen(true); }, []);
 
   const onRematch = useCallback((comp: CompetitionSummary, rows: CompetitionStanding[]) => {
-    const days = Math.max(1, Math.round((new Date(comp.end_at).getTime() - new Date(comp.start_at).getTime()) / 86400000));
+    const days = comp.start_at && comp.end_at
+      ? Math.max(1, Math.round((new Date(comp.end_at).getTime() - new Date(comp.start_at).getTime()) / 86400000))
+      : 7;
     setDetail(null);
     setSeed({
       track: comp.track,
