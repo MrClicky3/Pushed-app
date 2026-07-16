@@ -189,8 +189,8 @@ function CompetitionSheet({
         {done && (
           <button
             onClick={() => { feedback.log(); onRematch(comp, rows); }}
-            className="w-full rounded-2xl font-semibold text-[15px] transition-all active:scale-[0.99]"
-            style={{ height: 48, background: '#f4f1ec', color: '#0a0908' }}
+            className="te-white-btn w-full rounded-2xl font-semibold text-[15px]"
+            style={{ height: 48 }}
           >
             Rematch
           </button>
@@ -352,8 +352,8 @@ function CreateSheet({
         <button
           onClick={submit}
           disabled={saving || friendsList.length === 0}
-          className="w-full rounded-2xl font-semibold text-[15px] transition-all active:scale-[0.99] disabled:opacity-50"
-          style={{ height: 48, background: '#f4f1ec', color: '#0a0908' }}
+          className="te-white-btn w-full rounded-2xl font-semibold text-[15px] disabled:opacity-50"
+          style={{ height: 48 }}
         >
           {saving ? 'Creating…' : 'Start competition'}
         </button>
@@ -394,8 +394,8 @@ function InviteCard({ comp, comps }: { comp: CompetitionSummary; comps: Competit
         </button>
         <button
           onClick={() => act(true)} disabled={busy}
-          className="rounded-2xl font-semibold text-[13px] disabled:opacity-50"
-          style={{ height: 42, background: '#f4f1ec', color: '#0a0908' }}
+          className="te-white-btn rounded-2xl font-semibold text-[13px] disabled:opacity-50"
+          style={{ height: 42 }}
         >
           Accept
         </button>
@@ -556,38 +556,21 @@ export function CompetitionMiniWidget({ comps, onOpen }: {
   comps: CompetitionsApi;
   onOpen: () => void;
 }) {
-  const [leader, setLeader] = useState<CompetitionStanding | null>(null);
-
   const soonest = comps.competitions
     .filter(c => c.status === 'active')
     .sort((a, b) => new Date(a.end_at).getTime() - new Date(b.end_at).getTime())[0] ?? null;
-
-  useEffect(() => {
-    if (!soonest) { setLeader(null); return; }
-    let alive = true;
-    comps.getStandings(soonest.id).then(rows => {
-      if (alive) setLeader(rows.find(r => r.rank === 1) ?? rows[0] ?? null);
-    });
-    return () => { alive = false; };
-  }, [soonest?.id, comps]);
 
   if (!soonest) return null;
 
   return (
     <button
       onClick={onOpen}
-      className="te-panel w-full rounded-2xl px-4 py-3 text-left active:bg-white/[0.04] transition-colors mb-[18px]"
+      className="te-panel-dark w-full rounded-2xl px-4 py-3 flex items-center gap-2.5 text-left active:bg-white/[0.04] transition-colors mb-[18px]"
     >
-      <div className="flex items-center gap-2.5">
-        <Trophy className="w-3.5 h-3.5 shrink-0" style={{ color: '#e8c15a' }} />
-        <div className="flex-1 min-w-0">
-          <p className="text-[13px] font-semibold text-[#f4f1ec] tracking-tight truncate">{soonest.name}</p>
-          <p className="te-label mt-0.5 truncate">
-            {leader ? `${leader.display_name || leader.username} leading` : '—'} · ends {fmtLeft(soonest.end_at, '')}
-          </p>
-        </div>
-        <ChevronRightIcon className="w-3.5 h-3.5 text-white/25 shrink-0" />
-      </div>
+      <Trophy className="w-3.5 h-3.5 shrink-0" style={{ color: '#e8c15a' }} />
+      <span className="flex-1 min-w-0 text-[13px] font-semibold text-[#f4f1ec] tracking-tight truncate">{soonest.name}</span>
+      <span className="te-label shrink-0 whitespace-nowrap">ends {fmtLeft(soonest.end_at, '')}</span>
+      <ChevronRightIcon className="w-3.5 h-3.5 text-white/25 shrink-0" />
     </button>
   );
 }

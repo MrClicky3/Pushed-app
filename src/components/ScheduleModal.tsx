@@ -54,7 +54,47 @@ interface Props {
   unit: WeightUnit;
   onSetUnit: (u: WeightUnit) => void;
   toDisplay: (kg: number) => number;
+  fromDisplay: (val: number) => number;
   logs: WorkoutLog[];
+}
+
+// Segmented −/value/+ control whose middle value is also tap-to-edit: focus it
+// and type a new value, commit on blur/Enter. `onCommit` receives the raw
+// typed string to parse.
+function StepperControl({
+  text, suffix, inputMode = 'numeric', onDec, onInc, onCommit,
+}: {
+  text: string;
+  suffix?: string;
+  inputMode?: 'numeric' | 'decimal' | 'text';
+  onDec: () => void;
+  onInc: () => void;
+  onCommit: (raw: string) => void;
+}) {
+  const [draft, setDraft] = useState<string | null>(null);
+  const editing = draft !== null;
+  const btn = 'flex items-center justify-center text-white/45 active:bg-white/[0.06] transition-colors select-none';
+  return (
+    <div className="flex items-center shrink-0 rounded-xl overflow-hidden" style={{ border: '1px solid var(--te-border)', background: '#0b0b0b' }}>
+      <button type="button" onClick={onDec} className={btn} style={{ width: 38, height: 38, fontSize: 19 }}>−</button>
+      <div className="w-px self-stretch" style={{ background: 'var(--te-border)' }} />
+      <div className="flex items-center justify-center gap-0.5 px-1.5" style={{ minWidth: 56, height: 38 }}>
+        <input
+          value={editing ? draft! : text}
+          onFocus={() => setDraft(text)}
+          onChange={e => setDraft(e.target.value)}
+          onBlur={() => { if (draft !== null) onCommit(draft); setDraft(null); }}
+          onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+          inputMode={inputMode}
+          className="te-digit text-[14px] font-semibold text-white/85 tracking-tight tabular-nums bg-transparent focus:outline-none text-center"
+          style={{ width: `${Math.max(text.length, 2)}ch` }}
+        />
+        {suffix && <span className="te-digit text-[14px] font-semibold text-white/85">{suffix}</span>}
+      </div>
+      <div className="w-px self-stretch" style={{ background: 'var(--te-border)' }} />
+      <button type="button" onClick={onInc} className={btn} style={{ width: 38, height: 38, fontSize: 19 }}>+</button>
+    </div>
+  );
 }
 
 // ── Data export ──────────────────────────────────────────────────
@@ -133,6 +173,7 @@ export default function ScheduleModal({
   unit,
   onSetUnit,
   toDisplay,
+  fromDisplay,
   logs,
 }: Props) {
   const [view, setView] = useState<View>({ type: 'main' });
@@ -283,29 +324,23 @@ export default function ScheduleModal({
                   <p className="text-[14px] font-medium text-[#f4f1ec] tracking-tight">Rest timer</p>
                   <p className="te-label mt-0.5">Auto-starts after each set</p>
                 </div>
-                <div className="flex items-center shrink-0 rounded-xl overflow-hidden" style={{ border: '1px solid var(--te-border)', background: '#0b0b0b' }}>
-                  <button
-                    onClick={() => onSetTimerDuration(timerDuration - 30)}
-                    className="flex items-center justify-center text-white/45 active:bg-white/[0.06] transition-colors select-none"
-                    style={{ width: 38, height: 38, fontSize: 19 }}
-                  >
-                    −
-                  </button>
-                  <div className="w-px self-stretch" style={{ background: 'var(--te-border)' }} />
-                  <div className="flex items-center justify-center select-none" style={{ minWidth: 52, height: 38 }}>
-                    <span className="te-digit text-[14px] font-semibold text-white/85 tracking-tight">
-                      {fmtTimer(timerDuration)}
-                    </span>
-                  </div>
-                  <div className="w-px self-stretch" style={{ background: 'var(--te-border)' }} />
-                  <button
-                    onClick={() => onSetTimerDuration(timerDuration + 30)}
-                    className="flex items-center justify-center text-white/45 active:bg-white/[0.06] transition-colors select-none"
-                    style={{ width: 38, height: 38, fontSize: 19 }}
-                  >
-                    +
-                  </button>
-                </div>
+                <StepperControl
+                  text={fmtTimer(timerDuration)}
+                  inputMode="text"
+                  onDec={() => onSetTimerDuration(timerDuration - 10)}
+                  onInc={() => onSetTimerDuration(timerDuration + 10)}
+                  onCommit={raw => {
+                    const s = raw.trim();
+                    let secs: number;
+                    if (s.includes(':')) {
+                      const [m, sec] = s.split(':');
+                      secs = (parseInt(m || '0', 10) || 0) * 60 + (parseInt(sec || '0', 10) || 0);
+                    } else {
+                      secs = parseInt(s.replace(/[^0-9]/g, ''), 10) || 0;
+                    }
+                    if (secs > 0) onSetTimerDuration(secs);
+                  }}
+                />
               </div>
 
               {/* Barbell weight (for plate calculator) */}
@@ -314,29 +349,17 @@ export default function ScheduleModal({
                   <p className="text-[14px] font-medium text-[#f4f1ec] tracking-tight">Barbell weight</p>
                   <p className="te-label mt-0.5">Used by the plate calculator</p>
                 </div>
-                <div className="flex items-center shrink-0 rounded-xl overflow-hidden" style={{ border: '1px solid var(--te-border)', background: '#0b0b0b' }}>
-                  <button
-                    onClick={() => onSetBarbellWeight(barbellWeight - 2.5)}
-                    className="flex items-center justify-center text-white/45 active:bg-white/[0.06] transition-colors select-none"
-                    style={{ width: 38, height: 38, fontSize: 19 }}
-                  >
-                    −
-                  </button>
-                  <div className="w-px self-stretch" style={{ background: 'var(--te-border)' }} />
-                  <div className="flex items-center justify-center select-none" style={{ minWidth: 52, height: 38 }}>
-                    <span className="te-digit text-[14px] font-semibold text-white/85 tracking-tight tabular-nums">
-                      {toDisplay(barbellWeight)}{unit}
-                    </span>
-                  </div>
-                  <div className="w-px self-stretch" style={{ background: 'var(--te-border)' }} />
-                  <button
-                    onClick={() => onSetBarbellWeight(barbellWeight + 2.5)}
-                    className="flex items-center justify-center text-white/45 active:bg-white/[0.06] transition-colors select-none"
-                    style={{ width: 38, height: 38, fontSize: 19 }}
-                  >
-                    +
-                  </button>
-                </div>
+                <StepperControl
+                  text={String(toDisplay(barbellWeight))}
+                  suffix={unit}
+                  inputMode="decimal"
+                  onDec={() => onSetBarbellWeight(barbellWeight - 2.5)}
+                  onInc={() => onSetBarbellWeight(barbellWeight + 2.5)}
+                  onCommit={raw => {
+                    const v = parseFloat(raw.replace(/[^0-9.]/g, ''));
+                    if (!isNaN(v)) onSetBarbellWeight(fromDisplay(v));
+                  }}
+                />
               </div>
 
               {/* Weight unit — toggle button */}
@@ -352,8 +375,8 @@ export default function ScheduleModal({
                       <button
                         key={u}
                         onClick={() => onSetUnit(u)}
-                        className={`${active ? 'te-toggle-on' : 'te-toggle-off'} rounded-lg select-none te-mono text-[13px] font-semibold uppercase`}
-                        style={{ width: 48, height: 34, color: active ? 'var(--te-accent-contrast)' : 'rgba(255,255,255,0.4)' }}
+                        className={`${active ? 'te-toggle-on te-toggle-mono' : 'te-toggle-off'} rounded-lg select-none te-mono text-[13px] font-semibold uppercase`}
+                        style={{ width: 48, height: 34, color: active ? '#0a0908' : 'rgba(255,255,255,0.4)' }}
                       >
                         {u}
                       </button>
@@ -718,8 +741,8 @@ export default function ScheduleModal({
                           key={ex.id}
                           type="button"
                           onClick={() => toggleExercise(ex.id)}
-                          className={`${on ? 'te-toggle-on' : 'te-toggle-off'} px-3 py-1.5 rounded-xl text-[13px] font-semibold select-none`}
-                          style={{ color: on ? '#000' : 'rgba(255,255,255,0.45)' }}
+                          className={`${on ? 'te-toggle-on te-toggle-mono' : 'te-toggle-off'} px-3 py-1.5 rounded-xl text-[13px] font-semibold select-none`}
+                          style={{ color: on ? '#0a0908' : 'rgba(255,255,255,0.45)' }}
                         >
                           {ex.name}
                         </button>

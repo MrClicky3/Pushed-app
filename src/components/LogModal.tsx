@@ -3,7 +3,7 @@ import { ChevronRightIcon, CheckIcon } from '@heroicons/react/24/outline';
 import { ChevronUpIcon, ChevronDownIcon } from '@heroicons/react/24/solid';
 import Model from '@phelian/react-body-highlighter';
 import Modal from './Modal';
-import { WHITE_BUTTON, ToggleButton } from './SheetControls';
+import { ToggleButton } from './SheetControls';
 import { EXERCISE_LIBRARY } from '../data/exerciseLibrary';
 import type { Exercise, WorkoutLog, SetType } from '../types';
 import type { WeightUnit } from '../hooks/useSettings';
@@ -398,8 +398,7 @@ export default function LogModal({
         {/* Log set */}
         <button
           type="submit"
-          className="w-full h-[55px] rounded-[20px] flex items-center justify-center gap-1.5 active:opacity-80 transition-opacity"
-          style={WHITE_BUTTON}
+          className="te-white-btn w-full h-[55px] rounded-[20px] flex items-center justify-center gap-1.5"
         >
           <CheckIcon className="w-[15px] h-[15px] text-black stroke-[2.5]" />
           <span className="text-[15px] font-semibold text-black tracking-[-0.17px]">

@@ -84,8 +84,8 @@ function BioEditSheet({
         <button
           onClick={save}
           disabled={saving}
-          className="w-full rounded-2xl font-semibold text-[15px] transition-all active:scale-[0.99] disabled:opacity-50"
-          style={{ height: 48, background: '#f4f1ec', color: '#0a0908' }}
+          className="te-white-btn w-full rounded-2xl font-semibold text-[15px] disabled:opacity-50"
+          style={{ height: 48 }}
         >
           {saving ? 'Saving…' : 'Save'}
         </button>

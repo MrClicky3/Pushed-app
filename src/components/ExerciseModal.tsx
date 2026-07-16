@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { CheckIcon } from '@heroicons/react/24/outline';
 import Modal from './Modal';
-import { SECTION_LABEL, WHITE_BUTTON, ToggleButton } from './SheetControls';
+import { SECTION_LABEL, ToggleButton } from './SheetControls';
 import SwipeStepper from './SwipeStepper';
 import type { Exercise, LoadType } from '../types';
 import type { WeightUnit } from '../hooks/useSettings';
@@ -147,8 +147,7 @@ export default function ExerciseModal({ open, onClose, onSave, onDelete, exercis
           <button
             type="submit"
             disabled={!name.trim()}
-            className="w-full h-[55px] rounded-[20px] flex items-center justify-center gap-1.5 disabled:opacity-30 active:opacity-80 transition-opacity"
-            style={WHITE_BUTTON}
+            className="te-white-btn w-full h-[55px] rounded-[20px] flex items-center justify-center gap-1.5 disabled:opacity-30"
           >
             <CheckIcon className="w-[15px] h-[15px] text-black stroke-[2.5]" />
             <span className="text-[15px] font-semibold text-black tracking-[-0.17px]">

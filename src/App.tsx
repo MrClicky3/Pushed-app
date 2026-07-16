@@ -433,18 +433,28 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
   const swipeStartY = useRef(0);
   const swipeFullRef = useRef(false);  // ring is full → release commits
   const swipeShownRef = useRef(false); // affordance has appeared this gesture
+  const swipeArmedRef = useRef(true);  // false → gesture began too low to count
+  const dockContentRef = useRef<HTMLDivElement>(null); // nav bar content bounds
 
   function triggerAdd() {
     if (tab === 'exercises') { setExercisePrefill(undefined); setExerciseModal({ open: true, exercise: null }); }
     else { setLogModal({ open: true, exercise: null, editLog: null }); }
   }
   function onDockTouchStart(e: React.TouchEvent) {
-    swipeStartY.current = e.touches[0].clientY;
+    // Only arm the swipe if it begins at/above the nav bar's mid-line. Touches
+    // starting in the lower half (near the home indicator) are ignored so the
+    // gesture doesn't fight the system home-swipe or mis-fire.
+    const rect = dockContentRef.current?.getBoundingClientRect();
+    const y = e.touches[0].clientY;
+    swipeArmedRef.current = !rect || y <= rect.top + rect.height / 2;
+    if (!swipeArmedRef.current) return;
+    swipeStartY.current = y;
     swipeFullRef.current = false;
     swipeShownRef.current = false;
     setSwiping(true);
   }
   function onDockTouchMove(e: React.TouchEvent) {
+    if (!swipeArmedRef.current) return;
     const dy = swipeStartY.current - e.touches[0].clientY;
     const d = Math.max(0, Math.min(dy, SWIPE_THRESHOLD + 22));
     if (d > 4 && !swipeShownRef.current) { swipeShownRef.current = true; feedback.reveal(); }
@@ -455,6 +465,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
     setSwipeDrag(d);
   }
   function onDockTouchEnd() {
+    if (!swipeArmedRef.current) return;
     const committed = swipeFullRef.current;
     setSwiping(false);
     setSwipeDrag(0);
@@ -720,7 +731,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
         onTouchCancel={onDockTouchCancel}
       >
         {/* Relative wrapper anchors the swipe-up affordance above the bar. */}
-        <div style={{ position: 'relative' }}>
+        <div ref={dockContentRef} style={{ position: 'relative' }}>
           {/* Swipe-up-to-add affordance — a faint gray "+" whose radial ring
               fills as you drag up; release past full to fire the add. Only
               visible mid-swipe. */}
@@ -978,6 +989,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
         unit={unit}
         onSetUnit={setUnit}
         toDisplay={toDisplay}
+        fromDisplay={fromDisplay}
         logs={logs}
       />
 
