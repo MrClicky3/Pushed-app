@@ -51,6 +51,47 @@ function fmtTimer(s: number) {
   return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 }
 
+function formatSessionAge(dateStr: string): string {
+  const mins = Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000);
+  if (mins < 1) return 'Started just now';
+  if (mins < 60) return `Started ${mins}min ago`;
+  return `Started ${Math.floor(mins / 60)}h ${mins % 60}min ago`;
+}
+
+// Session indicator that replaces the greeting at the top. Shows how long ago
+// today's workout started; when no session is active it pans out the bottom
+// and collapses away (and back in when one starts).
+function SessionIndicator({ sessionStart }: { sessionStart: string | null }) {
+  const active = !!sessionStart;
+  const [, setTick] = useState(0);
+  const lastText = useRef('');
+
+  useEffect(() => {
+    if (!active) return;
+    const id = setInterval(() => setTick(t => t + 1), 30000);
+    return () => clearInterval(id);
+  }, [active]);
+
+  if (sessionStart) lastText.current = formatSessionAge(sessionStart);
+
+  return (
+    <div
+      style={{
+        overflow: 'hidden',
+        maxHeight: active ? 22 : 0,
+        opacity: active ? 1 : 0,
+        transform: active ? 'translateY(0)' : 'translateY(8px)',
+        transition:
+          'max-height 0.36s cubic-bezier(0.22,1,0.36,1), opacity 0.3s ease, transform 0.36s cubic-bezier(0.22,1,0.36,1)',
+      }}
+    >
+      <span className="te-label" style={{ color: 'rgba(244,241,236,0.5)', whiteSpace: 'nowrap' }}>
+        {sessionStart ? formatSessionAge(sessionStart) : lastText.current}
+      </span>
+    </div>
+  );
+}
+
 // "Leave your computer at home" watermark for wide screens
 function WideScreenNote() {
   const text = 'LEAVE YOUR COMPUTER AT HOME';
@@ -328,6 +369,22 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
 
   const profileName = profileRow?.display_name || profileRow?.username || userName || 'You';
 
+  // Earliest log created today → the current session's start (null when there
+  // is no workout logged today).
+  const sessionStart = useMemo(() => {
+    const now = new Date();
+    const k = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
+    let earliest: string | null = null;
+    for (const l of logs) {
+      const d = new Date(l.created_at);
+      if (`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}` !== k) continue;
+      if (earliest === null || new Date(l.created_at).getTime() < new Date(earliest).getTime()) {
+        earliest = l.created_at;
+      }
+    }
+    return earliest;
+  }, [logs]);
+
   // Rest timer
   const [timerRemaining, setTimerRemaining] = useState<number | null>(null);
   const [timerRunning, setTimerRunning] = useState(false);
@@ -567,9 +624,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
                 on the row, not the collapsing wrapper, so focus mode still
                 collapses cleanly). */}
             <div className="flex items-center justify-between mb-1" style={{ paddingTop: 9, paddingBottom: 3, paddingRight: 3 }}>
-              <span className="te-label">
-                {greeting}{userName ? `, ${userName}` : ''}!
-              </span>
+              <SessionIndicator sessionStart={showDuration ? sessionStart : null} />
               <button
                 onClick={() => setShowProfile(true)}
                 className="active:opacity-70 transition-opacity shrink-0"
@@ -616,7 +671,6 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
             toDisplay={toDisplay}
             routines={routines}
             schedule={schedule}
-            showDuration={showDuration}
             focusMode={focusMode}
           />
         ) : (
