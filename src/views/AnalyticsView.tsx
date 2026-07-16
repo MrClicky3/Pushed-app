@@ -67,9 +67,6 @@ function categoryColor(group: string): string {
   return accentHex();
 }
 
-function Card({ children }: { children: React.ReactNode }) {
-  return <div className="te-panel-dark rounded-2xl overflow-hidden">{children}</div>;
-}
 
 interface ChartPoint { value: number; label: string; shortLabel?: string; tooltipLabel?: string; }
 
@@ -298,16 +295,19 @@ function PageHeader({ def, scrubIndex }: { def: PageDef; scrubIndex: number | nu
   );
 }
 
-function ProgressPager({ pages, page, onPageChange }: {
-  pages: PageDef[]; page: number; onPageChange: (p: number) => void;
+// One standalone chart with scrub-to-read. Long-press (or horizontal drag)
+// reveals the crosshair; vertical drags fall through to page scroll. When there
+// is no data the chart area keeps its full height and shows a message instead of
+// collapsing to a thin strip.
+function ScrubbableChart({ def, hasData, noDataLabel }: {
+  def: PageDef; hasData: boolean; noDataLabel: string;
 }) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const [scrub, setScrub] = useState<number | null>(null);
-  const [dragX, setDragX] = useState(0);
-  const st = useRef<{ x: number; y: number; mode: null | 'page' | 'scrub' | 'abort'; timer: ReturnType<typeof setTimeout> | null } | null>(null);
+  const st = useRef<{ x: number; y: number; mode: null | 'scrub' | 'abort'; timer: ReturnType<typeof setTimeout> | null } | null>(null);
   const scrubbingRef = useRef(false);
 
-  const nPts = pages[page]?.points.length ?? 0;
+  const nPts = def.points.length;
 
   useEffect(() => {
     const el = viewportRef.current;
@@ -327,7 +327,8 @@ function ProgressPager({ pages, page, onPageChange }: {
   }
 
   function onPointerDown(e: React.PointerEvent) {
-    const s = { x: e.clientX, y: e.clientY, mode: null as null | 'page' | 'scrub' | 'abort', timer: null as ReturnType<typeof setTimeout> | null };
+    if (!hasData) return;
+    const s = { x: e.clientX, y: e.clientY, mode: null as null | 'scrub' | 'abort', timer: null as ReturnType<typeof setTimeout> | null };
     s.timer = setTimeout(() => {
       if (st.current && st.current.mode === null) {
         st.current.mode = 'scrub';
@@ -344,93 +345,56 @@ function ProgressPager({ pages, page, onPageChange }: {
     const dx = e.clientX - s.x;
     const dy = e.clientY - s.y;
     if (s.mode === null) {
-      if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) {
-        s.mode = 'page';
-        if (s.timer) clearTimeout(s.timer);
-      } else if (Math.abs(dy) > 12) {
+      if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) {
         s.mode = 'abort';
         if (s.timer) clearTimeout(s.timer);
+      } else if (Math.abs(dx) > 8) {
+        s.mode = 'scrub';
+        scrubbingRef.current = true;
+        if (s.timer) clearTimeout(s.timer);
+        setScrub(xToIndex(e.clientX));
       }
-    }
-    if (s.mode === 'page') {
-      setDragX(dx);
     } else if (s.mode === 'scrub') {
       setScrub(xToIndex(e.clientX));
     }
   }
 
-  function endGesture(e: React.PointerEvent) {
+  function endGesture() {
     const s = st.current;
-    if (!s) return;
-    if (s.timer) clearTimeout(s.timer);
+    if (s?.timer) clearTimeout(s.timer);
     scrubbingRef.current = false;
-    if (s.mode === 'page') {
-      const el = viewportRef.current;
-      const w = el ? el.getBoundingClientRect().width : 300;
-      const dx = e.clientX - s.x;
-      const thresh = w * 0.22;
-      let np = page;
-      if (dx < -thresh && page < pages.length - 1) np = page + 1;
-      else if (dx > thresh && page > 0) np = page - 1;
-      onPageChange(np);
-      setDragX(0);
-    } else if (s.mode === 'scrub') {
-      setScrub(null);
-    }
+    setScrub(null);
     st.current = null;
   }
 
-  const paging = st.current?.mode === 'page';
-
   return (
-    <div>
+    <div className="pt-2 pb-1">
+      <PageHeader def={def} scrubIndex={hasData ? scrub : null} />
       <div
         ref={viewportRef}
-        className="overflow-hidden"
+        className="mt-3"
         style={{ touchAction: 'pan-y' }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={endGesture}
         onPointerCancel={endGesture}
       >
-        <div
-          className="flex"
-          style={{
-            transform: `translateX(calc(${-page * 100}% + ${dragX}px))`,
-            transition: paging ? 'none' : 'transform 0.34s cubic-bezier(0.32, 0.72, 0, 1)',
-          }}
-        >
-          {pages.map((def, i) => (
-            <div key={def.key} className="w-full shrink-0 pt-2 pb-1" style={{ paddingRight: i < pages.length - 1 ? 0 : 0 }}>
-              <PageHeader def={def} scrubIndex={i === page ? scrub : null} />
-              <div className="mt-3">
-                <ScrubChart
-                  points={def.points}
-                  unit={def.unit}
-                  fillColor={def.fillColor}
-                  maxLabels={def.maxLabels}
-                  scrubIndex={i === page ? scrub : null}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="flex items-center justify-center gap-2 mt-2">
-        {pages.map((def, i) => (
-          <button
-            key={def.key}
-            onClick={() => onPageChange(i)}
-            aria-label={`Show ${def.title}`}
-            className="rounded-full transition-all"
-            style={{
-              width: i === page ? 18 : 6,
-              height: 6,
-              background: i === page ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.22)',
-            }}
+        {hasData ? (
+          <ScrubChart
+            points={def.points}
+            unit={def.unit}
+            fillColor={def.fillColor}
+            maxLabels={def.maxLabels}
+            scrubIndex={scrub}
           />
-        ))}
+        ) : (
+          <div
+            className="flex items-center justify-center"
+            style={{ aspectRatio: `${CW} / ${C_PT + C_CH + C_XH}` }}
+          >
+            <p className="te-label text-center px-6">{noDataLabel}</p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -999,13 +963,16 @@ function StreakCard({ logs, schedule, routines, exercises }: {
 
 export default function AnalyticsView({ logs, exercises, unit, toDisplay, routines, schedule, competitions, onOpenCompetitions }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [range, setRange] = useState<DayRange>(30);
-  const [customDays, setCustomDays] = useState(90);
+  const [weightRange, setWeightRange] = useState<DayRange>(30);
+  const [weightCustomDays, setWeightCustomDays] = useState(90);
+  const [dailyRange, setDailyRange] = useState<DayRange>(30);
+  const [dailyCustomDays, setDailyCustomDays] = useState(90);
   const [exerciseOpen, setExerciseOpen] = useState(false);
-  const [chartPage, setChartPage] = useState(0);
   const [prOpen, setPrOpen] = useState(false);
-  const rangeDays = resolveRangeDays(range, customDays, logs);
-  const isAll = range === 'all';
+  const weightRangeDays = resolveRangeDays(weightRange, weightCustomDays, logs);
+  const weightIsAll = weightRange === 'all';
+  const dailyRangeDays = resolveRangeDays(dailyRange, dailyCustomDays, logs);
+  const dailyIsAll = dailyRange === 'all';
 
   // All-time personal records: the heaviest working set per exercise (ties
   // broken by more reps), with the date it was set.
@@ -1091,20 +1058,17 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
   const activeId = (selectedId && withLogs.find(e => e.id === selectedId)) ? selectedId : defaultId;
   const selected = activeId ? withLogs.find(e => e.id === activeId) ?? null : null;
 
-  const hasLogsInRange = selected
-    ? filterLogsByRange(workingLogs, rangeDays).some(l => l.exercise_id === selected.id)
-    : false;
+  const catColor = selected ? categoryColor(selected.muscle_group) : 'rgba(244,241,236,0.3)';
 
-  const analytics = useMemo(() => {
+  // Weight-progress chart + its stat cards, driven by the weight range filter.
+  const weightAnalytics = useMemo(() => {
     if (!selected) return null;
-    const catColor = categoryColor(selected.muscle_group);
-    const rangeLabel = rangeSuffix(rangeDays, isAll).replace(/^\w/, c => c.toUpperCase());
-    const maxLabels = rangeDays <= 7 ? 7 : rangeDays <= 30 ? 6 : 5;
-
-    const rangeExLogs = filterLogsByRange(workingLogs, rangeDays).filter(l => l.exercise_id === selected.id);
+    const rangeLabel = rangeSuffix(weightRangeDays, weightIsAll).replace(/^\w/, c => c.toUpperCase());
+    const maxLabels = weightRangeDays <= 7 ? 7 : weightRangeDays <= 30 ? 6 : 5;
+    const rangeExLogs = filterLogsByRange(workingLogs, weightRangeDays).filter(l => l.exercise_id === selected.id);
 
     let weightPoints: ChartPoint[];
-    if (isAll) {
+    if (weightIsAll) {
       weightPoints = buildEntryOnlyChart(rangeExLogs, toDisplay);
     } else {
       const dailyBestMap = new Map<string, number>();
@@ -1114,40 +1078,12 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
         const cur = dailyBestMap.get(k);
         if (cur === undefined || v > cur) dailyBestMap.set(k, v);
       }
-      weightPoints = buildContinuousChart(buildAllDaysInRange(rangeDays), dailyBestMap, rangeDays);
+      weightPoints = buildContinuousChart(buildAllDaysInRange(weightRangeDays), dailyBestMap, weightRangeDays);
     }
-
-    const completion = buildCompletionChart(selected, rangeExLogs, rangeDays);
-
-    const prevLogs = (() => {
-      const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - rangeDays); cutoff.setHours(0, 0, 0, 0);
-      const prevCutoff = new Date(); prevCutoff.setDate(prevCutoff.getDate() - rangeDays * 2); prevCutoff.setHours(0, 0, 0, 0);
-      return workingLogs.filter(l => {
-        if (l.exercise_id !== selected.id) return false;
-        const d = new Date(l.created_at);
-        return d >= prevCutoff && d < cutoff;
-      });
-    })();
-    const prevPerDay = new Map<string, number>();
-    for (const log of prevLogs) {
-      const k = new Date(log.created_at).toDateString();
-      prevPerDay.set(k, (prevPerDay.get(k) ?? 0) + 1);
-    }
-    const targetSets = Math.max(selected.sets, 1);
-    const prevAvg = (() => {
-      const days: number[] = [];
-      const today = new Date(); today.setHours(0, 0, 0, 0);
-      for (let i = rangeDays * 2 - 1; i >= rangeDays; i--) {
-        const d = new Date(today); d.setDate(today.getDate() - i);
-        const sets = prevPerDay.get(d.toDateString()) ?? 0;
-        days.push(Math.min(100, Math.round((sets / targetSets) * 100)));
-      }
-      return days.length ? Math.round(days.reduce((a, b) => a + b, 0) / days.length) : 0;
-    })();
 
     const e1rm = (() => {
-      const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - rangeDays); cutoff.setHours(0, 0, 0, 0);
-      const prevCutoff = new Date(); prevCutoff.setDate(prevCutoff.getDate() - rangeDays * 2); prevCutoff.setHours(0, 0, 0, 0);
+      const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - weightRangeDays); cutoff.setHours(0, 0, 0, 0);
+      const prevCutoff = new Date(); prevCutoff.setDate(prevCutoff.getDate() - weightRangeDays * 2); prevCutoff.setHours(0, 0, 0, 0);
       let curBest = 0, prevBest = 0;
       for (const log of workingLogs) {
         if (log.exercise_id !== selected.id) continue;
@@ -1173,16 +1109,53 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
       };
     })();
 
+    const hasData = rangeExLogs.length > 0 && weightPoints.length >= 2;
+    return { rangeLabel, maxLabels, weightPoints, e1rm, heaviest, hasData };
+  }, [selected, workingLogs, weightRangeDays, weightIsAll, toDisplay, unit]);
+
+  // Daily-completion chart + its stat card, driven by the daily range filter.
+  const dailyAnalytics = useMemo(() => {
+    if (!selected) return null;
+    const rangeLabel = rangeSuffix(dailyRangeDays, dailyIsAll).replace(/^\w/, c => c.toUpperCase());
+    const maxLabels = dailyRangeDays <= 7 ? 7 : dailyRangeDays <= 30 ? 6 : 5;
+    const rangeExLogs = filterLogsByRange(workingLogs, dailyRangeDays).filter(l => l.exercise_id === selected.id);
+    const completion = buildCompletionChart(selected, rangeExLogs, dailyRangeDays);
+
+    const prevLogs = (() => {
+      const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - dailyRangeDays); cutoff.setHours(0, 0, 0, 0);
+      const prevCutoff = new Date(); prevCutoff.setDate(prevCutoff.getDate() - dailyRangeDays * 2); prevCutoff.setHours(0, 0, 0, 0);
+      return workingLogs.filter(l => {
+        if (l.exercise_id !== selected.id) return false;
+        const d = new Date(l.created_at);
+        return d >= prevCutoff && d < cutoff;
+      });
+    })();
+    const prevPerDay = new Map<string, number>();
+    for (const log of prevLogs) {
+      const k = new Date(log.created_at).toDateString();
+      prevPerDay.set(k, (prevPerDay.get(k) ?? 0) + 1);
+    }
+    const targetSets = Math.max(selected.sets, 1);
+    const prevAvg = (() => {
+      const days: number[] = [];
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      for (let i = dailyRangeDays * 2 - 1; i >= dailyRangeDays; i--) {
+        const d = new Date(today); d.setDate(today.getDate() - i);
+        const sets = prevPerDay.get(d.toDateString()) ?? 0;
+        days.push(Math.min(100, Math.round((sets / targetSets) * 100)));
+      }
+      return days.length ? Math.round(days.reduce((a, b) => a + b, 0) / days.length) : 0;
+    })();
+
+    const hasData = rangeExLogs.length > 0 && completion.points.length >= 2;
     return {
-      catColor, rangeLabel, maxLabels,
-      weightPoints,
+      rangeLabel, maxLabels,
       completionPoints: completion.points,
       avgDaily: completion.avg,
       avgDailySub: signedPct(completion.avg, prevAvg),
-      e1rm, heaviest,
-      weightUnit: unit,
+      hasData,
     };
-  }, [selected, workingLogs, rangeDays, isAll, toDisplay, unit]);
+  }, [selected, workingLogs, dailyRangeDays, dailyIsAll]);
 
   if (!logs.length) {
     return (
@@ -1210,35 +1183,36 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
     ? 'var(--te-lower)'
     : 'rgba(244,241,236,0.3)';
 
-  const pages: PageDef[] = analytics ? [
-    {
-      key: 'weight',
-      title: 'Weight progress',
-      points: analytics.weightPoints,
-      unit: analytics.weightUnit,
-      fillColor: analytics.catColor,
-      formatValue: v => `${v}${analytics.weightUnit}`,
-      idleCounter: null,
-      rangeLabel: analytics.rangeLabel,
-      maxLabels: analytics.maxLabels,
-    },
-    {
-      key: 'daily',
-      title: 'Daily completion',
-      points: analytics.completionPoints,
-      unit: '%',
-      fillColor: analytics.catColor,
-      formatValue: v => `${v}%`,
-      idleCounter: (
-        <p className="text-[32px] font-bold text-white tabular-nums leading-none tracking-tight te-digit">
-          <span className="text-[17px] font-semibold align-middle mr-1" style={{ color: 'rgba(255,255,255,0.45)' }}>avg</span>
-          {analytics.avgDaily}%
-        </p>
-      ),
-      rangeLabel: analytics.rangeLabel,
-      maxLabels: analytics.maxLabels,
-    },
-  ] : [];
+  if (!weightAnalytics || !dailyAnalytics) return null;
+
+  const weightDef: PageDef = {
+    key: 'weight',
+    title: 'Weight progress',
+    points: weightAnalytics.weightPoints,
+    unit,
+    fillColor: catColor,
+    formatValue: v => `${v}${unit}`,
+    idleCounter: null,
+    rangeLabel: weightAnalytics.rangeLabel,
+    maxLabels: weightAnalytics.maxLabels,
+  };
+
+  const dailyDef: PageDef = {
+    key: 'daily',
+    title: 'Daily completion',
+    points: dailyAnalytics.completionPoints,
+    unit: '%',
+    fillColor: catColor,
+    formatValue: v => `${v}%`,
+    idleCounter: dailyAnalytics.hasData ? (
+      <p className="text-[32px] font-bold text-white tabular-nums leading-none tracking-tight te-digit">
+        <span className="text-[17px] font-semibold align-middle mr-1" style={{ color: 'rgba(255,255,255,0.45)' }}>avg</span>
+        {dailyAnalytics.avgDaily}%
+      </p>
+    ) : null,
+    rangeLabel: dailyAnalytics.rangeLabel,
+    maxLabels: dailyAnalytics.maxLabels,
+  };
 
   return (
     <div>
@@ -1263,60 +1237,61 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
         <StreakCard logs={logs} schedule={schedule} routines={routines} exercises={exercises} />
       </div>
 
-      <div className="space-y-[10px]">
-        <CollapsibleSection
-          open={exerciseOpen}
-          onToggle={() => setExerciseOpen(o => !o)}
-          header={
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="w-[6px] h-[6px] rounded-full shrink-0" style={{ background: dotColor }} />
-              <span
-                className="text-[11.5px] font-semibold uppercase truncate"
-                style={{ fontFamily: MONO, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.85)' }}
-              >
-                {selected.name}
-              </span>
-            </div>
-          }
-        >
-          <GroupedExercisePicker
-            exercises={withLogs}
-            activeId={selected.id}
-            onSelect={id => { setSelectedId(id); setExerciseOpen(false); }}
-          />
-        </CollapsibleSection>
+      <CollapsibleSection
+        open={exerciseOpen}
+        onToggle={() => setExerciseOpen(o => !o)}
+        header={
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="w-[6px] h-[6px] rounded-full shrink-0" style={{ background: dotColor }} />
+            <span
+              className="text-[11.5px] font-semibold uppercase truncate"
+              style={{ fontFamily: MONO, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.85)' }}
+            >
+              {selected.name}
+            </span>
+          </div>
+        }
+      >
+        <GroupedExercisePicker
+          exercises={withLogs}
+          activeId={selected.id}
+          onSelect={id => { setSelectedId(id); setExerciseOpen(false); }}
+        />
+      </CollapsibleSection>
 
-        <RangePicker range={range} customDays={customDays} onChange={setRange} onCustomChange={setCustomDays} />
+      {/* Weight progress — its own time filter */}
+      <div className="mt-3">
+        <RangePicker range={weightRange} customDays={weightCustomDays} onChange={setWeightRange} onCustomChange={setWeightCustomDays} />
+        <div className="mt-3">
+          <ScrubbableChart
+            def={weightDef}
+            hasData={weightAnalytics.hasData}
+            noDataLabel={`No data for ${selected.name} in the ${rangeSuffix(weightRangeDays, weightIsAll)}`}
+          />
+          {weightAnalytics.hasData && (
+            <div className="space-y-1.5 pt-5">
+              {weightAnalytics.e1rm.has && <StatCard label="Estimated 1RM" value={weightAnalytics.e1rm.value} sub={weightAnalytics.e1rm.sub} />}
+              {weightAnalytics.heaviest.has && <StatCard label="Heaviest weight" value={weightAnalytics.heaviest.value} sub={weightAnalytics.heaviest.sub} />}
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="mt-3">
-        {!hasLogsInRange || !analytics ? (
-          <Card>
-            <div className="px-4 py-6 text-center">
-              <p className="te-label">
-                No data for {selected.name} in the {rangeSuffix(rangeDays, isAll)}
-              </p>
-            </div>
-          </Card>
-        ) : (
-          <>
-            <ProgressPager pages={pages} page={chartPage} onPageChange={setChartPage} />
-
+      {/* Daily completion — its own time filter */}
+      <div className="mt-6">
+        <RangePicker range={dailyRange} customDays={dailyCustomDays} onChange={setDailyRange} onCustomChange={setDailyCustomDays} />
+        <div className="mt-3">
+          <ScrubbableChart
+            def={dailyDef}
+            hasData={dailyAnalytics.hasData}
+            noDataLabel={`No data for ${selected.name} in the ${rangeSuffix(dailyRangeDays, dailyIsAll)}`}
+          />
+          {dailyAnalytics.hasData && (
             <div className="space-y-1.5 pt-5">
-              {chartPage === 0 ? (
-                <>
-                  {analytics.e1rm.has && <StatCard label="Estimated 1RM" value={analytics.e1rm.value} sub={analytics.e1rm.sub} />}
-                  {analytics.heaviest.has && <StatCard label="Heaviest weight" value={analytics.heaviest.value} sub={analytics.heaviest.sub} />}
-                </>
-              ) : (
-                <>
-                  <StatCard label="Average daily" value={`${analytics.avgDaily}%`} sub={analytics.avgDailySub} />
-                  {analytics.heaviest.has && <StatCard label="Heaviest weight" value={analytics.heaviest.value} sub={analytics.heaviest.sub} />}
-                </>
-              )}
+              <StatCard label="Average daily" value={`${dailyAnalytics.avgDaily}%`} sub={dailyAnalytics.avgDailySub} />
             </div>
-          </>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Personal records — bento at the very bottom, opens the full list */}
