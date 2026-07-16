@@ -360,6 +360,18 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
   const autoCollapsedRef = useRef<Set<string>>(loadDaySet('autocollapsed', todayKey));
   const persistAuto = useCallback(() => saveDaySet('autocollapsed', todayKey, autoCollapsedRef.current), [todayKey]);
 
+  // Manual "workout complete" for the day — persisted, and read by the Progress
+  // recap so a session can be finished at any time (>=1 set).
+  const [workoutDone, setWorkoutDone] = useState<boolean>(() => loadDaySet('workoutdone', todayKey).size > 0);
+  function toggleWorkoutDone() {
+    setWorkoutDone(prev => {
+      const next = !prev;
+      saveDaySet('workoutdone', todayKey, next ? new Set(['done']) : new Set());
+      if (next) feedback.workoutDone(); else feedback.skip();
+      return next;
+    });
+  }
+
   const isToday = isSameDay(selectedDate, today);
 
   const libraryByName = useMemo(() =>
@@ -797,6 +809,19 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
             );
           })}
         </div>
+      )}
+
+      {/* Complete workout — finish the session at any time (>=1 logged set) */}
+      {isToday && dayLogs.some(l => l.set_type !== 'warmup') && (
+        <button
+          onClick={toggleWorkoutDone}
+          className="w-full rounded-2xl font-semibold text-[15px] transition-all active:scale-[0.99] flex items-center justify-center gap-2"
+          style={workoutDone
+            ? { height: 52, background: 'rgba(48,209,88,0.14)', color: '#30d158', border: '1px solid rgba(48,209,88,0.3)' }
+            : { height: 52, background: '#f4f1ec', color: '#0a0908' }}
+        >
+          {workoutDone ? (<><CheckIcon className="w-4 h-4 stroke-[2.5]" /> Workout complete</>) : 'Complete workout'}
+        </button>
       )}
 
       <ExerciseLibraryModal
