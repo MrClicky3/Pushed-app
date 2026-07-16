@@ -611,7 +611,6 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
           <ExercisesView
             exercises={exercises}
             logs={logs}
-            onAdd={() => { setExercisePrefill(undefined); setExerciseModal({ open: true, exercise: null }); }}
             onEdit={ex => setExerciseModal({ open: true, exercise: ex })}
             onDelete={deleteExercise}
             onOpenLibrary={() => setLibraryOpen(true)}

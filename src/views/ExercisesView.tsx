@@ -9,7 +9,6 @@ import type { WeightUnit } from '../hooks/useSettings';
 interface Props {
   exercises: Exercise[];
   logs: WorkoutLog[];
-  onAdd: () => void;
   onEdit: (exercise: Exercise) => void;
   onDelete: (id: string) => void;
   onOpenLibrary: () => void;
@@ -19,7 +18,7 @@ interface Props {
 
 const GROUP_ORDER = ['upper', 'lower', 'push', 'pull', 'legs', 'core'];
 
-export default function ExercisesView({ exercises, logs, onAdd, onEdit, onOpenLibrary, unit, toDisplay }: Props) {
+export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, unit, toDisplay }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const PREVIEW_FIGURES = [
@@ -147,12 +146,6 @@ export default function ExercisesView({ exercises, logs, onAdd, onEdit, onOpenLi
             Browse the library to find exercises, or add your own.
           </p>
         </div>
-        <button
-          onClick={onAdd}
-          className="te-label active:opacity-60 transition-opacity py-1 text-center w-full"
-        >
-          or add manually
-        </button>
       </div>
     );
   }
