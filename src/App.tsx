@@ -323,6 +323,9 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
   const [prToast, setPrToast] = useState<{ exerciseName: string; detail: string } | null>(null);
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  // When opening the profile to a specific section (e.g. from the Progress
+  // page competition widget). Cleared once the profile closes.
+  const [profileFocus, setProfileFocus] = useState<'competitions' | null>(null);
 
   // First-run walkthrough. Auto-opens once for new users (data loaded, no
   // exercises yet); re-openable from Settings. Flag is localStorage-only.
@@ -640,6 +643,8 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
             toDisplay={toDisplay}
             routines={routines}
             schedule={schedule}
+            competitions={competitions}
+            onOpenCompetitions={() => { setProfileFocus('competitions'); setShowProfile(true); }}
           />
         )}
 
@@ -880,7 +885,8 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
 
       <ProfilePage
         open={showProfile}
-        onClose={() => setShowProfile(false)}
+        onClose={() => { setShowProfile(false); setProfileFocus(null); }}
+        focusCompetitions={profileFocus === 'competitions'}
         profile={profileRow}
         inviteUrl={inviteUrl}
         friends={friends}

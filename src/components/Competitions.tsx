@@ -549,62 +549,45 @@ export function CompetitionsSection({ comps, friendsList }: {
 // ── Mini widget for the Progress page ───────────────────────────
 // Shows a compact row of active competitions: who's leading and when it ends.
 // Tapping a row opens the full detail sheet (self-contained).
-export function CompetitionMiniWidget({ comps }: {
+// Compact Progress-page banner: the single active competition ending soonest,
+// showing who's leading + time left, with an arrow into the profile's
+// Competitions section.
+export function CompetitionMiniWidget({ comps, onOpen }: {
   comps: CompetitionsApi;
+  onOpen: () => void;
 }) {
-  const [leaders, setLeaders] = useState<Record<string, CompetitionStanding | null>>({});
-  const [detail, setDetail] = useState<CompetitionSummary | null>(null);
+  const [leader, setLeader] = useState<CompetitionStanding | null>(null);
 
-  const active = comps.competitions.filter(c => c.status === 'active');
+  const soonest = comps.competitions
+    .filter(c => c.status === 'active')
+    .sort((a, b) => new Date(a.end_at).getTime() - new Date(b.end_at).getTime())[0] ?? null;
 
   useEffect(() => {
-    if (active.length === 0) return;
+    if (!soonest) { setLeader(null); return; }
     let alive = true;
-    Promise.all(active.map(c => comps.getStandings(c.id).then(rows => [c.id, rows.find(r => r.rank === 1) ?? rows[0] ?? null] as const)))
-      .then(entries => { if (alive) setLeaders(Object.fromEntries(entries)); });
+    comps.getStandings(soonest.id).then(rows => {
+      if (alive) setLeader(rows.find(r => r.rank === 1) ?? rows[0] ?? null);
+    });
     return () => { alive = false; };
-  }, [active.map(c => c.id).join(','), comps]);
+  }, [soonest?.id, comps]);
 
-  if (active.length === 0) return null;
+  if (!soonest) return null;
 
   return (
-    <>
-      <div className="space-y-2">
-        {active.map(comp => {
-          const ld = leaders[comp.id];
-          const sc = ld ? scoreText(comp.track, ld) : null;
-          return (
-            <button
-              key={comp.id}
-              onClick={() => setDetail(comp)}
-              className="te-panel w-full rounded-2xl px-4 py-3 text-left active:bg-white/[0.04] transition-colors"
-            >
-              <div className="flex items-center gap-2.5">
-                <Trophy className="w-3.5 h-3.5 shrink-0" style={{ color: '#e8c15a' }} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-semibold text-[#f4f1ec] tracking-tight truncate">{comp.name}</p>
-                  <p className="te-label mt-0.5">
-                    {ld ? `${ld.display_name || ld.username} leading` : 'Loading…'} · ends {fmtLeft(comp.end_at, '')}
-                  </p>
-                </div>
-                {sc && (
-                  <span className="te-mono text-[13px] tabular-nums shrink-0" style={{ color: sc.color }}>
-                    {sc.text}
-                  </span>
-                )}
-                <ChevronRightIcon className="w-3 h-3 text-white/20 shrink-0" />
-              </div>
-            </button>
-          );
-        })}
+    <button
+      onClick={onOpen}
+      className="te-panel w-full rounded-2xl px-4 py-3 text-left active:bg-white/[0.04] transition-colors mb-[18px]"
+    >
+      <div className="flex items-center gap-2.5">
+        <Trophy className="w-3.5 h-3.5 shrink-0" style={{ color: '#e8c15a' }} />
+        <div className="flex-1 min-w-0">
+          <p className="text-[13px] font-semibold text-[#f4f1ec] tracking-tight truncate">{soonest.name}</p>
+          <p className="te-label mt-0.5 truncate">
+            {leader ? `${leader.display_name || leader.username} leading` : '—'} · ends {fmtLeft(soonest.end_at, '')}
+          </p>
+        </div>
+        <ChevronRightIcon className="w-3.5 h-3.5 text-white/25 shrink-0" />
       </div>
-      <CompetitionSheet
-        open={detail !== null}
-        comp={detail}
-        comps={comps}
-        onClose={() => setDetail(null)}
-        onRematch={() => {}}
-      />
-    </>
+    </button>
   );
 }
