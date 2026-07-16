@@ -21,7 +21,6 @@ interface Props {
   toDisplay: (kg: number) => number;
   routines: Routine[];
   schedule: ScheduleDay[];
-  showDuration?: boolean;
   focusMode?: boolean;
 }
 
@@ -71,12 +70,6 @@ function keyOf(d: Date): string {
 
 function formatTime(dateStr: string): string {
   return new Date(dateStr).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-}
-
-function formatSessionAge(dateStr: string): string {
-  const mins = Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000);
-  if (mins < 60) return `Started ${mins}m ago`;
-  return `Started ${Math.floor(mins / 60)}h ${mins % 60}m ago`;
 }
 
 function groupByExercise(logs: WorkoutLog[]): Map<string, WorkoutLog[]> {
@@ -342,7 +335,7 @@ function SwipeableRow({ skipped, onToggle, children }: { skipped: boolean; onTog
 // ── Main log view ─────────────────────────────────────────────
 type DisplayEntry = { exerciseId: string; exercise: Exercise | undefined; logs: WorkoutLog[] };
 
-export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExercise, onEdit, onDelete: _onDelete, unit, toDisplay, routines, schedule, showDuration = true, focusMode = false }: Props) {
+export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExercise, onEdit, onDelete: _onDelete, unit, toDisplay, routines, schedule, focusMode = false }: Props) {
   const [viewLibraryEx, setViewLibraryEx]     = useState<LibraryExercise | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -486,11 +479,6 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
     return map;
   }, [logs, selectedStart]);
 
-  const sessionStart = useMemo(() => {
-    if (!dayLogs.length) return null;
-    return dayLogs.reduce((a, l) => new Date(l.created_at) < new Date(a.created_at) ? l : a).created_at;
-  }, [dayLogs]);
-
   const grouped = useMemo(() => groupByExercise(dayLogs), [dayLogs]);
 
   // What to render below the calendar:
@@ -527,15 +515,26 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
     return entries;
   }, [grouped, selectedRoutine, exercises, isToday]);
 
-  // Skipped exercises sink to the bottom (today's interactive list only). The
-  // partition is stable, so un-skipping returns an exercise to its original
-  // position.
+  // Today's interactive list is tiered: incomplete on top, then completed,
+  // then skipped at the very bottom. Each partition is stable, so finishing,
+  // skipping, or un-skipping moves an exercise between tiers without
+  // scrambling the rest.
   const orderedEntries: DisplayEntry[] = useMemo(() => {
-    if (!isToday || skippedIds.size === 0) return displayEntries;
-    const active = displayEntries.filter(e => !skippedIds.has(e.exerciseId));
-    const skipped = displayEntries.filter(e => skippedIds.has(e.exerciseId));
-    return [...active, ...skipped];
-  }, [displayEntries, skippedIds, isToday]);
+    if (!isToday) return displayEntries;
+    const isDone = (id: string) => {
+      const target = exercises.find(e => e.id === id)?.sets ?? 0;
+      return target > 0 && (completedSetsMap.get(id) ?? 0) >= target;
+    };
+    const incomplete: DisplayEntry[] = [];
+    const completed: DisplayEntry[] = [];
+    const skipped: DisplayEntry[] = [];
+    for (const e of displayEntries) {
+      if (skippedIds.has(e.exerciseId)) skipped.push(e);
+      else if (isDone(e.exerciseId)) completed.push(e);
+      else incomplete.push(e);
+    }
+    return [...incomplete, ...completed, ...skipped];
+  }, [displayEntries, skippedIds, isToday, exercises, completedSetsMap]);
 
   // Auto-collapse an exercise the moment its last set lands (today only), with
   // the existing collapse animation. A manual re-expand sticks; if the exercise
@@ -593,9 +592,6 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
               {isToday ? 'Today' : selectedLabel}
             </p>
             <div className="flex items-center gap-2 ml-auto">
-              {isToday && sessionStart && showDuration && (
-                <p className="te-label" style={{ color: 'rgba(244,241,236,0.5)' }}>{formatSessionAge(sessionStart)}</p>
-              )}
               {selectedRoutine && (
                 <p className="te-label" style={{ color: '#f4f1ec' }}>{selectedRoutine.name}</p>
               )}
