@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { QueueListIcon, PlusIcon, CheckIcon, ChevronDownIcon, ForwardIcon } from '@heroicons/react/24/outline';
 import { BookOpenIcon } from '@heroicons/react/24/solid';
 import EmptyState from '../components/EmptyState';
@@ -8,7 +8,7 @@ import type { LibraryExercise } from '../data/exerciseLibrary';
 import type { Exercise, WorkoutLog, Routine, ScheduleDay } from '../types';
 import type { WeightUnit } from '../hooks/useSettings';
 import { feedback } from '../lib/feedback';
-import { loadSkips, saveSkips } from '../lib/skips';
+import { loadDaySet, saveDaySet } from '../lib/skips';
 
 interface Props {
   logs: WorkoutLog[];
@@ -343,22 +343,29 @@ function SwipeableRow({ skipped, onToggle, children }: { skipped: boolean; onTog
 type DisplayEntry = { exerciseId: string; exercise: Exercise | undefined; logs: WorkoutLog[] };
 
 export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExercise, onEdit, onDelete: _onDelete, unit, toDisplay, routines, schedule, showDuration = true, focusMode = false }: Props) {
-  const [collapsedIds, setCollapsedIds]       = useState<Set<string>>(new Set());
   const [viewLibraryEx, setViewLibraryEx]     = useState<LibraryExercise | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
-  // Exercises we've auto-collapsed on completion — lets us avoid fighting a
-  // manual re-expand, and re-collapse if an exercise becomes complete again.
-  const autoCollapsedRef = useRef<Set<string>>(new Set());
 
   // Today (stable across renders within the same day)
   const today = useMemo(() => startOfDay(new Date()), []);
+  const todayKey = useMemo(() => keyOf(today), [today]);
   const [selectedDate, setSelectedDate] = useState<Date>(today);
   const [weekStart, setWeekStart]       = useState<Date>(() => mondayOf(today));
 
-  // Skipped exercises persist to localStorage (per day) so a skip survives
+  // Skip + collapse state persist to localStorage (per day) so they survive
   // switching tabs; a new day resets automatically.
-  const [skippedIds, setSkippedIds] = useState<Set<string>>(() => loadSkips(keyOf(today)));
-  useEffect(() => { saveSkips(keyOf(today), skippedIds); }, [skippedIds, today]);
+  const [skippedIds, setSkippedIds] = useState<Set<string>>(() => loadDaySet('skips', todayKey));
+  useEffect(() => { saveDaySet('skips', todayKey, skippedIds); }, [skippedIds, todayKey]);
+
+  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(() => loadDaySet('collapsed', todayKey));
+  useEffect(() => { saveDaySet('collapsed', todayKey, collapsedIds); }, [collapsedIds, todayKey]);
+
+  // Exercises we've auto-collapsed on completion — lets us avoid fighting a
+  // manual re-expand, and re-collapse if an exercise becomes complete again.
+  // Persisted so the auto-collapse doesn't re-fire (and override a manual
+  // expand) after a tab switch.
+  const autoCollapsedRef = useRef<Set<string>>(loadDaySet('autocollapsed', todayKey));
+  const persistAuto = useCallback(() => saveDaySet('autocollapsed', todayKey, autoCollapsedRef.current), [todayKey]);
 
   const isToday = isSameDay(selectedDate, today);
 
@@ -520,6 +527,16 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
     return entries;
   }, [grouped, selectedRoutine, exercises, isToday]);
 
+  // Skipped exercises sink to the bottom (today's interactive list only). The
+  // partition is stable, so un-skipping returns an exercise to its original
+  // position.
+  const orderedEntries: DisplayEntry[] = useMemo(() => {
+    if (!isToday || skippedIds.size === 0) return displayEntries;
+    const active = displayEntries.filter(e => !skippedIds.has(e.exerciseId));
+    const skipped = displayEntries.filter(e => skippedIds.has(e.exerciseId));
+    return [...active, ...skipped];
+  }, [displayEntries, skippedIds, isToday]);
+
   // Auto-collapse an exercise the moment its last set lands (today only), with
   // the existing collapse animation. A manual re-expand sticks; if the exercise
   // later drops below its target again it re-expands so you can keep logging.
@@ -535,6 +552,7 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
       else if (!done && auto.has(exerciseId)) { auto.delete(exerciseId); toExpand.push(exerciseId); }
     }
     if (toCollapse.length || toExpand.length) {
+      persistAuto();
       setCollapsedIds(prev => {
         const next = new Set(prev);
         toCollapse.forEach(id => next.add(id));
@@ -542,7 +560,7 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
         return next;
       });
     }
-  }, [completedSetsMap, displayEntries, isToday]);
+  }, [completedSetsMap, displayEntries, isToday, persistAuto]);
 
   const selectedLabel = selectedDate.toLocaleDateString('en-US', {
     weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
@@ -611,7 +629,7 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
         )
       ) : (
         <div ref={listRef} className="space-y-3.5">
-          {displayEntries.map(({ exerciseId, exercise, logs: exerciseLogs }) => {
+          {orderedEntries.map(({ exerciseId, exercise, logs: exerciseLogs }) => {
             const targetSets      = exercise?.sets ?? 0;
             const workingLogs     = exerciseLogs.filter(l => l.set_type !== 'warmup');
             const totalSets       = workingLogs.length;
@@ -634,7 +652,7 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
               };
               setSkippedIds(toggle);
               setCollapsedIds(toggle);
-              if (wasSkipped) autoCollapsedRef.current.delete(exerciseId);
+              if (wasSkipped) { autoCollapsedRef.current.delete(exerciseId); persistAuto(); }
             }
 
             const card = (
