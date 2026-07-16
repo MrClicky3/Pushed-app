@@ -68,7 +68,7 @@ function categoryColor(group: string): string {
 }
 
 function Card({ children }: { children: React.ReactNode }) {
-  return <div className="te-panel rounded-2xl overflow-hidden">{children}</div>;
+  return <div className="te-panel-dark rounded-2xl overflow-hidden">{children}</div>;
 }
 
 interface ChartPoint { value: number; label: string; shortLabel?: string; tooltipLabel?: string; }
@@ -132,16 +132,41 @@ function ScrubChart({
   const lineD = (() => {
     const n = xs.length;
     if (n === 2) return `M ${xs[0].toFixed(1)} ${ys[0].toFixed(1)} L ${xs[1].toFixed(1)} ${ys[1].toFixed(1)}`;
-    const clampY = (v: number) => Math.max(C_PT, Math.min(areaBot, v));
-    const gx = (i: number) => xs[Math.max(0, Math.min(n - 1, i))];
-    const gy = (i: number) => ys[Math.max(0, Math.min(n - 1, i))];
+    // Monotone cubic (Fritsch–Carlson): a smooth curve through every real data
+    // point that never overshoots between them. This keeps the line free of
+    // sharp corners while guaranteeing it never invents a peak/dip that isn't
+    // in the data — so scrubbing always lands on a value the chart actually shows.
+    const dxs: number[] = [];
+    const slopes: number[] = [];
+    for (let i = 0; i < n - 1; i++) {
+      const dx = xs[i + 1] - xs[i] || 1e-6;
+      dxs.push(dx);
+      slopes.push((ys[i + 1] - ys[i]) / dx);
+    }
+    const m: number[] = new Array(n);
+    m[0] = slopes[0];
+    m[n - 1] = slopes[n - 2];
+    for (let i = 1; i < n - 1; i++) {
+      m[i] = slopes[i - 1] * slopes[i] <= 0 ? 0 : (slopes[i - 1] + slopes[i]) / 2;
+    }
+    for (let i = 0; i < n - 1; i++) {
+      if (slopes[i] === 0) { m[i] = 0; m[i + 1] = 0; continue; }
+      const a = m[i] / slopes[i];
+      const b = m[i + 1] / slopes[i];
+      const h = a * a + b * b;
+      if (h > 9) {
+        const t = 3 / Math.sqrt(h);
+        m[i] = t * a * slopes[i];
+        m[i + 1] = t * b * slopes[i];
+      }
+    }
     let d = `M ${xs[0].toFixed(1)} ${ys[0].toFixed(1)}`;
     for (let i = 0; i < n - 1; i++) {
-      const c1x = gx(i) + (gx(i + 1) - gx(i - 1)) / 6;
-      const c1y = clampY(gy(i) + (gy(i + 1) - gy(i - 1)) / 6);
-      const c2x = gx(i + 1) - (gx(i + 2) - gx(i)) / 6;
-      const c2y = clampY(gy(i + 1) - (gy(i + 2) - gy(i)) / 6);
-      d += ` C ${c1x.toFixed(1)} ${c1y.toFixed(1)} ${c2x.toFixed(1)} ${c2y.toFixed(1)} ${gx(i + 1).toFixed(1)} ${gy(i + 1).toFixed(1)}`;
+      const c1x = xs[i] + dxs[i] / 3;
+      const c1y = ys[i] + (m[i] * dxs[i]) / 3;
+      const c2x = xs[i + 1] - dxs[i] / 3;
+      const c2y = ys[i + 1] - (m[i + 1] * dxs[i]) / 3;
+      d += ` C ${c1x.toFixed(1)} ${c1y.toFixed(1)} ${c2x.toFixed(1)} ${c2y.toFixed(1)} ${xs[i + 1].toFixed(1)} ${ys[i + 1].toFixed(1)}`;
     }
     return d;
   })();
@@ -415,7 +440,7 @@ function StatCard({ label, value, sub }: { label: string; value: string; sub: st
   return (
     <div
       className="rounded-[20px] px-[18px] py-[12px] flex items-center justify-between gap-3"
-      style={{ background: '#141414', border: '1px solid #1a1a1a' }}
+      style={{ background: '#0f0f0f', border: '1px solid #1a1a1a' }}
     >
       <p className="text-[15px] font-semibold text-white tracking-tight">{label}</p>
       <div className="text-right shrink-0">
@@ -450,7 +475,7 @@ function CustomRangeSlider({ value, onChange }: { value: number; onChange: (v: n
   }
 
   return (
-    <div className="te-panel rounded-xl px-4 py-[12px] mt-1.5">
+    <div className="te-panel-dark rounded-xl px-4 py-[12px] mt-1.5">
       <div className="flex items-center justify-between mb-[10px]">
         <span className="te-label">Custom range</span>
         <span className="text-[13px] font-bold text-white tabular-nums te-digit">{display}</span>
@@ -720,7 +745,7 @@ function GroupedExercisePicker({
   const allGroups = [...orderedGroups, ...otherGroups];
 
   return (
-    <div className="te-panel rounded-2xl overflow-hidden">
+    <div className="te-panel-dark rounded-2xl overflow-hidden">
       {allGroups.map((group, gi) => (
         <div key={group}>
           {gi > 0 && <div className="h-px bg-white/[0.06] mx-3" />}
@@ -860,7 +885,7 @@ function SessionRecapCard({
   if (!todayLogs.length || dismissed) return null;
 
   return (
-    <div className="te-panel rounded-2xl overflow-hidden">
+    <div className="te-panel-dark rounded-2xl overflow-hidden">
       <div
         className="px-4 pt-4 pb-3 flex items-start justify-between gap-3"
         style={{ background: 'rgba(48,209,88,0.13)' }}
@@ -1225,7 +1250,7 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
           {isTodayComplete ? (
             <SessionRecapCard logs={logs} exercises={exercises} unit={unit} toDisplay={toDisplay} />
           ) : (
-            <div className="te-panel rounded-2xl px-4 py-5">
+            <div className="te-panel-dark rounded-2xl px-4 py-5">
               <p className="te-label" style={{ fontSize: 11 }}>
                 Complete all exercises to unlock your session recap.
               </p>
@@ -1297,7 +1322,7 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
       {/* Personal records — bento at the very bottom, opens the full list */}
       <button
         onClick={() => setPrOpen(true)}
-        className="te-panel w-full rounded-2xl px-4 py-3.5 mt-3 flex items-center gap-3 active:bg-white/[0.04] transition-colors text-left"
+        className="te-panel-dark w-full rounded-2xl px-4 py-3.5 mt-3 flex items-center gap-3 active:bg-white/[0.04] transition-colors text-left"
       >
         <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: 'rgba(48,209,88,0.14)' }}>
           <TrophyIcon className="w-4 h-4" style={{ color: '#30d158' }} />
@@ -1313,9 +1338,9 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
 
       <Modal open={prOpen} onClose={() => setPrOpen(false)} title="Personal records">
         {prs.length === 0 ? (
-          <div className="te-panel rounded-2xl px-4 py-8 text-center te-label">No records yet</div>
+          <div className="te-panel-dark rounded-2xl px-4 py-8 text-center te-label">No records yet</div>
         ) : (
-          <div className="te-panel rounded-2xl overflow-hidden divide-y divide-white/[0.05]">
+          <div className="te-panel-dark rounded-2xl overflow-hidden divide-y divide-white/[0.05]">
             {prs.map(pr => (
               <div key={pr.id} className="flex items-center px-4 py-[14px] gap-3">
                 <div className="flex-1 min-w-0">

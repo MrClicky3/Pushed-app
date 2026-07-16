@@ -46,6 +46,13 @@ body {
     border-radius: 18px;
   }
 
+  /* ─── TE Panel Dark: slightly deeper matte surface for analytics bento cards ─── */
+  .te-panel-dark {
+    background: #0f0f0f;
+    border: 1px solid var(--te-border);
+    border-radius: 18px;
+  }
+
   /* ─── TE Inset: recessed black well ─── */
   .te-inset {
     background: #050503;
@@ -123,6 +130,33 @@ body {
   .te-toggle-mono {
     background: #d0d0d2;
     color: #0a0908;
+  }
+
+  /* ─── TE White Button: primary action pill with a two-stage physical press.
+     Idle: white surface raised "popped out" above the page. Pressed: the
+     surface sinks in and the shadows invert so it reads as pushed down like a
+     real button. ─── */
+  .te-white-btn {
+    background: #d0d0d2;
+    color: #0a0908;
+    border: 1px solid #b6b6b9;
+    box-shadow:
+      0 2px 0 #9d9da0,
+      0 4px 9px rgba(0,0,0,0.45),
+      inset 0 1px 0 rgba(255,255,255,0.75);
+    transition: transform 90ms ease, box-shadow 90ms ease, background 90ms ease;
+    transform: translateY(-1px);
+  }
+  .te-white-btn:active {
+    transform: translateY(1px);
+    background: #c4c4c7;
+    box-shadow:
+      inset 0 2px 6px rgba(0,0,0,0.34),
+      inset 0 1px 2px rgba(0,0,0,0.22),
+      0 0 0 1px rgba(0,0,0,0.12);
+  }
+  .te-white-btn:disabled {
+    transform: translateY(-1px);
   }
 
   /* ─── TE OP-1 style button (raised pad with circle inset) ─── */

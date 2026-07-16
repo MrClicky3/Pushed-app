@@ -110,13 +110,6 @@ function FieldInput({
   );
 }
 
-const PRIMARY: React.CSSProperties = {
-  background: '#ffffff',
-  color: '#000000',
-  boxShadow: '0 0 7.5px rgba(0,0,0,0.25)',
-  border: '1px solid #262626',
-};
-
 export default function AuthView({ onSignIn, onSignUp, onResend, onVerifyOtp, onResetPassword, onGoogle }: Props) {
   const [mode, setMode]   = useState<Mode>('signin');
   const [step, setStep]   = useState<Step>('form');
@@ -202,8 +195,7 @@ export default function AuthView({ onSignIn, onSignUp, onResend, onVerifyOtp, on
       <button
         type="submit"
         disabled={loading || disabled}
-        className="w-full h-[55px] rounded-full font-semibold text-[15px] tracking-tight transition-all disabled:opacity-40 active:opacity-80 flex items-center justify-center"
-        style={PRIMARY}
+        className="te-white-btn w-full h-[55px] rounded-full font-semibold text-[15px] tracking-tight disabled:opacity-40 flex items-center justify-center"
       >
         {loading ? (
           <span className="inline-flex items-center justify-center gap-2">

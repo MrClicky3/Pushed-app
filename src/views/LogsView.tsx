@@ -94,7 +94,7 @@ function DayRing({
   onSelect: (d: Date) => void;
 }) {
   const size = 34;
-  const stroke = 2.4;
+  const stroke = 3;
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const dash = c * Math.max(0, Math.min(1, progress));
@@ -372,13 +372,25 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
     });
   }
 
+  // Auto-prompt to finish once every planned exercise on a routine day is done
+  // or skipped. Dismissible so it doesn't nag; not persisted (a fresh session
+  // may want to re-surface it).
+  const [promptDismissed, setPromptDismissed] = useState(false);
+  function completeFromPrompt() {
+    if (!workoutDone) toggleWorkoutDone();
+    setPromptDismissed(true);
+  }
+
   const isToday = isSameDay(selectedDate, today);
 
   const libraryByName = useMemo(() =>
     new Map(EXERCISE_LIBRARY.map(e => [e.name.toLowerCase(), e])),
   []);
 
-  function toggleCollapsed(id: string) {
+  function toggleCollapsed(id: string, locked = false) {
+    // Once the workout is complete, finished exercises stay collapsed — only
+    // still-incomplete ones can be re-opened.
+    if (locked) return;
     setCollapsedIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
   }
 
@@ -573,9 +585,40 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
     }
   }, [completedSetsMap, displayEntries, isToday, persistAuto]);
 
+  // When the workout is marked complete, collapse every exercise. Fires only on
+  // the transition into the complete stage so it doesn't fight a user re-opening
+  // an incomplete exercise afterwards.
+  const wasWorkoutDoneRef = useRef(workoutDone);
+  useEffect(() => {
+    if (workoutDone && !wasWorkoutDoneRef.current) {
+      setCollapsedIds(prev => {
+        const next = new Set(prev);
+        for (const { exerciseId } of displayEntries) next.add(exerciseId);
+        return next;
+      });
+    }
+    wasWorkoutDoneRef.current = workoutDone;
+  }, [workoutDone, displayEntries]);
+
   const selectedLabel = selectedDate.toLocaleDateString('en-US', {
     weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
   });
+
+  // On a routine day, the whole session is "complete" once every planned
+  // exercise is either done (target sets logged) or skipped.
+  const routineComplete = useMemo(() => {
+    if (!isToday || !selectedRoutine) return false;
+    const ids = selectedRoutine.exercise_ids;
+    if (ids.length === 0) return false;
+    return ids.every(id => {
+      if (skippedIds.has(id)) return true;
+      const target = exercises.find(e => e.id === id)?.sets ?? 0;
+      if (target <= 0) return true;
+      return (completedSetsMap.get(id) ?? 0) >= target;
+    });
+  }, [isToday, selectedRoutine, skippedIds, exercises, completedSetsMap]);
+
+  const showCompletePrompt = routineComplete && !workoutDone && !promptDismissed;
 
   return (
     <div className="space-y-4">
@@ -668,7 +711,7 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
                 <div className="flex items-center justify-between mb-2">
                   <button
                     className="flex-1 text-left active:opacity-70 transition-opacity min-w-0"
-                    onClick={() => toggleCollapsed(exerciseId)}
+                    onClick={() => toggleCollapsed(exerciseId, workoutDone && isDone)}
                   >
                     <div className="flex items-baseline min-w-0">
                       <p className="text-[16px] font-semibold text-[#f4f1ec] tracking-tight truncate min-w-0" style={{ letterSpacing: '-0.01em' }}>
@@ -715,7 +758,7 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
                         <BookOpenIcon className="w-4 h-4" />
                       </button>
                     )}
-                    <button onClick={() => toggleCollapsed(exerciseId)} className="p-1 text-white/20 active:text-white/50 transition-colors">
+                    <button onClick={() => toggleCollapsed(exerciseId, workoutDone && isDone)} className="p-1 text-white/20 active:text-white/50 transition-colors">
                       <ChevronDownIcon
                         className="w-4 h-4 transition-transform duration-200"
                         style={{ transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}
@@ -760,8 +803,11 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between gap-2">
                                 <div className="flex items-center gap-2 min-w-0">
-                                  <span className="te-mono text-[14px] font-normal text-white/45 tabular-nums leading-none">
-                                    {log.reps_done}{exercise?.target_reps ? `/${exercise.target_reps}` : ''} reps
+                                  <span className="flex items-baseline gap-1.5 shrink-0">
+                                    <span className="te-digit text-[15px] font-semibold text-white/75 tabular-nums leading-none">
+                                      {log.reps_done}{exercise?.target_reps ? `/${exercise.target_reps}` : ''}
+                                    </span>
+                                    <span className="te-label" style={{ fontSize: 9 }}>reps</span>
                                   </span>
                                   {log.set_type === 'warmup' && <SetBadge kind="warmup" />}
                                   {log.set_type === 'drop' && <SetBadge kind="drop" />}
@@ -779,7 +825,7 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
                       </div>
                     )}
 
-                    {exercise && isToday && !isSkipped && (
+                    {exercise && isToday && !isSkipped && !workoutDone && (
                       <button
                         onClick={() => onAddForExercise(exercise)}
                         className="w-full mt-2 py-3.5 rounded-xl bg-transparent te-label active:bg-white/[0.03] transition-all flex items-center justify-center gap-1.5"
@@ -811,17 +857,61 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
         </div>
       )}
 
-      {/* Complete workout — finish the session at any time (>=1 logged set) */}
-      {isToday && dayLogs.some(l => l.set_type !== 'warmup') && (
+      {/* Complete workout — manual finish for non-routine days (routine days use
+          the auto prompt instead). Shown once >=1 working set is logged. */}
+      {isToday && !selectedRoutine && dayLogs.some(l => l.set_type !== 'warmup') && (
         <button
           onClick={toggleWorkoutDone}
-          className="w-full rounded-2xl font-semibold text-[15px] transition-all active:scale-[0.99] flex items-center justify-center gap-2"
+          className={`w-full rounded-2xl font-semibold text-[15px] flex items-center justify-center gap-2 select-none ${
+            workoutDone ? 'te-toggle-on' : 'te-white-btn'
+          }`}
           style={workoutDone
-            ? { height: 52, background: 'rgba(48,209,88,0.14)', color: '#30d158', border: '1px solid rgba(48,209,88,0.3)' }
-            : { height: 52, background: '#f4f1ec', color: '#0a0908' }}
+            ? { height: 52, background: '#30d158', color: '#0a0908' }
+            : { height: 52 }}
         >
           {workoutDone ? (<><CheckIcon className="w-4 h-4 stroke-[2.5]" /> Workout complete</>) : 'Complete workout'}
         </button>
+      )}
+
+      {/* Routine-complete prompt — every planned exercise is done or skipped */}
+      {showCompletePrompt && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center px-4"
+          style={{ paddingBottom: 'calc(96px + env(safe-area-inset-bottom, 0px))' }}
+        >
+          <div
+            className="absolute inset-0 bg-black/50 animate-fade-in"
+            onClick={() => setPromptDismissed(true)}
+          />
+          <div className="relative w-full max-w-lg te-panel rounded-[22px] px-5 py-5 animate-slide-up z-10">
+            <div className="flex items-center gap-2 mb-1.5">
+              <div className="flex items-center justify-center rounded-full" style={{ width: 20, height: 20, background: 'rgba(48,209,88,0.14)' }}>
+                <CheckIcon className="w-3 h-3 stroke-[2.5]" style={{ color: '#30d158' }} />
+              </div>
+              <p className="text-[16px] font-semibold text-[#f4f1ec] tracking-tight" style={{ letterSpacing: '-0.01em' }}>
+                All exercises done
+              </p>
+            </div>
+            <p className="text-[13px] mb-4" style={{ color: 'rgba(244,241,236,0.5)' }}>
+              You've finished every exercise in {selectedRoutine?.name}. Complete this workout?
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setPromptDismissed(true)}
+                className="te-toggle-off flex-1 py-[10px] rounded-[12px] text-[13px] font-semibold select-none"
+                style={{ color: 'rgba(255,255,255,0.5)' }}
+              >
+                Not yet
+              </button>
+              <button
+                onClick={completeFromPrompt}
+                className="te-white-btn flex-1 py-[10px] rounded-[12px] text-[13px] font-semibold select-none"
+              >
+                Complete
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <ExerciseLibraryModal

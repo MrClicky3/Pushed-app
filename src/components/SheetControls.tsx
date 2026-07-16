@@ -13,13 +13,6 @@ export const SECTION_LABEL: CSSProperties = {
   letterSpacing: '-0.17px',
 };
 
-// White primary action pill (Add exercise / Log set).
-export const WHITE_BUTTON: CSSProperties = {
-  background: '#ffffff',
-  border: '1px solid #262626',
-  boxShadow: '0 0 7.5px rgba(0,0,0,0.25)',
-};
-
 // Segmented / choice pill — white when active, recessed dark when idle.
 export function ToggleButton({
   active, onClick, label, className = '', heightPx = 45,
