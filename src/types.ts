@@ -164,3 +164,16 @@ export interface Badge {
   tier: BadgeTier;
   awarded_at: string;
 }
+
+// get_friend_activity() — aggregate activity for a friend's profile view.
+export interface ActivityWindow {
+  volume: number;
+  sets: number;
+  active_days: number;
+}
+
+export interface FriendActivity {
+  d7: ActivityWindow;
+  d30: ActivityWindow;
+  d90: ActivityWindow;
+}

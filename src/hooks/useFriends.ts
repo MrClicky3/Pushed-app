@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import type {
-  Friendship, PendingRequest, RelationState, LeaderboardRow, VolumeRow,
+  Friendship, PendingRequest, RelationState, LeaderboardRow, VolumeRow, FriendActivity,
 } from '../types';
 
 export interface ProfileLite {
@@ -162,6 +162,18 @@ export function useFriends(userId: string) {
     return (data as VolumeRow[]) ?? [];
   }, []);
 
+  // Friend profile view: full profile (incl. bio) + aggregate activity.
+  const loadFriendProfile = useCallback(async (id: string): Promise<(ProfileLite & { bio: string | null }) | null> => {
+    const { data } = await supabase
+      .from('profiles').select('id,username,display_name,avatar_url,bio').eq('id', id).maybeSingle();
+    return (data as (ProfileLite & { bio: string | null }) | null) ?? null;
+  }, []);
+
+  const loadFriendActivity = useCallback(async (id: string): Promise<FriendActivity | null> => {
+    const { data } = await supabase.rpc('get_friend_activity', { p_user_id: id });
+    return (data as FriendActivity) ?? null;
+  }, []);
+
   return {
     loading,
     friendCount: acceptedIds.size,
@@ -176,6 +188,8 @@ export function useFriends(userId: string) {
     acceptInvite,
     loadStreakBoard,
     loadVolumeBoard,
+    loadFriendProfile,
+    loadFriendActivity,
     reload: loadFriendships,
   };
 }
