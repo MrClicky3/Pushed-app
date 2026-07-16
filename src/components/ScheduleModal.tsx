@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
 import {
-  ChevronLeftIcon,
   ChevronRightIcon,
   PlusIcon,
   ArrowDownTrayIcon,
 } from '@heroicons/react/24/outline';
-import Modal from './Modal';
+import FullPageSheet from './FullPageSheet';
 import type { Routine, ScheduleDay, WorkoutLog } from '../types';
 import type { Exercise } from '../types';
 import type { WeightUnit } from '../hooks/useSettings';
@@ -228,7 +227,7 @@ export default function ScheduleModal({
   // ── Main view ──────────────────────────────────────────────────
   if (view.type === 'main') {
     return (
-      <Modal open={open} onClose={onClose} title="">
+      <FullPageSheet open={open} onClose={onClose} title="Settings" padded>
         <div className="space-y-6">
 
           {/* Report a bug — prominent CTA for beta feedback */}
@@ -544,14 +543,14 @@ export default function ScheduleModal({
 
         </div>
         <ReportBugSheet open={reportOpen} onClose={() => setReportOpen(false)} context="Settings" />
-      </Modal>
+      </FullPageSheet>
     );
   }
 
   // ── Weekly plan & routines page ────────────────────────────────
   if (view.type === 'plan') {
     return (
-      <Modal open={open} onClose={onClose} title="Weekly plan" onBack={() => setView({ type: 'main' })}>
+      <FullPageSheet open={open} onClose={onClose} title="Weekly plan" onBack={() => setView({ type: 'main' })} padded>
         <div className="space-y-6">
 
           {/* Weekly plan section */}
@@ -615,7 +614,7 @@ export default function ScheduleModal({
           </div>
 
         </div>
-      </Modal>
+      </FullPageSheet>
     );
   }
 
@@ -626,19 +625,8 @@ export default function ScheduleModal({
     const currentRoutineId = currentEntry?.routine_id ?? null;
 
     return (
-      <Modal open={open} onClose={onClose} title="" onBack={() => setView({ type: 'plan' })}>
+      <FullPageSheet open={open} onClose={onClose} title={DAY_NAMES[day]} onBack={() => setView({ type: 'plan' })} padded>
         <div className="space-y-4">
-          {/* Header */}
-          <div className="flex items-center gap-3 mb-1">
-            <button
-              onClick={() => setView({ type: 'plan' })}
-              className="p-1 -ml-1 text-white/30 active:text-white/60 transition-colors shrink-0"
-            >
-              <ChevronLeftIcon className="w-5 h-5" />
-            </button>
-            <span className="te-label">{DAY_NAMES[day]}</span>
-          </div>
-
           {/* Rest option */}
           <button
             onClick={() => {
@@ -682,7 +670,7 @@ export default function ScheduleModal({
             <p className="te-label text-center py-4">No routines yet. Create one first.</p>
           )}
         </div>
-      </Modal>
+      </FullPageSheet>
     );
   }
 
@@ -690,19 +678,8 @@ export default function ScheduleModal({
   const isEditing = view.type === 'routine' && view.routine !== null;
 
   return (
-    <Modal open={open} onClose={onClose} title="" onBack={() => setView({ type: 'plan' })}>
+    <FullPageSheet open={open} onClose={onClose} title={isEditing ? 'Edit Routine' : 'New Routine'} onBack={() => setView({ type: 'plan' })} padded>
       <div className="space-y-4">
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-1">
-          <button
-            onClick={() => setView({ type: 'plan' })}
-            className="p-1 -ml-1 text-white/30 active:text-white/60 transition-colors shrink-0"
-          >
-            <ChevronLeftIcon className="w-5 h-5" />
-          </button>
-          <span className="te-label">{isEditing ? 'Edit Routine' : 'New Routine'}</span>
-        </div>
-
         {/* Name input */}
         <input
           type="text"
@@ -793,6 +770,6 @@ export default function ScheduleModal({
           </button>
         )}
       </div>
-    </Modal>
+    </FullPageSheet>
   );
 }
