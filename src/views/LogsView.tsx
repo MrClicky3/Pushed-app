@@ -631,7 +631,7 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
           // Day has no routine scheduled
           <EmptyState
             icon={<QueueListIcon className="w-7 h-7 text-apple-label-tertiary" />}
-            title="Your workout logs will appear here"
+            title="Your logs will appear here"
             subtitle="No routine is scheduled for this day."
           />
         )
