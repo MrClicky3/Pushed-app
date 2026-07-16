@@ -37,7 +37,6 @@ interface Props {
   onDeleteRoutine: (id: string) => void;
   onAssignDay: (day_of_week: number, routine_id: string | null) => void;
   onSignOut: () => void;
-  onReplayGuide: () => void;
   userName: string;
   onUpdateName: (name: string) => Promise<string | null>;
   timerDuration: number;
@@ -117,7 +116,6 @@ export default function ScheduleModal({
   onDeleteRoutine,
   onAssignDay,
   onSignOut,
-  onReplayGuide,
   userName,
   onUpdateName,
   timerDuration,
@@ -434,17 +432,6 @@ export default function ScheduleModal({
                 </div>
               </div>
 
-              {/* App guide */}
-              <button
-                onClick={onReplayGuide}
-                className="w-full flex items-center justify-between px-4 py-3.5 gap-3 active:bg-white/[0.03] transition-colors text-left"
-              >
-                <div className="min-w-0">
-                  <p className="text-[14px] font-medium text-[#f4f1ec] tracking-tight">App guide</p>
-                  <p className="te-label mt-0.5">Replay the gesture walkthrough</p>
-                </div>
-                <ChevronRightIcon className="w-3.5 h-3.5 text-white/20 shrink-0" />
-              </button>
 
             </div>
           </div>

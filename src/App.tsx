@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import {
   BoltIcon,
   QueueListIcon,
@@ -27,7 +27,6 @@ import ScheduleModal from './components/ScheduleModal';
 import ProfilePage from './components/ProfilePage';
 import Avatar from './components/Avatar';
 import EdgeSwipePeek from './components/EdgeSwipePeek';
-import Walkthrough from './components/Walkthrough';
 import UsernameSetupModal from './components/UsernameSetupModal';
 import ExerciseLibraryModal from './components/ExerciseLibraryModal';
 import { calcStreak, calcConsistency } from './lib/streak';
@@ -327,21 +326,6 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
   // page competition widget). Cleared once the profile closes.
   const [profileFocus, setProfileFocus] = useState<'competitions' | null>(null);
 
-  // First-run walkthrough. Auto-opens once for new users (data loaded, no
-  // exercises yet); re-openable from Settings. Flag is localStorage-only.
-  const WALKTHROUGH_KEY = 'overload_walkthrough_v1';
-  const [showGuide, setShowGuide] = useState(false);
-  useEffect(() => {
-    if (loading || needsUsername || !profileRow) return;
-    let seen = true;
-    try { seen = localStorage.getItem(WALKTHROUGH_KEY) === 'done'; } catch { /* ignore */ }
-    if (!seen && exercises.length === 0) setShowGuide(true);
-  }, [loading, needsUsername, profileRow, exercises.length]);
-  const closeGuide = useCallback(() => {
-    setShowGuide(false);
-    try { localStorage.setItem(WALKTHROUGH_KEY, 'done'); } catch { /* ignore */ }
-  }, []);
-
   const profileName = profileRow?.display_name || profileRow?.username || userName || 'You';
 
   // Rest timer
@@ -605,7 +589,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
           </h1>
           {/* Nudge down so the switch track sits on the title's baseline,
               compensating for the switch's own bottom padding. */}
-          <div style={{ transform: 'translateY(5px)' }} data-guide="focus">
+          <div style={{ transform: 'translateY(5px)' }}>
             <FocusModeSwitch active={focusMode} onToggle={toggleFocus} />
           </div>
         </div>
@@ -682,7 +666,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
         onTouchCancel={onDockTouchCancel}
       >
         {/* Relative wrapper anchors the swipe-up affordance above the bar. */}
-        <div style={{ position: 'relative' }} data-guide="dock">
+        <div style={{ position: 'relative' }}>
           {/* Swipe-up-to-add affordance — a faint gray "+" whose radial ring
               fills as you drag up; release past full to fire the add. Only
               visible mid-swipe. */}
@@ -734,7 +718,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
           {/* Tabs — hidden in focus mode */}
           {/* Swipe-up line — the grabber you drag up on to add. */}
           <div className="flex justify-center" style={{ paddingTop: 6, paddingBottom: 2 }}>
-            <div data-guide="swipeline" style={{ width: 68, height: 4, borderRadius: 99, background: 'rgba(255,255,255,0.16)' }} />
+            <div style={{ width: 68, height: 4, borderRadius: 99, background: 'rgba(255,255,255,0.16)' }} />
           </div>
 
           {/* Tabs — plain flat bar (no skeuomorphic panel), hidden in focus mode. */}
@@ -899,19 +883,6 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
         updateBio={updateBio}
       />
 
-      <Walkthrough
-        open={showGuide}
-        onClose={closeGuide}
-        focusMode={focusMode}
-        onToggleFocus={toggleFocus}
-        onGoTab={switchTab}
-        onDemoAddLog={() => setLogModal({ open: true, exercise: null, editLog: null })}
-        onDemoAddExercise={() => { setExercisePrefill(undefined); setExerciseModal({ open: true, exercise: null }); }}
-        onDemoCloseAdd={() => { setLogModal({ open: false, exercise: null, editLog: null }); setExerciseModal({ open: false, exercise: null }); }}
-        onOpenProfile={() => setShowProfile(true)}
-        onCloseProfile={() => setShowProfile(false)}
-      />
-
       {needsUsername && <UsernameSetupModal onCreate={createProfile} />}
 
       {inviteToast && (
@@ -936,7 +907,6 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
         onDeleteRoutine={deleteRoutine}
         onAssignDay={assignDay}
         onSignOut={onSignOut}
-        onReplayGuide={() => { setScheduleOpen(false); setShowGuide(true); }}
         userName={userName}
         onUpdateName={onUpdateName}
         timerDuration={timerDuration}

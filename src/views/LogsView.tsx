@@ -8,6 +8,7 @@ import type { LibraryExercise } from '../data/exerciseLibrary';
 import type { Exercise, WorkoutLog, Routine, ScheduleDay } from '../types';
 import type { WeightUnit } from '../hooks/useSettings';
 import { feedback } from '../lib/feedback';
+import { loadSkips, saveSkips } from '../lib/skips';
 
 interface Props {
   logs: WorkoutLog[];
@@ -271,8 +272,8 @@ function WeekCalendar({
   );
 }
 
-// ── Swipeable row — swipe right to skip ───────────────────────
-function SwipeableRow({ onSkip, children }: { onSkip: () => void; children: React.ReactNode }) {
+// ── Swipeable row — swipe right to skip, swipe right again to un-skip ──
+function SwipeableRow({ skipped, onToggle, children }: { skipped: boolean; onToggle: () => void; children: React.ReactNode }) {
   const [dx, setDx] = useState(0);
   const [snapping, setSnapping] = useState(false);
   const startX = useRef(0);
@@ -298,7 +299,7 @@ function SwipeableRow({ onSkip, children }: { onSkip: () => void; children: Reac
   function onTouchEnd() {
     active.current = false;
     setSnapping(true);
-    if (dx >= THRESHOLD) onSkip();
+    if (dx >= THRESHOLD) onToggle();
     setDx(0);
   }
 
@@ -318,7 +319,7 @@ function SwipeableRow({ onSkip, children }: { onSkip: () => void; children: Reac
         <span style={{
           fontFamily: "'Geist Mono', monospace", fontSize: 10, fontWeight: 600,
           letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)',
-        }}>Skip</span>
+        }}>{skipped ? 'Unskip' : 'Skip'}</span>
       </div>
       {/* Card */}
       <div
@@ -344,7 +345,6 @@ type DisplayEntry = { exerciseId: string; exercise: Exercise | undefined; logs: 
 export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExercise, onEdit, onDelete: _onDelete, unit, toDisplay, routines, schedule, showDuration = true, focusMode = false }: Props) {
   const [collapsedIds, setCollapsedIds]       = useState<Set<string>>(new Set());
   const [viewLibraryEx, setViewLibraryEx]     = useState<LibraryExercise | null>(null);
-  const [skippedIds, setSkippedIds]           = useState<Set<string>>(new Set());
   const listRef = useRef<HTMLDivElement>(null);
   // Exercises we've auto-collapsed on completion — lets us avoid fighting a
   // manual re-expand, and re-collapse if an exercise becomes complete again.
@@ -354,6 +354,11 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
   const today = useMemo(() => startOfDay(new Date()), []);
   const [selectedDate, setSelectedDate] = useState<Date>(today);
   const [weekStart, setWeekStart]       = useState<Date>(() => mondayOf(today));
+
+  // Skipped exercises persist to localStorage (per day) so a skip survives
+  // switching tabs; a new day resets automatically.
+  const [skippedIds, setSkippedIds] = useState<Set<string>>(() => loadSkips(keyOf(today)));
+  useEffect(() => { saveSkips(keyOf(today), skippedIds); }, [skippedIds, today]);
 
   const isToday = isSameDay(selectedDate, today);
 
@@ -543,14 +548,6 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
     weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
   });
 
-  // The whole routine is finished when every planned exercise is done or skipped
-  const routineComplete = !!selectedRoutine && selectedRoutine.exercise_ids.every(id => {
-    const ex = exercises.find(e => e.id === id);
-    if (!ex || ex.sets <= 0) return true;
-    const done = (completedSetsMap.get(id) ?? 0) >= ex.sets;
-    return done || skippedIds.has(id);
-  });
-
   return (
     <div className="space-y-4">
 
@@ -627,10 +624,17 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
             const isCollapsed = collapsedIds.has(exerciseId);
             const isSkipped   = skippedIds.has(exerciseId);
 
-            function handleSkip() {
+            function handleToggleSkip() {
               feedback.skip();
-              setSkippedIds(prev => { const n = new Set(prev); n.add(exerciseId); return n; });
-              setCollapsedIds(prev => { const n = new Set(prev); n.add(exerciseId); return n; });
+              const wasSkipped = skippedIds.has(exerciseId);
+              const toggle = (prev: Set<string>) => {
+                const n = new Set(prev);
+                if (wasSkipped) n.delete(exerciseId); else n.add(exerciseId);
+                return n;
+              };
+              setSkippedIds(toggle);
+              setCollapsedIds(toggle);
+              if (wasSkipped) autoCollapsedRef.current.delete(exerciseId);
             }
 
             const card = (
@@ -771,38 +775,13 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
                 style={{ transformOrigin: 'center center', willChange: 'transform, opacity', opacity: isSkipped ? 0.45 : undefined }}
               >
                 {isToday ? (
-                  <SwipeableRow onSkip={handleSkip}>{card}</SwipeableRow>
+                  <SwipeableRow skipped={isSkipped} onToggle={handleToggleSkip}>{card}</SwipeableRow>
                 ) : (
                   card
                 )}
               </div>
             );
           })}
-
-          {/* Workout summary — only on the Log page for a routine day (today),
-              once something has been skipped or the whole routine is complete */}
-          {isToday && selectedRoutine && (skippedIds.size > 0 || routineComplete) && (
-            <div className="te-panel rounded-2xl px-4 py-3.5 space-y-2" style={{ opacity: 0.8 }}>
-              <p className="te-label" style={{ color: 'rgba(244,241,236,0.4)' }}>Workout summary</p>
-              {displayEntries.map(({ exerciseId, exercise }) => {
-                const done    = (completedSetsMap.get(exerciseId) ?? 0) >= (exercise?.sets ?? 0) && (exercise?.sets ?? 0) > 0;
-                const skipped = skippedIds.has(exerciseId);
-                if (!done && !skipped) return null;
-                return (
-                  <div key={exerciseId} className="flex items-center gap-2">
-                    {done ? (
-                      <CheckIcon className="w-3 h-3 shrink-0 stroke-[2.5]" style={{ color: '#30d158' }} />
-                    ) : (
-                      <ForwardIcon className="w-3 h-3 shrink-0 stroke-[2]" style={{ color: 'rgba(255,255,255,0.25)' }} />
-                    )}
-                    <span className="text-[13px]" style={{ color: done ? 'rgba(244,241,236,0.6)' : 'rgba(244,241,236,0.25)', letterSpacing: '-0.01em' }}>
-                      {exercise?.name ?? 'Unknown'}
-                    </span>
-                  </div>
-                );
-              }).filter(Boolean)}
-            </div>
-          )}
         </div>
       )}
 
