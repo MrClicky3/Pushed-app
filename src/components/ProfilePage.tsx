@@ -23,6 +23,7 @@ type CompetitionsApi = ReturnType<typeof useCompetitions>;
 interface Props {
   open: boolean;
   onClose: () => void;
+  focusCompetitions?: boolean;
   profile: Profile | null;
   inviteUrl: string;
   friends: FriendsApi;
@@ -504,7 +505,7 @@ function FriendsSection({ friends, inviteUrl }: { friends: FriendsApi; inviteUrl
 
 // ── Full-screen profile page ────────────────────────────────────
 export default function ProfilePage({
-  open, onClose, profile, inviteUrl, friends, competitions, unit, toDisplay, onOpenSettings,
+  open, onClose, focusCompetitions, profile, inviteUrl, friends, competitions, unit, toDisplay, onOpenSettings,
   setAvatar, uploadAvatarFile, updateBio,
 }: Props) {
   const name = profile?.display_name || profile?.username || 'You';
@@ -513,6 +514,17 @@ export default function ProfilePage({
   const [reportOpen, setReportOpen] = useState(false);
   const [badges, setBadges] = useState<Badge[]>([]);
   const [friendTarget, setFriendTarget] = useState<FriendProfileTarget | null>(null);
+  const competitionsRef = useRef<HTMLDivElement>(null);
+
+  // When opened via the Progress competition widget, scroll the Competitions
+  // section into view once the page has settled.
+  useEffect(() => {
+    if (!open || !focusCompetitions) return;
+    const t = window.setTimeout(() => {
+      competitionsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 360);
+    return () => window.clearTimeout(t);
+  }, [open, focusCompetitions]);
 
   // Load the current user's badge shelf whenever the profile opens or a
   // competition finishes (competitions list changes).
@@ -675,7 +687,9 @@ export default function ProfilePage({
             updateBio={updateBio}
           />
 
-          <CompetitionsSection comps={competitions} friendsList={friends.friendsList} />
+          <div ref={competitionsRef} style={{ scrollMarginTop: 16 }}>
+            <CompetitionsSection comps={competitions} friendsList={friends.friendsList} />
+          </div>
 
           <BadgeShelf badges={badges} />
 

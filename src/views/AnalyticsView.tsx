@@ -1,8 +1,10 @@
 import React, { useState, useMemo, useRef, useId, useEffect } from 'react';
 import { ChevronDownIcon, XMarkIcon, ChartBarSquareIcon } from '@heroicons/react/24/outline';
 import EmptyState from '../components/EmptyState';
+import { CompetitionMiniWidget } from '../components/Competitions';
 import type { Exercise, WorkoutLog, Routine, ScheduleDay } from '../types';
 import type { WeightUnit } from '../hooks/useSettings';
+import type { useCompetitions } from '../hooks/useCompetitions';
 import { buildCompletedDays, calcStreak } from '../lib/streak';
 import { accentHex } from '../lib/accent';
 
@@ -13,6 +15,8 @@ interface Props {
   toDisplay: (kg: number) => number;
   routines: Routine[];
   schedule: ScheduleDay[];
+  competitions: ReturnType<typeof useCompetitions>;
+  onOpenCompetitions: () => void;
 }
 
 type DayRange = 7 | 30 | 90 | 'all' | 'custom';
@@ -966,7 +970,7 @@ function StreakCard({ logs, schedule, routines, exercises }: {
   );
 }
 
-export default function AnalyticsView({ logs, exercises, unit, toDisplay, routines, schedule }: Props) {
+export default function AnalyticsView({ logs, exercises, unit, toDisplay, routines, schedule, competitions, onOpenCompetitions }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [range, setRange] = useState<DayRange>(30);
   const [customDays, setCustomDays] = useState(90);
@@ -1116,7 +1120,7 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
     return (
       <EmptyState
         icon={<ChartBarSquareIcon className="w-8 h-8 text-apple-label-tertiary" />}
-        title="No data yet"
+        title="Your progress will appear here"
         subtitle="Log some workouts to see your progress."
       />
     );
@@ -1126,7 +1130,7 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
     return (
       <EmptyState
         icon={<ChartBarSquareIcon className="w-8 h-8 text-apple-label-tertiary" />}
-        title="No data yet"
+        title="Your progress will appear here"
         subtitle="Log some workouts to see per-exercise analytics."
       />
     );
@@ -1170,6 +1174,8 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
 
   return (
     <div>
+
+      <CompetitionMiniWidget comps={competitions} onOpen={onOpenCompetitions} />
 
       {todayIsScheduled && (
         <div className="mb-3">
