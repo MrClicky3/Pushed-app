@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { QueueListIcon, PlusIcon, CheckIcon, ChevronDownIcon, ForwardIcon } from '@heroicons/react/24/outline';
+import { QueueListIcon, PlusIcon, CheckIcon, ChevronDownIcon, ForwardIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { BookOpenIcon } from '@heroicons/react/24/solid';
 import EmptyState from '../components/EmptyState';
 import ExerciseLibraryModal from '../components/ExerciseLibraryModal';
@@ -9,6 +9,7 @@ import type { Exercise, WorkoutLog, Routine, ScheduleDay } from '../types';
 import type { WeightUnit } from '../hooks/useSettings';
 import { feedback } from '../lib/feedback';
 import { loadDaySet, saveDaySet } from '../lib/skips';
+import { dayCompletionPct } from '../lib/streak';
 
 interface Props {
   logs: WorkoutLog[];
@@ -332,6 +333,143 @@ function SwipeableRow({ skipped, onToggle, children }: { skipped: boolean; onTog
   );
 }
 
+// ── Session recap — compact card shown once the workout is complete ────
+const RECAP_HEADLINES = [
+  'Great session.',
+  'Solid work.',
+  'Strong session.',
+  'Well done.',
+  'Crushed it.',
+  'Keep building.',
+];
+
+function recapStorageKey(suffix: string) {
+  const d = new Date();
+  return `recap-${suffix}-${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
+function SessionRecapCard({
+  logs,
+  exercises,
+  unit,
+  toDisplay,
+}: {
+  logs: WorkoutLog[];
+  exercises: Exercise[];
+  unit: WeightUnit;
+  toDisplay: (kg: number) => number;
+}) {
+  const [headline] = useState(
+    () => RECAP_HEADLINES[Math.floor(Math.random() * RECAP_HEADLINES.length)]
+  );
+  const [dismissed, setDismissed] = useState(
+    () => localStorage.getItem(recapStorageKey('dismissed')) === '1'
+  );
+
+  function dismiss() {
+    localStorage.setItem(recapStorageKey('dismissed'), '1');
+    setDismissed(true);
+  }
+
+  const { todayLogs, summaries, sentence, score } = useMemo(() => {
+    const now = new Date();
+    const key = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
+    const tLogs = logs.filter(l => {
+      const d = new Date(l.created_at);
+      return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}` === key;
+    });
+
+    const map = new Map<string, { exercise: Exercise; bestWeight: number; bestReps: number; sets: number }>();
+    for (const log of tLogs) {
+      const ex = exercises.find(e => e.id === log.exercise_id);
+      if (!ex) continue;
+      const cur = map.get(log.exercise_id);
+      if (!cur) {
+        map.set(log.exercise_id, { exercise: ex, bestWeight: log.weight, bestReps: log.reps_done, sets: 1 });
+      } else {
+        cur.sets++;
+        if (log.weight > cur.bestWeight || (log.weight === cur.bestWeight && log.reps_done > cur.bestReps)) {
+          cur.bestWeight = log.weight;
+          cur.bestReps = log.reps_done;
+        }
+      }
+    }
+    const sums = Array.from(map.values());
+    const sets = tLogs.length;
+    const vol = Math.round(tLogs.reduce((s, l) => s + toDisplay(l.weight) * l.reps_done, 0));
+    const exCount = sums.length;
+    const sent = `${exCount} exercise${exCount !== 1 ? 's' : ''}, ${sets} set${sets !== 1 ? 's' : ''}, ${vol} ${unit} moved.`;
+
+    let scoreVal: number | null = null;
+    if (sums.length > 0) {
+      const exScores = sums.map(({ exercise, bestWeight, bestReps, sets: setsLogged }) => {
+        const stt = exercise.sets > 0 ? exercise.sets : null;
+        const rt = exercise.target_reps > 0 ? exercise.target_reps : null;
+        const wt = exercise.weight > 0 ? exercise.weight : null;
+        if (!stt && !rt && !wt) return 0.7;
+        const parts: number[] = [];
+        if (stt) parts.push(Math.min(setsLogged / stt, 1.0));
+        if (rt) parts.push(Math.min(bestReps / rt, 1.1));
+        if (wt) parts.push(Math.min(bestWeight / wt, 1.1));
+        return parts.reduce((a, b) => a + b, 0) / parts.length;
+      });
+      const overall = exScores.reduce((a, b) => a + b, 0) / exScores.length;
+      scoreVal = Math.max(1, Math.min(10, Math.round(overall * 10)));
+    }
+
+    return { todayLogs: tLogs, summaries: sums, sentence: sent, score: scoreVal };
+  }, [logs, exercises, toDisplay, unit]);
+
+  if (!todayLogs.length || dismissed) return null;
+
+  return (
+    <div className="te-panel-dark rounded-2xl overflow-hidden">
+      <div className="px-3.5 py-3 flex items-start justify-between gap-3" style={{ background: 'rgba(48,209,88,0.1)' }}>
+        <div className="min-w-0">
+          <p className="text-[16px] font-semibold text-white tracking-tight leading-tight">{headline}</p>
+          <p className="te-label mt-1 leading-relaxed">{sentence}</p>
+        </div>
+        <div className="flex items-center gap-2.5 shrink-0">
+          {score !== null && (
+            <div className="flex items-baseline gap-1">
+              <span className="text-[16px] font-bold tabular-nums leading-none te-digit" style={{ color: '#30d158' }}>{score}</span>
+              <span className="te-label" style={{ fontSize: 10 }}>/10</span>
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={dismiss}
+            className="p-1 -mr-1 active:opacity-50 transition-opacity"
+            style={{ color: 'rgba(48,209,88,0.45)' }}
+            aria-label="Dismiss recap"
+          >
+            <XMarkIcon className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {summaries.length > 0 && (
+        <div className="divide-y divide-white/[0.05]" style={{ maxHeight: 110, overflowY: 'auto', WebkitOverflowScrolling: 'touch' as never }}>
+          <div className="h-px bg-white/[0.06]" />
+          {summaries.map(({ exercise, bestWeight, bestReps, sets }) => (
+            <div key={exercise.id} className="flex items-center justify-between px-3.5 py-2">
+              <div className="min-w-0">
+                <p className="text-[12.5px] font-semibold text-white/80 tracking-tight truncate">{exercise.name}</p>
+                <p className="te-label" style={{ fontSize: 9.5, marginTop: 1 }}>
+                  {sets} set{sets !== 1 ? 's' : ''}
+                </p>
+              </div>
+              <p className="te-mono text-[11.5px] font-semibold text-white/35 tabular-nums shrink-0 ml-3">
+                {toDisplay(bestWeight)}{unit} × {bestReps}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main log view ─────────────────────────────────────────────
 type DisplayEntry = { exerciseId: string; exercise: Exercise | undefined; logs: WorkoutLog[] };
 
@@ -360,16 +498,35 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
   const autoCollapsedRef = useRef<Set<string>>(loadDaySet('autocollapsed', todayKey));
   const persistAuto = useCallback(() => saveDaySet('autocollapsed', todayKey, autoCollapsedRef.current), [todayKey]);
 
-  // Manual "workout complete" for the day — persisted, and read by the Progress
-  // recap so a session can be finished at any time (>=1 set).
+  // Manual "workout complete" for the day — persisted, and read by the recap
+  // card below so a session can be finished at any time (>=1 set). One-way:
+  // once set, there's no UI path back to incomplete for today.
   const [workoutDone, setWorkoutDone] = useState<boolean>(() => loadDaySet('workoutdone', todayKey).size > 0);
-  function toggleWorkoutDone() {
-    setWorkoutDone(prev => {
-      const next = !prev;
-      saveDaySet('workoutdone', todayKey, next ? new Set(['done']) : new Set());
-      if (next) feedback.workoutDone(); else feedback.skip();
-      return next;
-    });
+  function completeWorkout() {
+    if (workoutDone) return;
+    setWorkoutDone(true);
+    saveDaySet('workoutdone', todayKey, new Set(['done']));
+    feedback.workoutDone();
+  }
+
+  // "Complete workout" is a tap-again-to-confirm button (same pattern as the
+  // destructive-delete confirms elsewhere) since completing is irreversible.
+  // The armed state auto-reverts after a few seconds since, unlike those
+  // modals, this button lives permanently on the page rather than resetting
+  // on close.
+  const [confirmComplete, setConfirmComplete] = useState(false);
+  const confirmCompleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (confirmCompleteTimer.current) clearTimeout(confirmCompleteTimer.current); }, []);
+  function handleCompletePress() {
+    if (!confirmComplete) {
+      setConfirmComplete(true);
+      if (confirmCompleteTimer.current) clearTimeout(confirmCompleteTimer.current);
+      confirmCompleteTimer.current = setTimeout(() => setConfirmComplete(false), 3000);
+      return;
+    }
+    if (confirmCompleteTimer.current) clearTimeout(confirmCompleteTimer.current);
+    setConfirmComplete(false);
+    completeWorkout();
   }
 
   // Auto-prompt to finish once every planned exercise on a routine day is done
@@ -377,7 +534,7 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
   // may want to re-surface it).
   const [promptDismissed, setPromptDismissed] = useState(false);
   function completeFromPrompt() {
-    if (!workoutDone) toggleWorkoutDone();
+    completeWorkout();
     setPromptDismissed(true);
   }
 
@@ -416,27 +573,8 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
 
   // Ring fill for a day = working sets completed / target sets for that day
   const progressFor = useMemo(() => {
-    return (date: Date): number => {
-      const dLogs = logsByDay.get(keyOf(date)) ?? [];
-      const routine = routineForDate(date);
-      const plannedIds = routine
-        ? routine.exercise_ids
-        : Array.from(new Set(dLogs.map(l => l.exercise_id)));
-
-      let target = 0;
-      let done = 0;
-      for (const id of plannedIds) {
-        const ex = exercises.find(e => e.id === id);
-        const t = ex?.sets ?? 0;
-        if (t <= 0) continue;
-        const working = dLogs.filter(l => l.exercise_id === id && l.set_type !== 'warmup').length;
-        target += t;
-        done += Math.min(working, t);
-      }
-      if (target === 0) return dLogs.length > 0 ? 1 : 0;
-      return Math.max(0, Math.min(1, done / target));
-    };
-  }, [logsByDay, routineForDate, exercises]);
+    return (date: Date): number => dayCompletionPct(date, logs, schedule, routines, exercises);
+  }, [logs, schedule, routines, exercises]);
 
   // A day "has a schedule" if a routine is assigned to its day-of-week
   const hasScheduleFor = useMemo(() => {
@@ -858,19 +996,29 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
       )}
 
       {/* Complete workout — manual finish for non-routine days (routine days use
-          the auto prompt instead). Shown once >=1 working set is logged. */}
+          the auto prompt instead). Shown once >=1 working set is logged.
+          Tap-again-to-confirm since completing is irreversible for the day. */}
       {isToday && !selectedRoutine && dayLogs.some(l => l.set_type !== 'warmup') && (
         <button
-          onClick={toggleWorkoutDone}
+          onClick={workoutDone ? undefined : handleCompletePress}
+          disabled={workoutDone}
           className={`w-full rounded-2xl font-semibold text-[15px] flex items-center justify-center gap-2 select-none ${
             workoutDone ? 'te-toggle-on' : 'te-white-btn'
           }`}
           style={workoutDone
             ? { height: 52, background: '#30d158', color: '#0a0908' }
-            : { height: 52 }}
+            : { height: 52, opacity: confirmComplete ? 0.7 : 1 }}
         >
-          {workoutDone ? (<><CheckIcon className="w-4 h-4 stroke-[2.5]" /> Workout complete</>) : 'Complete workout'}
+          {workoutDone
+            ? (<><CheckIcon className="w-4 h-4 stroke-[2.5]" /> Workout complete</>)
+            : confirmComplete ? 'Tap again to confirm' : 'Complete workout'}
         </button>
+      )}
+
+      {isToday && workoutDone && (
+        <div className="mt-3">
+          <SessionRecapCard logs={logs} exercises={exercises} unit={unit} toDisplay={toDisplay} />
+        </div>
       )}
 
       {/* Routine-complete prompt — every planned exercise is done or skipped */}
