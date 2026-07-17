@@ -24,6 +24,7 @@ interface Props {
   schedule: ScheduleDay[];
   focusMode?: boolean;
   weekStartDay?: WeekStartDay;
+  onCreateRoutine: () => void;
 }
 
 // Small inline chip on a set row: warmup / drop / PR
@@ -489,8 +490,9 @@ function SessionRecapCard({
 // ── Main log view ─────────────────────────────────────────────
 type DisplayEntry = { exerciseId: string; exercise: Exercise | undefined; logs: WorkoutLog[] };
 
-export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExercise, onEdit, onDelete: _onDelete, unit, toDisplay, routines, schedule, focusMode = false, weekStartDay = 'monday' }: Props) {
+export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExercise, onEdit, onDelete: _onDelete, unit, toDisplay, routines, schedule, focusMode = false, weekStartDay = 'monday', onCreateRoutine }: Props) {
   const [viewLibraryEx, setViewLibraryEx]     = useState<LibraryExercise | null>(null);
+  const [noRoutineDismissed, setNoRoutineDismissed] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
 
   // Today (stable across renders within the same day)
@@ -811,6 +813,35 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
           </div>
         </div>
       </div>
+
+      {/* No routines exist yet — invite the user to create one */}
+      {routines.length === 0 && !noRoutineDismissed && (
+        <div className="te-panel-dark rounded-2xl overflow-hidden">
+          <div className="px-4 py-3.5 flex items-start gap-3">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: 'rgba(255,255,255,0.06)' }}>
+              <QueueListIcon className="w-4 h-4 text-white/50" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[14px] font-semibold text-[#f4f1ec] tracking-tight">No routine yet</p>
+              <p className="te-label mt-1 leading-relaxed">Create a routine to start planning your weekly schedule.</p>
+            </div>
+            <button
+              onClick={() => setNoRoutineDismissed(true)}
+              className="p-1 -mr-1 -mt-1 text-white/25 active:text-white/50 transition-colors"
+              aria-label="Dismiss"
+            >
+              <XMarkIcon className="w-4 h-4" />
+            </button>
+          </div>
+          <button
+            onClick={onCreateRoutine}
+            className="w-full py-3 text-[13px] font-semibold text-center active:bg-white/[0.04] transition-colors"
+            style={{ borderTop: '1px solid rgba(255,255,255,0.06)', color: '#f4f1ec' }}
+          >
+            Create a routine
+          </button>
+        </div>
+      )}
 
       {/* Selected day's exercise cards */}
       {displayEntries.length === 0 ? (

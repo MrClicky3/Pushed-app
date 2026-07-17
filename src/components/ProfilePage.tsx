@@ -599,61 +599,35 @@ export default function ProfilePage({
       }}
       onTransitionEnd={() => setDragSnapping(false)}
     >
-      {/* Identity band — top quarter of the page */}
-      <div
-        className="shrink-0 relative flex flex-col items-center gap-3"
-        style={{ height: '25vh', minHeight: 200, paddingTop: 'calc(env(safe-area-inset-top, 0px) + 68px)' }}
+      {/* Back — pinned above the scroll content, doesn't scroll with the page */}
+      <button
+        onClick={onClose}
+        className="absolute flex items-center justify-center active:opacity-60 transition-opacity"
+        style={{ top: 'calc(env(safe-area-inset-top, 0px) + 14px)', left: 14, width: 32, height: 32 }}
+        aria-label="Back"
       >
-        <button
-          onClick={onClose}
-          className="absolute flex items-center justify-center active:opacity-60 transition-opacity"
-          style={{ top: 'calc(env(safe-area-inset-top, 0px) + 14px)', left: 14, width: 32, height: 32 }}
-          aria-label="Back"
-        >
-          <ChevronLeftIcon className="w-5 h-5 text-white/60" />
-        </button>
+        <ChevronLeftIcon className="w-5 h-5 text-white/60" />
+      </button>
 
-        {/* Report a bug — mirrors the back button, top-right */}
-        <button
-          onClick={() => setReportOpen(true)}
-          className="absolute flex items-center gap-1.5 rounded-full active:opacity-80 transition-opacity"
-          style={{
-            top: 'calc(env(safe-area-inset-top, 0px) + 14px)', right: 14, height: 32, padding: '0 12px 0 10px',
-            background: 'linear-gradient(180deg, #3b82f6 0%, #2563eb 100%)',
-            boxShadow: '0 3px 12px rgba(37,99,235,0.35), inset 0 1px 0 rgba(255,255,255,0.18)',
-            border: '1px solid rgba(255,255,255,0.14)',
-          }}
-          aria-label="Report a bug"
-        >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M8 2l1.5 2.5M16 2l-1.5 2.5" />
-            <rect x="7" y="6" width="10" height="12" rx="5" />
-            <path d="M12 6v12M3 10h4M17 10h4M3 15h4M17 15h4M4 6l3 2M20 6l-3 2M4 19l3-2M20 19l-3-2" />
-          </svg>
-          <span className="text-[11px] font-bold text-white tracking-tight">Bug</span>
-        </button>
-
-        <button
-          onClick={() => setPickerOpen(true)}
-          className="relative shrink-0 active:opacity-70 transition-opacity"
-          aria-label="Change profile photo"
-        >
-          <Avatar name={name} avatarUrl={profile?.avatar_url} size={88} />
-          <span
-            className="absolute flex items-center justify-center rounded-full"
-            style={{ width: 24, height: 24, right: -2, bottom: -2, background: '#f4f1ec', border: '2.5px solid #0a0908' }}
-          >
-            <CameraIcon className="w-3.5 h-3.5" style={{ color: '#0a0908' }} strokeWidth={1.5} />
-          </span>
-        </button>
-
-        <div className="text-center">
-          <p className="text-[20px] font-bold text-[#f4f1ec] tracking-tight" style={{ letterSpacing: '-0.02em' }}>
-            {name}
-          </p>
-          {profile?.username && <p className="te-label mt-1">@{profile.username}</p>}
-        </div>
-      </div>
+      {/* Report a bug — mirrors the back button, top-right, also pinned */}
+      <button
+        onClick={() => setReportOpen(true)}
+        className="absolute flex items-center gap-1.5 rounded-full active:opacity-80 transition-opacity"
+        style={{
+          top: 'calc(env(safe-area-inset-top, 0px) + 14px)', right: 14, height: 32, padding: '0 12px 0 10px',
+          background: 'linear-gradient(180deg, #3b82f6 0%, #2563eb 100%)',
+          boxShadow: '0 3px 12px rgba(37,99,235,0.35), inset 0 1px 0 rgba(255,255,255,0.18)',
+          border: '1px solid rgba(255,255,255,0.14)',
+        }}
+        aria-label="Report a bug"
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M8 2l1.5 2.5M16 2l-1.5 2.5" />
+          <rect x="7" y="6" width="10" height="12" rx="5" />
+          <path d="M12 6v12M3 10h4M17 10h4M3 15h4M17 15h4M4 6l3 2M20 6l-3 2M4 19l3-2M20 19l-3-2" />
+        </svg>
+        <span className="text-[11px] font-bold text-white tracking-tight">Bug</span>
+      </button>
 
       <AvatarPickerSheet
         open={pickerOpen}
@@ -666,9 +640,38 @@ export default function ProfilePage({
 
       <ReportBugSheet open={reportOpen} onClose={() => setReportOpen(false)} context="Profile" />
 
-      {/* Remaining three quarters — leaderboard-first, scrollable */}
+      {/* Whole page scrolls as one unit — the identity band is regular
+          content now, not a fixed band, so it scrolls away like everything
+          else and the page can be pulled to refresh from the very top. */}
       <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
         <div className="max-w-lg mx-auto pl-[max(16px,env(safe-area-inset-left))] pr-[max(16px,env(safe-area-inset-right))] space-y-6" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 32px)' }}>
+          {/* Identity band */}
+          <div
+            className="flex flex-col items-center gap-3"
+            style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 68px)' }}
+          >
+            <button
+              onClick={() => setPickerOpen(true)}
+              className="relative shrink-0 active:opacity-70 transition-opacity"
+              aria-label="Change profile photo"
+            >
+              <Avatar name={name} avatarUrl={profile?.avatar_url} size={88} />
+              <span
+                className="absolute flex items-center justify-center rounded-full"
+                style={{ width: 24, height: 24, right: -2, bottom: -2, background: '#f4f1ec', border: '2.5px solid #0a0908' }}
+              >
+                <CameraIcon className="w-3.5 h-3.5" style={{ color: '#0a0908' }} strokeWidth={1.5} />
+              </span>
+            </button>
+
+            <div className="text-center">
+              <p className="text-[20px] font-bold text-[#f4f1ec] tracking-tight" style={{ letterSpacing: '-0.02em' }}>
+                {name}
+              </p>
+              {profile?.username && <p className="te-label mt-1">@{profile.username}</p>}
+            </div>
+          </div>
+
           <button
             onClick={() => setBioOpen(true)}
             className="w-full text-left active:opacity-60 transition-opacity"

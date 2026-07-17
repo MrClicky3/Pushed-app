@@ -237,9 +237,9 @@ function Stepper({
             className={`te-mono !text-[52px] font-bold text-white tabular-nums !leading-[38px] bg-transparent border-none focus:outline-none w-full text-center ${animClass}`}
             style={{ letterSpacing: '-1px', touchAction: 'none' }}
           />
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex flex-col gap-0.5 pointer-events-none">
-            <ChevronUpIcon className="w-3 h-3 text-white/15" />
-            <ChevronDownIcon className="w-3 h-3 text-white/15" />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex flex-col gap-1.5 pointer-events-none">
+            <ChevronUpIcon className="w-[13.5px] h-[13.5px] text-white/15" />
+            <ChevronDownIcon className="w-[13.5px] h-[13.5px] text-white/15" />
           </div>
         </div>
 
