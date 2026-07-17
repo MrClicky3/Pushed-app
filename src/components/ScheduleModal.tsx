@@ -34,8 +34,7 @@ const GROUP_LABEL: Record<string, string> = {
 
 type View =
   | { type: 'main' }
-  | { type: 'plan' }
-  | { type: 'day'; day: number };
+  | { type: 'plan' };
 
 interface Props {
   open: boolean;
@@ -208,6 +207,8 @@ export default function ScheduleModal({
   // Routine editor now lives in a popup layered over the Weekly plan view.
   // `null` = closed; `{ routine }` opens it (routine=null → creating a new one).
   const [routineEditor, setRoutineEditor] = useState<{ routine: Routine | null } | null>(null);
+  // Day → routine assignment picker, also a popup over the plan (0=Mon…6=Sun).
+  const [dayPicker, setDayPicker] = useState<number | null>(null);
 
   // Reset to main view when modal closes
   useEffect(() => {
@@ -220,6 +221,7 @@ export default function ScheduleModal({
         setPreviewRoutine(null);
         setDataMenuOpen(false);
         setRoutineEditor(null);
+        setDayPicker(null);
       }, 300);
     }
   }, [open]);
@@ -649,7 +651,7 @@ export default function ScheduleModal({
                 return (
                   <button
                     key={i}
-                    onClick={() => setView({ type: 'day', day: i })}
+                    onClick={() => setDayPicker(i)}
                     className="w-full flex items-center px-4 py-4 gap-3 active:bg-white/[0.04] transition-colors text-left"
                   >
                     <div className="flex items-center gap-2 w-10 shrink-0">
@@ -678,20 +680,20 @@ export default function ScheduleModal({
                 <button
                   key={r.id}
                   onClick={() => setPreviewRoutine(r)}
-                  className="te-panel-dark rounded-[22px] aspect-square p-4 flex flex-col justify-between text-left active:opacity-80 transition-opacity"
+                  className="te-panel-dark rounded-[20px] aspect-[7/6] p-3.5 flex flex-col justify-between text-left active:opacity-80 transition-opacity"
                 >
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: 'rgba(244,241,236,0.08)' }}>
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: 'rgba(244,241,236,0.08)' }}>
                     <QueueListIcon className="w-4 h-4 text-white/50" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[15px] font-semibold text-[#f4f1ec] tracking-tight truncate">{r.name}</p>
+                    <p className="text-[14px] font-semibold text-[#f4f1ec] tracking-tight truncate">{r.name}</p>
                     <p className="te-label mt-0.5">{r.exercise_ids.length} exercise{r.exercise_ids.length !== 1 ? 's' : ''}</p>
                   </div>
                 </button>
               ))}
               <button
                 onClick={() => setRoutineEditor({ routine: null })}
-                className="te-panel rounded-[22px] aspect-square flex flex-col items-center justify-center gap-2 active:bg-white/[0.04] transition-colors"
+                className="te-panel rounded-[20px] aspect-[7/6] flex flex-col items-center justify-center gap-1.5 active:bg-white/[0.04] transition-colors"
               >
                 <PlusIcon className="w-5 h-5 text-white/40" />
                 <span className="te-label">New routine</span>
@@ -739,6 +741,55 @@ export default function ScheduleModal({
               </button>
             </div>
           )}
+        </Modal>
+
+        {/* Day → routine assignment — small popup over the plan */}
+        <Modal
+          open={dayPicker !== null}
+          onClose={() => setDayPicker(null)}
+          title={dayPicker !== null ? DAY_NAMES[dayPicker] : ''}
+        >
+          {dayPicker !== null && (() => {
+            const currentRoutineId = getScheduleForDay(dayPicker)?.routine_id ?? null;
+            return (
+              <div className="space-y-2.5">
+                {/* Rest option */}
+                <button
+                  onClick={() => { onAssignDay(dayPicker, null); setDayPicker(null); }}
+                  className="te-panel w-full flex items-center px-4 py-3.5 rounded-2xl gap-3 active:bg-white/[0.04] transition-colors text-left"
+                >
+                  <span className="flex-1 text-[14px] font-semibold text-[#f4f1ec] tracking-tight">Rest / Off</span>
+                  {currentRoutineId === null && (
+                    <span className="w-2 h-2 rounded-full bg-white/60 shrink-0" />
+                  )}
+                </button>
+
+                {/* Routine options */}
+                {routines.map(r => {
+                  const isActive = currentRoutineId === r.id;
+                  return (
+                    <button
+                      key={r.id}
+                      onClick={() => { onAssignDay(dayPicker, r.id); setDayPicker(null); }}
+                      className="te-panel w-full flex items-center px-4 py-3.5 rounded-2xl gap-3 active:bg-white/[0.04] transition-colors text-left"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[14px] font-semibold text-[#f4f1ec] tracking-tight truncate">{r.name}</p>
+                        <p className="te-label mt-0.5">{r.exercise_ids.length} exercise{r.exercise_ids.length !== 1 ? 's' : ''}</p>
+                      </div>
+                      {isActive && (
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: '#34c759' }} />
+                      )}
+                    </button>
+                  );
+                })}
+
+                {routines.length === 0 && (
+                  <p className="te-label text-center py-4">No routines yet. Create one first.</p>
+                )}
+              </div>
+            );
+          })()}
         </Modal>
 
         {/* Routine editor — create / edit in a popup layered over the plan */}
@@ -837,62 +888,6 @@ export default function ScheduleModal({
             )}
           </div>
         </Modal>
-      </FullPageSheet>
-    );
-  }
-
-  // ── Day picker view ────────────────────────────────────────────
-  if (view.type === 'day') {
-    const { day } = view;
-    const currentEntry = getScheduleForDay(day);
-    const currentRoutineId = currentEntry?.routine_id ?? null;
-
-    return (
-      <FullPageSheet open={open} onClose={onClose} title={DAY_NAMES[day]} onBack={() => setView({ type: 'plan' })} padded>
-        <div className="space-y-4">
-          {/* Rest option */}
-          <button
-            onClick={() => {
-              onAssignDay(day, null);
-              setView({ type: 'plan' });
-            }}
-            className="te-panel w-full flex items-center px-4 py-3.5 rounded-2xl gap-3 active:bg-white/[0.04] transition-colors text-left"
-          >
-            <div className="flex-1">
-              <span className="text-[14px] font-semibold text-[#f4f1ec] tracking-tight">Rest / Off</span>
-            </div>
-            {currentRoutineId === null && (
-              <span className="w-2 h-2 rounded-full bg-white/60 shrink-0" />
-            )}
-          </button>
-
-          {/* Routine options */}
-          {routines.map(r => {
-            const isActive = currentRoutineId === r.id;
-            return (
-              <button
-                key={r.id}
-                onClick={() => {
-                  onAssignDay(day, r.id);
-                  setView({ type: 'plan' });
-                }}
-                className="te-panel w-full flex items-center px-4 py-3.5 rounded-2xl gap-3 active:bg-white/[0.04] transition-colors text-left"
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="text-[14px] font-semibold text-[#f4f1ec] tracking-tight truncate">{r.name}</p>
-                  <p className="te-label mt-0.5">{r.exercise_ids.length} exercise{r.exercise_ids.length !== 1 ? 's' : ''}</p>
-                </div>
-                {isActive && (
-                  <span className="w-2 h-2 rounded-full shrink-0" style={{ background: '#34c759' }} />
-                )}
-              </button>
-            );
-          })}
-
-          {routines.length === 0 && (
-            <p className="te-label text-center py-4">No routines yet. Create one first.</p>
-          )}
-        </div>
       </FullPageSheet>
     );
   }

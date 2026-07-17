@@ -83,7 +83,7 @@ export default function SwipeStepper({
       onPointerLeave={handlePointerUp}
       onWheel={handleWheel}
     >
-      <p className="te-label">{label}</p>
+      <p className="te-label whitespace-nowrap overflow-hidden text-ellipsis">{label}</p>
       <input
         type="number"
         value={value}

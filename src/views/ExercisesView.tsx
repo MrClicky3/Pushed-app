@@ -83,7 +83,7 @@ export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, 
     <button
       onClick={onOpenLibrary}
       className="w-full rounded-[20px] overflow-hidden active:opacity-80 transition-opacity"
-      style={{ display: 'block', textAlign: 'left', position: 'relative', border: '1px solid #1a1a1a', boxShadow: '0 0 15px rgba(0,0,0,0.25)' }}
+      style={{ display: 'block', textAlign: 'left', position: 'relative', border: '1px solid var(--te-border)', boxShadow: '0 0 15px rgba(0,0,0,0.25)' }}
     >
       <div style={{
         height: 164,
@@ -169,7 +169,7 @@ export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, 
                   key={ex.id}
                   data-card
                   className="rounded-[20px] overflow-hidden"
-                  style={{ background: '#141414', border: '1px solid #1a1a1a', boxShadow: '0 0 7.5px rgba(0,0,0,0.25)', transformOrigin: 'center center', willChange: 'transform, opacity' }}
+                  style={{ background: '#141414', border: '1px solid var(--te-border)', boxShadow: '0 0 7.5px rgba(0,0,0,0.25)', transformOrigin: 'center center', willChange: 'transform, opacity' }}
                 >
                   <ExerciseCard
                     exercise={ex}

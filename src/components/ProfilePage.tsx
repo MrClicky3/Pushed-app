@@ -185,8 +185,10 @@ function AvatarPickerSheet({
 
 // ── Leaderboard rows — enlarged, more prominent ─────────────────
 function StreakRows({ rows, onSelect }: { rows: LeaderboardRow[]; onSelect: (r: FriendProfileTarget) => void }) {
+  // Rendered flush inside the Leaderboard bento — no nested card, and pulled
+  // to the bento's edges so the rows read as one full-width list.
   return (
-    <div className="te-panel rounded-2xl overflow-hidden divide-y divide-white/[0.05]">
+    <div className="-mx-4 border-t border-white/[0.06] divide-y divide-white/[0.05]">
       {rows.map((r, i) => (
         <button
           type="button"
@@ -222,9 +224,10 @@ function StreakRows({ rows, onSelect }: { rows: LeaderboardRow[]; onSelect: (r: 
 
 function VolumeRows({ rows, unit, toDisplay, onSelect }: { rows: VolumeRow[]; unit: WeightUnit; toDisplay: (kg: number) => number; onSelect: (r: FriendProfileTarget) => void }) {
   // Same people, resorted by volume — ranked like the streak tab, but no
-  // medal coloring (motivational framing, not competitive).
+  // medal coloring (motivational framing, not competitive). Rendered flush
+  // inside the Leaderboard bento as a full-width list.
   return (
-    <div className="te-panel rounded-2xl overflow-hidden divide-y divide-white/[0.05]">
+    <div className="-mx-4 border-t border-white/[0.06] divide-y divide-white/[0.05]">
       {rows.map((r, i) => (
         <button
           type="button"
@@ -287,10 +290,10 @@ function Leaderboard({
     // accent-bordered container so it reads as the main event, distinct from
     // the flat section headings around it.
     <div
-      className="rounded-[24px] p-4"
+      className="rounded-[24px] p-4 overflow-hidden"
       style={{
         background: 'linear-gradient(180deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.012) 100%), #0c0c0c',
-        border: '1px solid var(--te-border-strong)',
+        border: '1px solid var(--te-border)',
         boxShadow: '0 8px 28px rgba(0,0,0,0.4)',
       }}
     >

@@ -213,7 +213,7 @@ function Stepper({
 
   return (
     <div className="flex flex-col items-center gap-2.5 w-full">
-      <span className="te-label" style={{ letterSpacing: '0.06em' }}>{label}</span>
+      <span className="te-label whitespace-nowrap" style={{ letterSpacing: '0.06em' }}>{label}</span>
       <div className="flex items-center justify-center gap-[15px] w-full">
         <StepperBtn label="–" onPress={() => onChange(clamp(value - step))} onLongPress={() => onChange(clamp(value - bigStep))} />
 
@@ -390,7 +390,8 @@ export default function LogModal({
               active={setType === key}
               onClick={() => setSetType(key)}
               label={label}
-              className="flex-1 min-w-[96px]"
+              className="flex-1 min-w-[88px]"
+              heightPx={36}
             />
           ))}
         </div>

@@ -7,7 +7,9 @@
   --te-lower: #f2c08c;
   --te-pr:    #7fd57f;
   --te-warn:  #e8a657;
-  --te-border: rgba(255, 255, 255, 0.04);
+  /* Single source of truth for every bento/card border — keep card borders on
+     this token so they stay uniform in opacity and thickness. */
+  --te-border: rgba(255, 255, 255, 0.06);
   --te-border-strong: rgba(255, 255, 255, 0.07);
   /* Accent — overridden at runtime by lib/accent.ts (default: red) */
   --te-accent: #ff453a;
