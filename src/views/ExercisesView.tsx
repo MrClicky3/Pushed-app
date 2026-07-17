@@ -3,6 +3,7 @@ import { FireIcon } from '@heroicons/react/24/outline';
 import Model from '@phelian/react-body-highlighter';
 import ExerciseCard from '../components/ExerciseCard';
 import { accentHex } from '../lib/accent';
+import { EXERCISE_LIBRARY } from '../data/exerciseLibrary';
 import type { Exercise, WorkoutLog } from '../types';
 import type { WeightUnit } from '../hooks/useSettings';
 
@@ -96,7 +97,7 @@ export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, 
         }} />
 
         <div style={{ position: 'absolute', top: 20, left: 20 }}>
-          <p style={{ fontFamily: "'Geist Mono', monospace", fontSize: 18, fontWeight: 600, letterSpacing: '-0.17px', textTransform: 'uppercase', color: '#ffffff', lineHeight: 1 }}>
+          <p style={{ fontFamily: "'Geist Mono', monospace", fontSize: 18, fontWeight: 600, letterSpacing: '-0.17px', textTransform: 'uppercase', color: '#ff453a', lineHeight: 1 }}>
             Exercise Library
           </p>
           <p style={{ fontFamily: "'Geist', sans-serif", fontSize: 12, fontWeight: 400, letterSpacing: '-0.1px', color: 'rgba(244,241,236,0.35)', marginTop: 9, lineHeight: 1 }}>
@@ -105,7 +106,7 @@ export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, 
         </div>
 
         <div style={{ position: 'absolute', bottom: 20, left: 20 }}>
-          <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: 40, fontWeight: 600, color: 'rgba(244,241,236,0.92)', lineHeight: 1, letterSpacing: '-1.76px', display: 'block' }}>63</span>
+          <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: 40, fontWeight: 600, color: 'rgba(244,241,236,0.92)', lineHeight: 1, letterSpacing: '-1.76px', display: 'block' }}>{EXERCISE_LIBRARY.length}</span>
           <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: 13, fontWeight: 600, letterSpacing: '-0.52px', textTransform: 'uppercase', color: 'rgba(244,241,236,0.92)', marginTop: 8, display: 'block', lineHeight: 1 }}>exercises</span>
         </div>
 

@@ -814,7 +814,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
                       <button
                         key={key}
                         onClick={() => switchTab(key)}
-                        className="flex flex-col items-center gap-0.5 px-7 py-1 rounded-full active:opacity-60 transition-opacity select-none"
+                        className="flex flex-col items-center gap-0.5 px-5 py-1 rounded-full active:opacity-60 transition-opacity select-none"
                       >
                         <Icon className="w-[22px] h-[22px]" style={{ color }} />
                         <span className="text-[10px] font-medium tracking-tight" style={{ color }}>
