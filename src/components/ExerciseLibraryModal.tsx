@@ -1,15 +1,14 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { MagnifyingGlassIcon, XMarkIcon, CheckIcon } from '@heroicons/react/24/outline';
 import Model from '@phelian/react-body-highlighter';
 import type { Muscle } from '@phelian/react-body-highlighter';
 import FullPageSheet from './FullPageSheet';
-import HardwareSlider from './HardwareSlider';
+import Modal from './Modal';
 import { accentHex, accentAlpha } from '../lib/accent';
 import {
   EXERCISE_LIBRARY,
   EQUIPMENT_LABELS,
   type LibraryExercise,
-  type MuscleGroup,
   type EquipmentType,
 } from '../data/exerciseLibrary';
 
@@ -21,9 +20,16 @@ interface Props {
   initialSelected?: LibraryExercise;
 }
 
-// ── Tokens (matches app TE system) ───────────────────────────
+// ── Tokens ────────────────────────────────────────────────────
 const ACCENT     = '#f4f1ec';
 const ACCENT_DIM = 'rgba(244,241,236,0.28)';
+
+// Surfaces
+const CARD_BG    = '#141414';
+const FIELD_BG   = '#1b1b1b';
+const HAIRLINE   = 'var(--te-border-strong)';   // matches the app's border tokens
+const PLACEHOLDER = '#5c5a58';
+const SAVED = '__saved__';   // sentinel filter for user-saved exercises
 
 const POSTERIOR = new Set<string>([
   'upper-back','lower-back','back-deltoids','trapezius',
@@ -46,16 +52,31 @@ const MUSCLE_CATEGORY: Record<string, string> = {
 const CATEGORY_ORDER = ['Chest','Back','Shoulders','Biceps','Triceps','Core','Quads','Hamstrings & Glutes','Calves','Forearms'];
 function getCategory(ex: LibraryExercise) { return MUSCLE_CATEGORY[ex.primaryMuscles[0]] ?? 'Other'; }
 
+// Muscle-filter cards shown under the search bar. Each highlights the
+// worked muscles on a small body model; tapping filters the library.
+const MUSCLE_FILTERS: { cat: string; view: 'anterior' | 'posterior'; isUpper: boolean; muscles: Muscle[] }[] = [
+  { cat: 'Chest',               view: 'anterior',  isUpper: true,  muscles: ['chest'] },
+  { cat: 'Back',                view: 'posterior', isUpper: true,  muscles: ['upper-back', 'lower-back'] },
+  { cat: 'Shoulders',           view: 'anterior',  isUpper: true,  muscles: ['front-deltoids', 'trapezius'] },
+  { cat: 'Biceps',              view: 'anterior',  isUpper: true,  muscles: ['biceps'] },
+  { cat: 'Triceps',             view: 'posterior', isUpper: true,  muscles: ['triceps'] },
+  { cat: 'Core',                view: 'anterior',  isUpper: true,  muscles: ['abs', 'obliques'] },
+  { cat: 'Quads',               view: 'anterior',  isUpper: false, muscles: ['quadriceps'] },
+  { cat: 'Hamstrings & Glutes', view: 'posterior', isUpper: false, muscles: ['hamstring', 'gluteal'] },
+  { cat: 'Calves',              view: 'posterior', isUpper: false, muscles: ['calves'] },
+  { cat: 'Forearms',            view: 'anterior',  isUpper: true,  muscles: ['forearm'] },
+];
+
 // ── Equipment icons ───────────────────────────────────────────
 function EquipIcon({ type, size = 13, color = 'rgba(255,255,255,0.38)' }: { type: EquipmentType; size?: number; color?: string }) {
-  const p: React.SVGProps<SVGSVGElement> = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none' };
+  const p: React.SVGProps<SVGSVGElement> = { width: size, height: size, viewBox: '0 0 24 24', fill: color };
   switch (type) {
-    case 'barbell': return <svg {...p}><line x1="8" y1="12" x2="16" y2="12" stroke={color} strokeWidth="2" strokeLinecap="round"/><rect x="4" y="9" width="2" height="6" rx="1" fill={color}/><rect x="18" y="9" width="2" height="6" rx="1" fill={color}/><rect x="2" y="10" width="2" height="4" rx="0.8" fill={color}/><rect x="20" y="10" width="2" height="4" rx="0.8" fill={color}/></svg>;
-    case 'dumbbell': return <svg {...p}><path d="M3 9v6M6 7v10M18 7v10M21 9v6M6 12h12" stroke={color} strokeWidth="2" strokeLinecap="round"/></svg>;
-    case 'cable': return <svg {...p}><circle cx="12" cy="5.5" r="2.8" stroke={color} strokeWidth="1.8"/><line x1="12" y1="8.3" x2="12" y2="19" stroke={color} strokeWidth="1.8" strokeLinecap="round"/><path d="M9 16.5l3 3 3-3" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>;
-    case 'machine': return <svg {...p}><rect x="4" y="3" width="3.5" height="18" rx="1.5" stroke={color} strokeWidth="1.8"/><rect x="16.5" y="3" width="3.5" height="18" rx="1.5" stroke={color} strokeWidth="1.8"/><line x1="7.5" y1="12" x2="16.5" y2="12" stroke={color} strokeWidth="1.8" strokeLinecap="round"/><line x1="4" y1="8" x2="20" y2="8" stroke={color} strokeWidth="1.6" strokeLinecap="round"/></svg>;
-    case 'bodyweight': return <svg {...p}><circle cx="12" cy="5" r="2.3" stroke={color} strokeWidth="1.8"/><path d="M8 10.5h8" stroke={color} strokeWidth="1.8" strokeLinecap="round"/><path d="M12 10.5v6" stroke={color} strokeWidth="1.8" strokeLinecap="round"/><path d="M9.5 16.5l2.5 3.5 2.5-3.5" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/><path d="M8.5 13.5l-2 2.5M15.5 13.5l2 2.5" stroke={color} strokeWidth="1.8" strokeLinecap="round"/></svg>;
-    default: return <svg {...p}><circle cx="12" cy="12" r="3.5" stroke={color} strokeWidth="1.8"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22" stroke={color} strokeWidth="1.8" strokeLinecap="round"/></svg>;
+    case 'barbell': return <svg {...p}><rect x="1.5" y="9.5" width="2.5" height="5" rx="1"/><rect x="4.8" y="7.5" width="2.6" height="9" rx="1.1"/><rect x="16.6" y="7.5" width="2.6" height="9" rx="1.1"/><rect x="20" y="9.5" width="2.5" height="5" rx="1"/><rect x="7" y="10.9" width="10" height="2.2" rx="1.1"/></svg>;
+    case 'dumbbell': return <svg {...p}><rect x="1.5" y="7.5" width="3" height="9" rx="1.2"/><rect x="5" y="9" width="2.6" height="6" rx="1"/><rect x="7.4" y="10.8" width="9.2" height="2.4" rx="1.2"/><rect x="16.4" y="9" width="2.6" height="6" rx="1"/><rect x="19.5" y="7.5" width="3" height="9" rx="1.2"/></svg>;
+    case 'cable': return <svg {...p}><circle cx="12" cy="4.8" r="3"/><rect x="10.8" y="7.4" width="2.4" height="8" rx="1.2"/><path d="M8 14.5h8l-4 5z"/></svg>;
+    case 'machine': return <svg {...p}><rect x="2.5" y="3" width="4" height="18" rx="1.6"/><rect x="17.5" y="3" width="4" height="18" rx="1.6"/><rect x="6" y="10.8" width="12" height="2.4" rx="1.2"/></svg>;
+    case 'bodyweight': return <svg {...p}><circle cx="12" cy="4.5" r="2.6"/><path d="M6.5 10.2c1.7-1 3.6-1.5 5.5-1.5s3.8.5 5.5 1.5l-1 1.8c-1.4-.8-2.9-1.2-4.5-1.2s-3.1.4-4.5 1.2z"/><path d="M9.3 13.8l2.7 5.7 2.7-5.7c-.85.4-1.75.6-2.7.6s-1.85-.2-2.7-.6z"/></svg>;
+    default: return <svg {...p}><circle cx="12" cy="12" r="5.5"/></svg>;
   }
 }
 
@@ -64,53 +85,142 @@ const SvgCheck = ({ c }: { c: string }) => <svg width="13" height="13" viewBox="
 const SvgX     = ({ c }: { c: string }) => <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke={c} strokeWidth="2.6" strokeLinecap="round"/></svg>;
 const SvgPlus  = ({ c }: { c: string }) => <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke={c} strokeWidth="2.2" strokeLinecap="round"/></svg>;
 const SvgBack  = ({ c }: { c: string }) => <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke={c} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+const SvgBookmark = ({ c }: { c: string }) => <svg width="20" height="20" viewBox="0 0 24 24" fill={c}><path d="M6 3.5h12a1 1 0 0 1 1 1V20a.75.75 0 0 1-1.18.61L12 16.9l-5.82 3.71A.75.75 0 0 1 5 20V4.5a1 1 0 0 1 1-1z"/></svg>;
 
-// ── Exercise animation (hasaneyldrm/exercises-dataset) ────────
+// ── Exercise animation — autoplays, no controls ───────────────
 const ANIM_BASE = 'https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main';
 
 function ExerciseAnimation({ gifUrl, inline }: { gifUrl: string; inline?: boolean }) {
-  const [playing, setPlaying] = useState(false);
-
-  useEffect(() => { setPlaying(false); }, [gifUrl]);
-
   const posterUrl = `${ANIM_BASE}/${gifUrl.replace('videos/', 'images/').replace('.gif', '.jpg')}`;
   const animUrl   = `${ANIM_BASE}/${gifUrl}`;
 
   const wrapper: React.CSSProperties = inline
     ? { position: 'relative', height: 180, background: '#f5f2ee', borderBottom: '1px solid rgba(255,255,255,0.07)' }
-    : { margin: '0 16px 10px', borderRadius: 16, overflow: 'hidden', border: '1px solid var(--te-border)', background: '#f5f2ee', position: 'relative', height: 180 };
+    : { margin: '0 16px 10px', borderRadius: 16, overflow: 'hidden', border: `1px solid ${HAIRLINE}`, background: '#f5f2ee', position: 'relative', height: 180 };
 
   return (
     <div style={wrapper}>
-      <img
-        key={playing ? 'gif' : 'poster'}
-        src={playing ? animUrl : posterUrl}
-        alt=""
-        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }}
-      />
-      {/* Play / pause */}
-      <button
-        onClick={() => setPlaying(p => !p)}
-        style={{
-          position: 'absolute', bottom: 8, right: 8,
-          width: 30, height: 30, borderRadius: '50%',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: playing ? 'rgba(0,0,0,0.5)' : ACCENT,
-          border: 'none', cursor: 'pointer',
-        }}
-      >
-        {playing
-          ? <svg width="11" height="11" viewBox="0 0 24 24"><rect x="5" y="4" width="4" height="16" rx="1" fill="white"/><rect x="15" y="4" width="4" height="16" rx="1" fill="white"/></svg>
-          : <svg width="11" height="11" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8V4z" fill="white"/></svg>
-        }
-      </button>
+      {/* Poster underlay avoids a flash before the gif decodes */}
+      <img src={posterUrl} alt="" aria-hidden style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }} />
+      <img src={animUrl} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }} />
     </div>
   );
 }
 
+// ── Muscle-filter mini card ───────────────────────────────────
+const MiniMuscleCard = React.memo(function MiniMuscleCard({ filter, active, onToggle }: {
+  filter: typeof MUSCLE_FILTERS[number]; active: boolean; onToggle: () => void;
+}) {
+  const data = useMemo(() => [{ name: 'p', muscles: filter.muscles }], [filter.muscles]);
+  return (
+    <button
+      onClick={onToggle}
+      aria-pressed={active}
+      title={filter.cat}
+      className="active:opacity-70 transition-all"
+      style={{
+        flexShrink: 0, width: 56, height: 65, borderRadius: 15,
+        position: 'relative', overflow: 'hidden', cursor: 'pointer',
+        background: active ? 'rgba(255,255,255,0.06)' : FIELD_BG,
+        border: `1px solid ${active ? '#ffffff' : HAIRLINE}`,
+        boxShadow: active ? '0 0 0 1px #ffffff' : 'none',
+      }}
+    >
+      <div style={{
+        position: 'absolute',
+        [filter.isUpper ? 'top' : 'bottom']: filter.isUpper ? -6 : -46,
+        left: '50%', transform: 'translateX(-50%)', width: '112%',
+      }}>
+        <Model
+          type={filter.view}
+          data={data}
+          bodyColor={active ? '#3d3d3d' : '#343434'}
+          highlightedColors={[accentHex()]}
+          style={{ width: '100%' }}
+        />
+      </div>
+    </button>
+  );
+});
+
+// ── Exercise card (Figma "Card") ──────────────────────────────
+const CarouselCard = React.memo(function CarouselCard({ exercise, onTap, onToggleAdd, added }: {
+  exercise: LibraryExercise; onTap: () => void; onToggleAdd: () => void; added: boolean;
+}) {
+  const isUpper = exercise.muscleGroup === 'upper';
+  const view = bestView(exercise.primaryMuscles);
+  const mapData = useMemo(() => [{ name: 'p', muscles: exercise.primaryMuscles }], [exercise.primaryMuscles]);
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onTap}
+      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onTap(); } }}
+      className="active:opacity-80 transition-opacity"
+      style={{
+        flexShrink: 0, width: 'calc((100vw - 50px) / 2)', maxWidth: 182, height: 240,
+        display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+        position: 'relative', background: CARD_BG, border: `1px solid ${HAIRLINE}`,
+        borderRadius: 20, overflow: 'hidden', cursor: 'pointer', textAlign: 'left',
+        scrollSnapAlign: 'start',
+      }}
+    >
+      {/* Muscle model fills the card (solid card background, single scrim below) */}
+      <div style={{
+        position: 'absolute',
+        [isUpper ? 'top' : 'bottom']: isUpper ? 26 : -6,
+        left: '50%', transform: 'translateX(-50%)', width: '58%',
+      }}>
+        <Model type={view} data={mapData} bodyColor="#343434" highlightedColors={[accentHex()]} style={{ width: '100%' }} />
+      </div>
+      {/* Single gradient — solid card fading up from behind the title */}
+      <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 118, background: 'linear-gradient(to top, #141414 30%, rgba(20,20,20,0) 100%)' }} />
+
+      {/* Tag */}
+      <div style={{ position: 'relative', padding: '11px 46px 0 11px' }}>
+        <span className="te-label" style={{
+          display: 'inline-block', maxWidth: '100%',
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          color: 'rgba(244,241,236,0.42)', fontSize: 9.5,
+          padding: '3px 8px', borderRadius: 50, border: `1px solid ${HAIRLINE}`,
+          background: 'rgba(8,8,10,0.5)',
+        }}>
+          {exercise.primaryMuscles[0]?.replace(/-/g, ' ')}
+        </span>
+      </div>
+
+      {/* Add / check */}
+      <button onClick={e => { e.stopPropagation(); onToggleAdd(); }} style={{
+        position: 'absolute', top: 12, right: 12,
+        width: 30, height: 30, borderRadius: '50%',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: added ? ACCENT : 'rgba(10,10,14,0.72)',
+        border: `1px solid ${added ? ACCENT : 'rgba(255,255,255,0.09)'}`,
+      }}>
+        {added ? <SvgCheck c="#0a0a0e" /> : <SvgPlus c="rgba(255,255,255,0.8)" />}
+      </button>
+
+      {/* Title */}
+      <div style={{ position: 'relative', padding: '0 12px 13px' }}>
+        <p className="text-[15px] font-semibold text-[#f4f1ec]" style={{ letterSpacing: '-0.01em', lineHeight: 1.2 }}>
+          {exercise.name}
+        </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 4 }}>
+          <EquipIcon type={exercise.equipment} size={13} />
+          <span className="te-label" style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11.5 }}>
+            {EQUIPMENT_LABELS[exercise.equipment]}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+});
+
 // ── Carousel with dot indicator ───────────────────────────────
-function CarouselSection({ category, exercises, onTap, isAdded, onToggleAdd }: {
+function CarouselSection({ category, count, exercises, onTap, isAdded, onToggleAdd }: {
   category: string;
+  count: number;
   exercises: LibraryExercise[];
   onTap: (ex: LibraryExercise) => void;
   isAdded: (ex: LibraryExercise) => boolean;
@@ -122,16 +232,23 @@ function CarouselSection({ category, exercises, onTap, isAdded, onToggleAdd }: {
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
-    const cardW = 170 + 10;
+    // At the end of the track the last card is fully visible even though its
+    // left edge never reaches the container start — snap the indicator to last.
+    if (el.scrollLeft + el.clientWidth >= el.scrollWidth - 2) {
+      setActiveIdx(exercises.length - 1);
+      return;
+    }
+    const card = el.querySelector<HTMLElement>('[data-card]');
+    const cardW = (card?.offsetWidth ?? 170) + 10;
     setActiveIdx(Math.min(Math.round(el.scrollLeft / cardW), exercises.length - 1));
   }, [exercises.length]);
 
   return (
-    <div style={{ marginBottom: 10 }}>
+    <div style={{ marginBottom: 14 }}>
       {/* Section header */}
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 7, padding: '0 20px', marginBottom: 6 }}>
-        <p className="text-[17px] font-bold text-[#f4f1ec]" style={{ letterSpacing: '-0.02em' }}>{category}</p>
-        <span className="te-label" style={{ color: 'rgba(255,255,255,0.28)' }}>{exercises.length}</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 0 9px', margin: '0 20px 12px', borderBottom: `1px solid ${HAIRLINE}` }}>
+        <span className="te-label" style={{ color: 'rgba(244,241,236,0.55)' }}>{category}</span>
+        <span className="te-label ml-auto" style={{ color: 'rgba(244,241,236,0.55)' }}>{count}</span>
       </div>
 
       {/* Horizontal scroll */}
@@ -147,29 +264,27 @@ function CarouselSection({ category, exercises, onTap, isAdded, onToggleAdd }: {
           paddingTop: 2, paddingBottom: 4,
         }}
       >
-        {/* Leading spacer — webkit ignores padding-left on overflow flex containers */}
-        <div style={{ flexShrink: 0, width: 20 }} />
+        <div style={{ flexShrink: 0, width: 10 }} />
         {exercises.map(ex => (
-          <CarouselCard
-            key={ex.id}
-            exercise={ex}
-            onTap={() => onTap(ex)}
-            onToggleAdd={() => onToggleAdd(ex.id)}
-            added={isAdded(ex)}
-          />
+          <span data-card key={ex.id} style={{ display: 'flex' }}>
+            <CarouselCard
+              exercise={ex}
+              onTap={() => onTap(ex)}
+              onToggleAdd={() => onToggleAdd(ex.id)}
+              added={isAdded(ex)}
+            />
+          </span>
         ))}
-        {/* Trailing spacer — webkit ignores padding-right on overflow flex containers */}
-        <div style={{ flexShrink: 0, width: 20 }} />
+        <div style={{ flexShrink: 0, width: 10 }} />
       </div>
 
       {/* Dot indicators */}
       {exercises.length > 1 && (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 5, marginTop: 6 }}>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 6, marginTop: 8 }}>
           {exercises.map((_, i) => (
             <div key={i} style={{
-              height: 3, borderRadius: 99,
-              width: i === activeIdx ? 18 : 5,
-              background: i === activeIdx ? ACCENT : 'rgba(255,255,255,0.14)',
+              width: 6, height: 6, borderRadius: 99,
+              background: i === activeIdx ? ACCENT : 'rgba(255,255,255,0.16)',
               transition: 'all 0.25s ease',
             }} />
           ))}
@@ -179,89 +294,17 @@ function CarouselSection({ category, exercises, onTap, isAdded, onToggleAdd }: {
   );
 }
 
-// ── Carousel card ─────────────────────────────────────────────
-const CarouselCard = React.memo(function CarouselCard({ exercise, onTap, onToggleAdd, added }: {
-  exercise: LibraryExercise; onTap: () => void; onToggleAdd: () => void; added: boolean;
-}) {
-  const isUpper = exercise.muscleGroup === 'upper';
-  const view = bestView(exercise.primaryMuscles);
-  const mapData = useMemo(() => [{ name: 'p', muscles: exercise.primaryMuscles }], [exercise.primaryMuscles]);
-
+// ── Detail – muscle chip ──────────────────────────────────────
+function MuscleChip({ label, primary }: { label: string; primary?: boolean }) {
   return (
-    <button
-      onClick={onTap}
-      className="active:opacity-75 transition-opacity"
-      style={{
-        flexShrink: 0, width: 170, display: 'flex', flexDirection: 'column',
-        background: '#141414', border: '1px solid var(--te-border)',
-        borderRadius: 14, overflow: 'hidden', cursor: 'pointer', textAlign: 'left',
-        scrollSnapAlign: 'start',
-      }}
-    >
-      {/* Muscle model */}
-      <div style={{
-        position: 'relative', height: 170, overflow: 'hidden',
-        background: 'radial-gradient(130% 100% at 50% 0%, rgba(255,255,255,0.04) 0%, transparent 60%), #0c0c10',
-        borderBottom: '1px solid var(--te-border)',
-      }}>
-        <div style={{
-          position: 'absolute',
-          [isUpper ? 'top' : 'bottom']: -4,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '60%',
-        }}>
-          <Model type={view} data={mapData} bodyColor="#181818" highlightedColors={[accentHex()]} style={{ width: '100%' }} />
-        </div>
-
-        {/* Add / check button */}
-        <button onClick={e => { e.stopPropagation(); onToggleAdd(); }} style={{
-          position: 'absolute', top: 8, right: 8,
-          width: 26, height: 26, borderRadius: '50%',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: added ? ACCENT : 'rgba(10,10,14,0.72)',
-          border: `1px solid ${added ? ACCENT : 'rgba(255,255,255,0.07)'}`,
-        }}>
-          {added ? <SvgCheck c="#0a0a0e" /> : <SvgPlus c="rgba(255,255,255,0.75)" />}
-        </button>
-
-        {/* Target label */}
-        <span className="te-label" style={{
-          position: 'absolute', bottom: 7, left: 8,
-          color: 'rgba(255,255,255,0.35)', padding: '2px 6px',
-          borderRadius: 5, background: 'rgba(8,8,12,0.7)',
-          border: '1px solid rgba(255,255,255,0.06)',
-        }}>
-          {exercise.primaryMuscles[0]?.replace(/-/g, ' ')}
-        </span>
-      </div>
-
-      {/* Meta — strictly below the map, no overlap */}
-      <div style={{ padding: '9px 10px 11px', display: 'flex', flexDirection: 'column', gap: 4, background: '#141414' }}>
-        <p className="text-[14.5px] font-semibold text-[#f4f1ec]" style={{ letterSpacing: '-0.01em', lineHeight: 1.25 }}>
-          {exercise.name}
-        </p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-          <EquipIcon type={exercise.equipment} size={13} />
-          <span className="te-label" style={{ color: 'rgba(255,255,255,0.38)', fontSize: 11.5 }}>
-            {EQUIPMENT_LABELS[exercise.equipment]}
-          </span>
-        </div>
-      </div>
-    </button>
-  );
-});
-
-// ── Detail – stat tile ────────────────────────────────────────
-function StatTile({ label, value, dot }: { label: string; value: string; dot?: string }) {
-  return (
-    <div className="te-panel flex-1 rounded-2xl" style={{ padding: '10px 12px' }}>
-      <p className="te-label mb-1.5">{label}</p>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        {dot && <span style={{ width: 7, height: 7, borderRadius: '50%', background: dot, boxShadow: `0 0 8px ${dot}99`, flexShrink: 0 }} />}
-        <span className="text-[14px] font-semibold text-[#f4f1ec]" style={{ letterSpacing: '-0.01em' }}>{value}</span>
-      </div>
-    </div>
+    <span className="te-label" style={{
+      padding: '4px 9px', borderRadius: 50, whiteSpace: 'nowrap',
+      color: primary ? accentHex() : 'rgba(244,241,236,0.6)',
+      background: primary ? accentAlpha(0.14) : 'rgba(255,255,255,0.05)',
+      border: `1px solid ${primary ? accentAlpha(0.32) : HAIRLINE}`,
+    }}>
+      {label.replace(/-/g, ' ')}
+    </span>
   );
 }
 
@@ -294,8 +337,7 @@ function SwipeableHeroCard({ selected }: { selected: LibraryExercise }) {
   ], [selected.primaryMuscles, selected.secondaryMuscles]);
 
   return (
-    <div style={{ margin: '0 16px', borderRadius: 20, overflow: 'hidden', border: '1px solid var(--te-border)' }}>
-      {/* Swipeable slides */}
+    <div style={{ borderRadius: 20, overflow: 'hidden', border: `1px solid ${HAIRLINE}` }}>
       <div
         style={{ overflow: 'hidden' }}
         onTouchStart={e => { touchStartX.current = e.touches[0].clientX; }}
@@ -310,7 +352,7 @@ function SwipeableHeroCard({ selected }: { selected: LibraryExercise }) {
           transform: `translateX(-${slide * 100}%)`,
           transition: 'transform 0.32s cubic-bezier(0.4,0,0.2,1)',
         }}>
-          {/* Slide 0 — form video */}
+          {/* Slide 0 — form video (autoplays) */}
           {hasVideo && (
             <div style={{ flexShrink: 0, width: '100%' }}>
               <ExerciseAnimation gifUrl={selected.gifUrl!} inline />
@@ -337,39 +379,28 @@ function SwipeableHeroCard({ selected }: { selected: LibraryExercise }) {
         </div>
       </div>
 
-      {/* Bottom bar: muscle chip | slide dots | legend */}
-      <div style={{ background: '#0f0f14', padding: '8px 14px 11px', display: 'flex', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-        <span style={{ flex: 1 }}>
-          <span className="te-label" style={{ color: ACCENT, padding: '2px 7px', borderRadius: 5, background: ACCENT + '1f', border: `1px solid ${ACCENT}33` }}>
-            {selected.primaryMuscles[0]?.replace(/-/g, ' ')}
-          </span>
-        </span>
-        {totalSlides > 1 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            {Array.from({ length: totalSlides }).map((_, i) => (
-              <button key={i} onClick={() => setSlide(i)} style={{
-                height: 3, width: i === slide ? 18 : 5, borderRadius: 99,
-                background: i === slide ? ACCENT : 'rgba(255,255,255,0.22)',
-                border: 'none', padding: 0, cursor: 'pointer',
-                transition: 'all 0.2s ease',
-              }} />
-            ))}
-          </div>
-        )}
-        <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 5 }}>
-          <span style={{ width: 5, height: 5, borderRadius: '50%', background: ACCENT_DIM }} />
-          <span className="te-label" style={{ color: 'rgba(255,255,255,0.28)' }}>Sec</span>
-          <span style={{ marginLeft: 3, width: 5, height: 5, borderRadius: '50%', background: ACCENT }} />
-          <span className="te-label" style={{ color: 'rgba(255,255,255,0.28)' }}>Pri</span>
+      {/* Bottom bar: video ↔ model toggle dots only */}
+      {totalSlides > 1 && (
+        <div style={{ background: '#0f0f14', padding: '9px 14px 11px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+          {(['Video', 'Muscles'] as const).map((label, i) => (
+            <button key={label} onClick={() => setSlide(i)} className="te-label" style={{
+              padding: '3px 9px', borderRadius: 50, border: 'none', cursor: 'pointer',
+              color: i === slide ? '#0a0a0e' : 'rgba(255,255,255,0.4)',
+              background: i === slide ? ACCENT : 'rgba(255,255,255,0.05)',
+              transition: 'all 0.2s ease',
+            }}>
+              {label}
+            </button>
+          ))}
         </div>
-      </div>
+      )}
     </div>
   );
 }
 
 // ── Main component ────────────────────────────────────────────
 export default function ExerciseLibraryModal({ open, onClose, onSelect, existingNames, initialSelected }: Props) {
-  const [filter, setFilter]       = useState<'all' | MuscleGroup>('all');
+  const [muscleCat, setMuscleCat] = useState<string | null>(null);
   const [search, setSearch]       = useState('');
   const [selected, setSelected]   = useState<LibraryExercise | null>(initialSelected ?? null);
   const [addedIds, setAddedIds]   = useState<Set<string>>(new Set());
@@ -379,7 +410,7 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, existing
     if (open) {
       setSelected(initialSelected ?? null);
       setSearch('');
-      setFilter('all');
+      setMuscleCat(null);
       setAddedIds(new Set());
     }
   }, [open]);
@@ -391,7 +422,11 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, existing
 
   const filtered = useMemo(() => {
     let list = EXERCISE_LIBRARY;
-    if (filter !== 'all') list = list.filter(e => e.muscleGroup === filter);
+    if (muscleCat === SAVED) {
+      list = list.filter(e => addedIds.has(e.id) || existingNames.has(e.name.toLowerCase()));
+    } else if (muscleCat) {
+      list = list.filter(e => getCategory(e) === muscleCat);
+    }
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(e =>
@@ -401,7 +436,7 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, existing
       );
     }
     return list;
-  }, [filter, search]);
+  }, [muscleCat, search, addedIds, existingNames]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, LibraryExercise[]>();
@@ -413,51 +448,71 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, existing
     return CATEGORY_ORDER.filter(c => map.has(c)).map(c => ({ category: c, exercises: map.get(c)! }));
   }, [filtered]);
 
+  // Only offer muscle filters that actually have exercises.
+  const availableFilters = useMemo(() => {
+    const present = new Set(EXERCISE_LIBRARY.map(getCategory));
+    return MUSCLE_FILTERS.filter(f => present.has(f.cat));
+  }, []);
+
   function handleClose() { setSelected(null); setSearch(''); onClose(); }
 
-  const REGION_FILTERS: { key: 'all' | MuscleGroup; label: string }[] = [
-    { key: 'all',   label: 'All' },
-    { key: 'upper', label: 'Upper' },
-    { key: 'lower', label: 'Lower' },
-  ];
+  // ── Detail pop-up (opens over the library list) ──────────────
+  const added = selected ? isAdded(selected) : false;
+  const closeDetail = () => (initialSelected ? handleClose() : setSelected(null));
 
-  // ── Detail view ──────────────────────────────────────────────
-  if (selected) {
-    const added = isAdded(selected);
+  const detailPopup = (
+    <Modal open={open && !!selected} onClose={closeDetail} title="" noPadTop noPadBottom>
+      {selected && (
+        <div className="animate-detail-enter" style={{ paddingTop: 4 }}>
 
-    return (
-      <FullPageSheet open={open} onClose={handleClose}>
-        <div className="animate-detail-enter" style={{ margin: 0, background: '#161617' }}>
-
-          {/* Sticky back */}
-          <div style={{ position: 'sticky', top: 0, zIndex: 10, background: '#161617', padding: '10px 16px 12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-              <button onClick={() => initialSelected ? handleClose() : setSelected(null)} style={{ width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.06)', cursor: 'pointer' }}>
-                <SvgBack c="#fff" />
-              </button>
-              <span className="te-label" style={{ color: 'rgba(255,255,255,0.38)', letterSpacing: '0.1em' }}>{initialSelected ? 'Close' : 'Library'}</span>
-            </div>
-          </div>
-
-          {/* Hero card — swipeable: video ↔ muscle model */}
+          {/* Hero — autoplaying video ↔ muscle model */}
           <SwipeableHeroCard selected={selected} />
 
           {/* Title + summary */}
-          <div style={{ padding: '16px 20px 0' }}>
-            <h1 className="text-[24px] font-bold text-[#f4f1ec]" style={{ letterSpacing: '-0.025em', lineHeight: 1.1 }}>{selected.name}</h1>
+          <div style={{ paddingTop: 16 }}>
+            <h1 className="text-[22px] font-bold text-[#f4f1ec]" style={{ letterSpacing: '-0.02em', lineHeight: 1.12 }}>{selected.name}</h1>
             {selected.summary && (
-              <p className="text-[13px] leading-relaxed mt-2" style={{ color: 'rgba(244,241,236,0.5)' }}>{selected.summary}</p>
+              <p className="text-[13.5px] leading-relaxed mt-2" style={{ color: 'rgba(244,241,236,0.55)' }}>{selected.summary}</p>
             )}
           </div>
 
-          {/* Stats */}
-          <div style={{ display: 'flex', gap: 8, padding: '14px 20px 0' }}>
-            <StatTile label="Equipment" value={EQUIPMENT_LABELS[selected.equipment]} />
-            <StatTile label="Muscle group" value={selected.muscleGroup === 'upper' ? 'Upper' : 'Lower'} />
+          {/* Overview — equipment · region · muscles worked in one panel */}
+          <div className="te-panel rounded-2xl" style={{ marginTop: 16, overflow: 'hidden' }}>
+            <div style={{ display: 'flex' }}>
+              <div style={{ flex: 1, padding: '12px 14px' }}>
+                <p className="te-label mb-1.5">Equipment</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <EquipIcon type={selected.equipment} size={14} color="rgba(244,241,236,0.85)" />
+                  <span className="text-[14px] font-semibold text-[#f4f1ec]">{EQUIPMENT_LABELS[selected.equipment]}</span>
+                </div>
+              </div>
+              <div style={{ width: 1, background: HAIRLINE }} />
+              <div style={{ flex: 1, padding: '12px 14px' }}>
+                <p className="te-label mb-1.5">Region</p>
+                <span className="text-[14px] font-semibold text-[#f4f1ec]">{selected.muscleGroup === 'upper' ? 'Upper body' : 'Lower body'}</span>
+              </div>
+            </div>
+            <div style={{ height: 1, background: HAIRLINE }} />
+            <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 9 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span className="te-label" style={{ color: ACCENT_DIM, width: 66, flexShrink: 0 }}>Primary</span>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {selected.primaryMuscles.map(m => <MuscleChip key={m} label={m} primary />)}
+                </div>
+              </div>
+              {selected.secondaryMuscles.length > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span className="te-label" style={{ color: ACCENT_DIM, width: 66, flexShrink: 0 }}>Secondary</span>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {selected.secondaryMuscles.map(m => <MuscleChip key={m} label={m} />)}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* How to */}
-          <div style={{ padding: '20px 20px 0' }}>
+          {/* How to perform */}
+          <div style={{ paddingTop: 22 }}>
             <p className="te-label mb-3.5" style={{ letterSpacing: '0.12em' }}>How to perform</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {selected.instructions.map((step, i) => (
@@ -473,7 +528,7 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, existing
           </div>
 
           {selected.cues?.length > 0 && (
-            <div style={{ padding: '20px 20px 0' }}>
+            <div style={{ paddingTop: 6 }}>
               <p className="te-label mb-3.5" style={{ letterSpacing: '0.12em' }}>Form cues</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {selected.cues.map((c, i) => <CueLine key={i} text={c} good />)}
@@ -482,7 +537,7 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, existing
           )}
 
           {selected.mistakes?.length > 0 && (
-            <div style={{ padding: '20px 20px 0' }}>
+            <div style={{ paddingTop: 20 }}>
               <p className="te-label mb-3.5" style={{ letterSpacing: '0.12em' }}>Common mistakes</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {selected.mistakes.map((m, i) => <CueLine key={i} text={m} />)}
@@ -490,66 +545,51 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, existing
             </div>
           )}
 
-          {/* Bottom padding so content clears the sticky CTA */}
-          <div style={{ height: 90 }} />
+          <div style={{ height: 88 }} />
 
-          {/* Sticky CTA */}
-          <div style={{ position: 'sticky', bottom: 0, padding: '12px 20px calc(16px + env(safe-area-inset-bottom, 0px))', background: '#161617' }}>
+          {/* Sticky CTA — same button as "Complete workout" / "Log set" */}
+          <div style={{ position: 'sticky', bottom: 0, margin: '0 -19px', padding: '12px 19px calc(14px + env(safe-area-inset-bottom, 0px))', background: '#161617' }}>
             <button
-              onClick={() => { if (!added) { onSelect(selected); toggleAdd(selected.id); handleClose(); } }}
+              onClick={() => { if (!added) { onSelect(selected); toggleAdd(selected.id); closeDetail(); } }}
               disabled={added}
-              style={{
-                width: '100%', height: 50, borderRadius: 16,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                fontSize: 15, fontWeight: 600, letterSpacing: '-0.01em',
-                background: added ? '#163320' : ACCENT,
-                color: added ? '#30d158' : '#0a0a0e',
-                border: `1.5px solid ${added ? 'rgba(48,209,88,0.3)' : 'transparent'}`,
-                cursor: added ? 'default' : 'pointer',
-                boxShadow: added ? 'none' : `0 2px 12px ${ACCENT}55`,
-              }}
+              className="te-white-btn w-full h-[55px] rounded-[20px] flex items-center justify-center gap-1.5 disabled:opacity-60"
             >
-              {added ? <SvgCheck c="#30d158" /> : <SvgPlus c="#0a0a0e" />}
-              {added ? 'Added to your exercises' : 'Add to my exercises'}
+              {added
+                ? <><CheckIcon className="w-[15px] h-[15px] text-black stroke-[2.5]" /><span className="text-[15px] font-semibold text-black tracking-[-0.17px]">Added to your exercises</span></>
+                : <><SvgPlus c="#0a0908" /><span className="text-[15px] font-semibold text-black tracking-[-0.17px]">Add to my exercises</span></>}
             </button>
           </div>
 
         </div>
-      </FullPageSheet>
-    );
-  }
+      )}
+    </Modal>
+  );
 
-  // ── Library list view ────────────────────────────────────────
+  // ── Library list view (detail pops up on top) ────────────────
   return (
+    <>
     <FullPageSheet open={open} onClose={handleClose}>
       <div style={{ margin: 0, position: 'relative' }}>
 
-        {/* Back */}
-        <div style={{ padding: '4px 20px 8px' }}>
-          <button onClick={handleClose} style={{ width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.06)', cursor: 'pointer' }}>
+        {/* Header — back arrow + red title inline */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 20px 16px' }}>
+          <button onClick={handleClose} style={{ width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0 }}>
             <SvgBack c="#fff" />
           </button>
-        </div>
-
-        {/* Header */}
-        <div style={{ padding: '2px 20px 14px' }}>
-          <span className="te-label" style={{ color: ACCENT, letterSpacing: '0.14em' }}>
-            {String(filtered.length).padStart(2, '0')} Exercises
-          </span>
-          <h1 className="text-[26px] font-bold text-[#f4f1ec] mt-1 whitespace-nowrap" style={{ letterSpacing: '-0.03em', lineHeight: 1 }}>
+          <h1 className="text-[19px] font-semibold whitespace-nowrap" style={{ color: '#f4f1ec', letterSpacing: '-0.01em', lineHeight: 1 }}>
             Exercise Library
           </h1>
         </div>
 
-        {/* Search */}
-        <div style={{ padding: '0 20px 11px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0 13px', height: 42, background: 'rgba(255,255,255,0.05)', borderRadius: 12, border: `1px solid ${focused ? ACCENT + '77' : 'var(--te-border)'}`, transition: 'border-color .15s' }}>
-            <MagnifyingGlassIcon style={{ width: 16, height: 16, flexShrink: 0, color: focused ? ACCENT : 'rgba(255,255,255,0.35)' }} />
+        {/* Search — pill */}
+        <div style={{ padding: '0 20px 16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0 18px', height: 45, background: FIELD_BG, borderRadius: 50, border: `1px solid ${focused ? accentHex() : HAIRLINE}`, boxShadow: '0 0 7.5px rgba(0,0,0,0.25)', transition: 'border-color .15s' }}>
+            <MagnifyingGlassIcon style={{ width: 16, height: 16, flexShrink: 0, color: focused ? accentHex() : PLACEHOLDER }} />
             <input
               value={search} onChange={e => setSearch(e.target.value)}
               onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
-              placeholder="Search exercises, muscles…"
-              className="text-[15px] text-white placeholder:text-white/20"
+              placeholder="Search exercises"
+              className="text-[15px] text-white"
               style={{ flex: 1, background: 'none', border: 'none', outline: 'none', letterSpacing: '-0.01em' }}
             />
             {search && (
@@ -560,19 +600,36 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, existing
           </div>
         </div>
 
-        {/* Muscle group filter */}
-        <div style={{ padding: '0 20px 16px' }}>
-          <HardwareSlider options={REGION_FILTERS} value={filter} onChange={setFilter} />
+        {/* Saved filter + muscle-filter mini cards */}
+        <div
+          style={{ display: 'flex', alignItems: 'center', gap: 9, overflowX: 'auto', overflowY: 'visible', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' as never, padding: '6px 20px 18px' }}
+        >
+          {/* Saved — a preview without the card box */}
+          <button
+            onClick={() => setMuscleCat(c => c === SAVED ? null : SAVED)}
+            aria-pressed={muscleCat === SAVED}
+            title="Saved exercises"
+            className="active:opacity-70 transition-opacity"
+            style={{ flexShrink: 0, width: 40, height: 65, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}
+          >
+            <SvgBookmark c={muscleCat === SAVED ? '#ffffff' : 'rgba(255,255,255,0.32)'} />
+          </button>
+          <div style={{ flexShrink: 0, width: 1, height: 38, background: HAIRLINE, marginRight: 2 }} />
+          {availableFilters.map(f => (
+            <MiniMuscleCard
+              key={f.cat}
+              filter={f}
+              active={muscleCat === f.cat}
+              onToggle={() => setMuscleCat(c => c === f.cat ? null : f.cat)}
+            />
+          ))}
         </div>
-
-        {/* Divider */}
-        <div style={{ height: 1, background: 'var(--te-border)', margin: '0 20px 20px' }} />
 
         {/* Grouped carousels */}
         {grouped.length === 0 ? (
           <div style={{ padding: '40px 20px', textAlign: 'center' }}>
             <p className="text-[16px] font-semibold text-[#f4f1ec] mb-2">No exercises found</p>
-            <p className="te-label">Try a different search or filter.</p>
+            <p className="te-label">Try a different search or muscle.</p>
           </div>
         ) : (
           <div style={{ paddingBottom: 24 }}>
@@ -580,6 +637,7 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, existing
               <CarouselSection
                 key={category}
                 category={category}
+                count={exercises.length}
                 exercises={exercises}
                 onTap={setSelected}
                 isAdded={isAdded}
@@ -591,5 +649,7 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, existing
 
       </div>
     </FullPageSheet>
+    {detailPopup}
+    </>
   );
 }
