@@ -27,7 +27,7 @@ function StatCard({ label, value, sub }: { label: string; value: string; sub: st
   return (
     <div
       className="rounded-[20px] px-[18px] py-[12px] flex items-center justify-between gap-3"
-      style={{ background: '#141414', border: '1px solid #1a1a1a' }}
+      style={{ background: '#141414', border: '1px solid var(--te-border)' }}
     >
       <p className="text-[15px] font-semibold text-white tracking-tight">{label}</p>
       <div className="text-right shrink-0">
