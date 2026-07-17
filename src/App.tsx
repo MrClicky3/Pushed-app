@@ -276,6 +276,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
     soundEnabled, setSoundEnabled,
     hapticsEnabled, setHapticsEnabled,
     accent, setAccent,
+    weekStartDay, setWeekStartDay,
   } = useSettings();
   const { routines, schedule, addRoutine, updateRoutine, deleteRoutine, assignDay } = useSchedule(userId);
   const profileApi = useProfile(userId, userName);
@@ -683,6 +684,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
             routines={routines}
             schedule={schedule}
             focusMode={focusMode}
+            weekStartDay={weekStartDay}
           />
         ) : (
           <AnalyticsView
@@ -980,6 +982,8 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
         onSetBarbellWeight={setBarbellWeight}
         showDuration={showDuration}
         onSetShowDuration={setShowDuration}
+        weekStartDay={weekStartDay}
+        onSetWeekStartDay={setWeekStartDay}
         soundEnabled={soundEnabled}
         onSetSoundEnabled={setSoundEnabled}
         hapticsEnabled={hapticsEnabled}
