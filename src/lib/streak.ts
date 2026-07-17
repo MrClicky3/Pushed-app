@@ -52,6 +52,41 @@ export function buildCompletedDays(
   return completed;
 }
 
+// Whole-day set completion: working sets logged across every planned exercise
+// that day (routine's exercise_ids if one's scheduled, else whatever was
+// actually logged) divided by their target sets. Mirrors the day-ring math on
+// the Log page and backs the Overall progress chart.
+export function dayCompletionPct(
+  date: Date,
+  logs: WorkoutLog[],
+  schedule: ScheduleDay[],
+  routines: Routine[],
+  exercises: Exercise[],
+): number {
+  const dk = dayKey(date);
+  const dow = (date.getDay() + 6) % 7;
+  const dLogs = logs.filter(l => dayKey(new Date(l.created_at)) === dk);
+
+  const entry = schedule.find(s => s.day_of_week === dow);
+  const routine = entry?.routine_id ? routines.find(r => r.id === entry.routine_id) : null;
+  const plannedIds = routine
+    ? routine.exercise_ids
+    : Array.from(new Set(dLogs.map(l => l.exercise_id)));
+
+  let target = 0;
+  let done = 0;
+  for (const id of plannedIds) {
+    const ex = exercises.find(e => e.id === id);
+    const t = ex?.sets ?? 0;
+    if (t <= 0) continue;
+    const working = dLogs.filter(l => l.exercise_id === id && l.set_type !== 'warmup').length;
+    target += t;
+    done += Math.min(working, t);
+  }
+  if (target === 0) return dLogs.length > 0 ? 1 : 0;
+  return Math.max(0, Math.min(1, done / target));
+}
+
 export function calcStreak(
   logs: WorkoutLog[],
   schedule: ScheduleDay[],
