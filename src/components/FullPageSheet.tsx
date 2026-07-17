@@ -53,7 +53,7 @@ export default function FullPageSheet({ open, onClose, children, title, onBack, 
     <div
       className={`fixed inset-0 z-50 flex flex-col ${closing ? '' : 'animate-page-push-in'}`}
       style={{
-        background: '#0a0908',
+        background: '#010101',
         transform: closing ? 'translateX(100%)' : undefined,
         transition: closing ? 'transform 0.3s cubic-bezier(0.32,0.72,0,1)' : undefined,
       }}

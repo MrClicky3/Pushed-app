@@ -591,7 +591,7 @@ export default function ProfilePage({
       className={dismissing || dragging ? '' : 'animate-page-push-in'}
       style={{
         position: 'fixed', inset: 0, zIndex: 70,
-        background: '#0a0908',
+        background: '#010101',
         display: 'flex', flexDirection: 'column',
         transform: dismissing ? 'translateX(100%)' : `translateX(${dx}px)`,
         transition: dismissing ? 'transform 0.3s cubic-bezier(0.32,0.72,0,1)'
