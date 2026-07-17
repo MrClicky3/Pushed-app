@@ -35,8 +35,7 @@ const GROUP_LABEL: Record<string, string> = {
 type View =
   | { type: 'main' }
   | { type: 'plan' }
-  | { type: 'day'; day: number }
-  | { type: 'routine'; routine: Routine | null };
+  | { type: 'day'; day: number };
 
 interface Props {
   open: boolean;
@@ -206,6 +205,9 @@ export default function ScheduleModal({
   const [reportOpen, setReportOpen] = useState(false);
   const [previewRoutine, setPreviewRoutine] = useState<Routine | null>(null);
   const [dataMenuOpen, setDataMenuOpen] = useState(false);
+  // Routine editor now lives in a popup layered over the Weekly plan view.
+  // `null` = closed; `{ routine }` opens it (routine=null → creating a new one).
+  const [routineEditor, setRoutineEditor] = useState<{ routine: Routine | null } | null>(null);
 
   // Reset to main view when modal closes
   useEffect(() => {
@@ -217,30 +219,33 @@ export default function ScheduleModal({
         setSignOutConfirm(false);
         setPreviewRoutine(null);
         setDataMenuOpen(false);
+        setRoutineEditor(null);
       }, 300);
     }
   }, [open]);
 
-  // Jump straight to the routine editor when opened for that purpose.
+  // Jump straight to the routine editor (over the Weekly plan) when opened for
+  // that purpose — the Logs page's no-routine prompt.
   useEffect(() => {
     if (open && initialView === 'routine') {
-      setView({ type: 'routine', routine: null });
+      setView({ type: 'plan' });
+      setRoutineEditor({ routine: null });
     }
   }, [open, initialView]);
 
-  // Populate editor when entering routine view
+  // Populate editor fields whenever it opens.
   useEffect(() => {
-    if (view.type === 'routine') {
+    if (routineEditor) {
       setConfirmDelete(false);
-      if (view.routine) {
-        setRoutineName(view.routine.name);
-        setSelectedExerciseIds(view.routine.exercise_ids);
+      if (routineEditor.routine) {
+        setRoutineName(routineEditor.routine.name);
+        setSelectedExerciseIds(routineEditor.routine.exercise_ids);
       } else {
         setRoutineName('');
         setSelectedExerciseIds([]);
       }
     }
-  }, [view]);
+  }, [routineEditor]);
 
   const todayDow = (new Date().getDay() + 6) % 7; // 0=Mon ... 6=Sun
 
@@ -261,25 +266,26 @@ export default function ScheduleModal({
   }
 
   async function handleSaveRoutine() {
-    if (!routineName.trim()) return;
-    if (view.type !== 'routine') return;
+    // A routine needs a name and at least one exercise to be saveable.
+    if (!routineName.trim() || selectedExerciseIds.length === 0) return;
+    if (!routineEditor) return;
 
-    if (view.routine) {
-      onUpdateRoutine(view.routine.id, routineName.trim(), selectedExerciseIds);
+    if (routineEditor.routine) {
+      onUpdateRoutine(routineEditor.routine.id, routineName.trim(), selectedExerciseIds);
     } else {
       await onAddRoutine(routineName.trim(), selectedExerciseIds);
     }
-    setView({ type: 'plan' });
+    setRoutineEditor(null);
   }
 
   function handleDeleteRoutine() {
-    if (view.type !== 'routine' || !view.routine) return;
+    if (!routineEditor?.routine) return;
     if (!confirmDelete) {
       setConfirmDelete(true);
       return;
     }
-    onDeleteRoutine(view.routine.id);
-    setView({ type: 'plan' });
+    onDeleteRoutine(routineEditor.routine.id);
+    setRoutineEditor(null);
   }
 
   // Group exercises by muscle group
@@ -684,7 +690,7 @@ export default function ScheduleModal({
                 </button>
               ))}
               <button
-                onClick={() => setView({ type: 'routine', routine: null })}
+                onClick={() => setRoutineEditor({ routine: null })}
                 className="te-panel rounded-[22px] aspect-square flex flex-col items-center justify-center gap-2 active:bg-white/[0.04] transition-colors"
               >
                 <PlusIcon className="w-5 h-5 text-white/40" />
@@ -725,7 +731,7 @@ export default function ScheduleModal({
                 <p className="te-label text-center py-4">No exercises in this routine yet.</p>
               )}
               <button
-                onClick={() => { const r = previewRoutine; setPreviewRoutine(null); setView({ type: 'routine', routine: r }); }}
+                onClick={() => { const r = previewRoutine; setPreviewRoutine(null); setRoutineEditor({ routine: r }); }}
                 className="te-panel w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl active:bg-white/[0.04] transition-colors"
               >
                 <PencilSquareIcon className="w-4 h-4 text-white/40" />
@@ -733,6 +739,103 @@ export default function ScheduleModal({
               </button>
             </div>
           )}
+        </Modal>
+
+        {/* Routine editor — create / edit in a popup layered over the plan */}
+        <Modal
+          open={routineEditor !== null}
+          onClose={() => setRoutineEditor(null)}
+          title={routineEditor?.routine ? 'Edit routine' : 'New routine'}
+        >
+          <div className="space-y-4">
+            {/* Name input */}
+            <input
+              type="text"
+              value={routineName}
+              onChange={e => setRoutineName(e.target.value)}
+              placeholder="Routine name"
+              data-no-drag
+              className="te-field w-full rounded-xl px-4 py-3 text-white text-[15px] placeholder:text-white/25 focus:outline-none"
+            />
+
+            {/* Exercises */}
+            {exercises.length > 0 ? (
+              <div>
+                <p className="te-label mb-2 px-0.5">Exercises</p>
+                <div className="space-y-3">
+                  {allGroups.map(group => (
+                    <div key={group}>
+                      <div className="flex items-center gap-2 mb-2 px-0.5">
+                        <span
+                          className="w-[5px] h-[5px] rounded-full shrink-0"
+                          style={{
+                            background:
+                              group === 'upper' ? 'var(--te-upper)'
+                              : group === 'lower' ? 'var(--te-lower)'
+                              : 'rgba(244,241,236,0.3)',
+                          }}
+                        />
+                        <span
+                          className="te-label"
+                          style={{
+                            color:
+                              group === 'upper' ? 'var(--te-upper)'
+                              : group === 'lower' ? 'var(--te-lower)'
+                              : undefined,
+                          }}
+                        >
+                          {GROUP_LABEL[group] ?? group.charAt(0).toUpperCase() + group.slice(1)}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {groupedExercises[group].map(ex => {
+                          const on = selectedExerciseIds.includes(ex.id);
+                          return (
+                            <button
+                              key={ex.id}
+                              type="button"
+                              onClick={() => toggleExercise(ex.id)}
+                              className={`${on ? 'te-toggle-on te-toggle-mono' : 'te-toggle-off'} px-3 py-1.5 rounded-xl text-[13px] font-semibold select-none`}
+                              style={{ color: on ? '#0a0908' : 'rgba(255,255,255,0.45)' }}
+                            >
+                              {ex.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <p className="te-label text-center py-2">Add exercises first to build a routine.</p>
+            )}
+
+            {/* Save button — needs a name and at least one exercise */}
+            <button
+              type="button"
+              onClick={handleSaveRoutine}
+              disabled={!routineName.trim() || selectedExerciseIds.length === 0}
+              className="te-fab w-full py-3.5 rounded-xl te-mono text-[12px] tracking-[0.08em] uppercase text-white/90 disabled:opacity-30 active:opacity-80 transition-opacity"
+            >
+              {routineEditor?.routine ? 'Save changes' : 'Create routine'}
+            </button>
+
+            {/* Delete button (editing only) */}
+            {routineEditor?.routine && (
+              <button
+                type="button"
+                onClick={handleDeleteRoutine}
+                className={`w-full py-3 rounded-xl text-[13px] font-semibold transition-all active:opacity-75 ${
+                  confirmDelete
+                    ? 'bg-apple-red/15 text-apple-red border border-apple-red/25'
+                    : 'text-apple-red/50'
+                }`}
+              >
+                {confirmDelete ? 'Tap again to confirm' : 'Delete routine'}
+              </button>
+            )}
+          </div>
         </Modal>
       </FullPageSheet>
     );
@@ -794,102 +897,5 @@ export default function ScheduleModal({
     );
   }
 
-  // ── Routine editor view ────────────────────────────────────────
-  const isEditing = view.type === 'routine' && view.routine !== null;
-
-  return (
-    <FullPageSheet open={open} onClose={onClose} title={isEditing ? 'Edit Routine' : 'New Routine'} onBack={() => setView({ type: 'plan' })} padded>
-      <div className="space-y-4">
-        {/* Name input */}
-        <input
-          type="text"
-          value={routineName}
-          onChange={e => setRoutineName(e.target.value)}
-          placeholder="Routine name"
-          className="te-field w-full rounded-xl px-4 py-3 text-white text-[15px] placeholder:text-white/25 focus:outline-none"
-          autoFocus
-        />
-
-        {/* Exercises */}
-        {exercises.length > 0 && (
-          <div>
-            <p className="te-label mb-2 px-0.5">Exercises</p>
-            <div className="space-y-3">
-              {allGroups.map(group => (
-                <div key={group}>
-                  <div className="flex items-center gap-2 mb-2 px-0.5">
-                    <span
-                      className="w-[5px] h-[5px] rounded-full shrink-0"
-                      style={{
-                        background:
-                          group === 'upper'
-                            ? 'var(--te-upper)'
-                            : group === 'lower'
-                            ? 'var(--te-lower)'
-                            : 'rgba(244,241,236,0.3)',
-                      }}
-                    />
-                    <span
-                      className="te-label"
-                      style={{
-                        color:
-                          group === 'upper'
-                            ? 'var(--te-upper)'
-                            : group === 'lower'
-                            ? 'var(--te-lower)'
-                            : undefined,
-                      }}
-                    >
-                      {GROUP_LABEL[group] ?? group.charAt(0).toUpperCase() + group.slice(1)}
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {groupedExercises[group].map(ex => {
-                      const on = selectedExerciseIds.includes(ex.id);
-                      return (
-                        <button
-                          key={ex.id}
-                          type="button"
-                          onClick={() => toggleExercise(ex.id)}
-                          className={`${on ? 'te-toggle-on te-toggle-mono' : 'te-toggle-off'} px-3 py-1.5 rounded-xl text-[13px] font-semibold select-none`}
-                          style={{ color: on ? '#0a0908' : 'rgba(255,255,255,0.45)' }}
-                        >
-                          {ex.name}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Save button */}
-        <button
-          type="button"
-          onClick={handleSaveRoutine}
-          disabled={!routineName.trim()}
-          className="te-fab w-full py-3.5 rounded-xl te-mono text-[12px] tracking-[0.08em] uppercase text-white/90 disabled:opacity-30 active:opacity-80 transition-opacity"
-        >
-          {isEditing ? 'Save changes' : 'Create routine'}
-        </button>
-
-        {/* Delete button (editing only) */}
-        {isEditing && (
-          <button
-            type="button"
-            onClick={handleDeleteRoutine}
-            className={`w-full py-3 rounded-xl text-[13px] font-semibold transition-all active:opacity-75 ${
-              confirmDelete
-                ? 'bg-apple-red/15 text-apple-red border border-apple-red/25'
-                : 'text-apple-red/50'
-            }`}
-          >
-            {confirmDelete ? 'Tap again to confirm' : 'Delete routine'}
-          </button>
-        )}
-      </div>
-    </FullPageSheet>
-  );
+  return null;
 }

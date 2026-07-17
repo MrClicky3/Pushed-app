@@ -234,9 +234,9 @@ function ScrubChart({
         </>
       )}
 
-      {/* Backing plate behind the date row — mostly solid so the line/area
-          never shows through the axis labels. */}
-      <rect x={0} y={C_PT + C_CH} width={CW} height={C_XH} fill="#010101" fillOpacity="0.8" />
+      {/* Solid backing plate behind the date row (matches the page bg) so the
+          line/area is fully hidden behind the axis labels. */}
+      <rect x={0} y={C_PT + C_CH} width={CW} height={C_XH} fill="#010101" />
 
       {labelIdxs.map((i, li) => {
         const first = li === 0;
@@ -278,13 +278,10 @@ function YAxisLabels({ domain, yTicks, unit }: {
       className="absolute inset-0 w-full h-full pointer-events-none"
       style={{ display: 'block' }}
     >
-      {/* Backing plate behind the label column — mostly solid so the chart
-          line/area never shows through the vertical legend. */}
-      <rect x={0} y={C_PT - 6} width={56} height={C_CH + 12} fill="#010101" fillOpacity="0.8" />
-
-      {/* Axis bar — a fixed reference line the labels sit against, same idea
-          as the plain-text bottom axis labels (no per-label backing boxes). */}
-      <line x1={1.5} x2={1.5} y1={C_PT} y2={C_PT + C_CH} stroke="rgba(255,255,255,0.16)" strokeWidth="1.5" strokeLinecap="round" />
+      {/* Solid backing plate behind the label column (matches the page bg) so
+          the chart line/area is fully hidden behind the vertical legend. No
+          axis bar line — it read as a stray sliver on the far left. */}
+      <rect x={0} y={C_PT - 6} width={56} height={C_CH + 12} fill="#010101" />
       {yTicks.map(tick => {
         const ty = py(tick);
         const ly = Math.max(C_PT + 9, Math.min(C_PT + C_CH + 4, ty + 4));

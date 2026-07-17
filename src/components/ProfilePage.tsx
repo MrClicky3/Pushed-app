@@ -4,6 +4,7 @@ import {
   ChevronRightIcon, ChevronLeftIcon, UserPlusIcon, CameraIcon, PhotoIcon,
 } from '@heroicons/react/24/outline';
 import { FireIcon } from '@heroicons/react/24/solid';
+import { Trophy } from 'lucide-react';
 import Modal from './Modal';
 import Avatar, { AVATAR_PRESETS, presetKeyOf } from './Avatar';
 import type { Profile, LeaderboardRow, VolumeRow, Badge } from '../types';
@@ -282,10 +283,31 @@ function Leaderboard({
   }, [loadStreakBoard, loadVolumeBoard, reloadKey]);
 
   return (
-    <div>
-      <p className="text-[16px] font-bold text-[#f4f1ec] tracking-tight mb-3 px-0.5" style={{ letterSpacing: '-0.02em' }}>
-        Leaderboard
-      </p>
+    // The leaderboard is the profile's hero section — given its own elevated,
+    // accent-bordered container so it reads as the main event, distinct from
+    // the flat section headings around it.
+    <div
+      className="rounded-[24px] p-4"
+      style={{
+        background: 'linear-gradient(180deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.012) 100%), #0c0c0c',
+        border: '1px solid var(--te-border-strong)',
+        boxShadow: '0 8px 28px rgba(0,0,0,0.4)',
+      }}
+    >
+      <div className="flex items-center gap-2.5 mb-3.5 px-0.5">
+        <div
+          className="flex items-center justify-center rounded-full shrink-0"
+          style={{ width: 30, height: 30, background: 'rgba(232,193,90,0.14)', border: '1px solid rgba(232,193,90,0.28)' }}
+        >
+          <Trophy className="w-4 h-4" style={{ color: '#e8c15a' }} strokeWidth={2} />
+        </div>
+        <div className="min-w-0">
+          <p className="text-[19px] font-bold text-[#f4f1ec] tracking-tight leading-none" style={{ letterSpacing: '-0.03em' }}>
+            Leaderboard
+          </p>
+          <p className="te-label mt-1">Who's on top this week</p>
+        </div>
+      </div>
 
       {friendCount > 0 && (
         <div className="grid grid-cols-2 gap-2.5 mb-3">
