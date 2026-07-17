@@ -20,7 +20,7 @@ interface Props {
   onOpenCompetitions: () => void;
 }
 
-type DayRange = 7 | 30 | 90 | 'all' | 'custom';
+type DayRange = 7 | 30 | 90 | 365;
 
 const CATEGORY_ORDER = ['upper', 'lower', 'push', 'pull', 'legs', 'core'];
 const CATEGORY_LABELS: Record<string, string> = {
@@ -49,8 +49,7 @@ function fmtAxisLabel(d: Date, rangeDays: number) {
   return d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
 }
 
-function rangeSuffix(rangeDays: number, isAll: boolean): string {
-  if (isAll) return 'all time';
+function rangeSuffix(rangeDays: number): string {
   if (rangeDays <= 7) return 'last 7 days';
   if (rangeDays <= 30) return 'last 30 days';
   if (rangeDays <= 90) return 'last 90 days';
@@ -344,14 +343,11 @@ const PAGE_THRESHOLD = 60;
 // track, same mechanics as the Log page's WeekCalendar); holding still for a
 // beat instead reveals the scrub crosshair over the current window. Vertical
 // drags fall through to page scroll. Paging into the future is blocked by
-// passing nextDef={null}; passing canPage={false} disables paging entirely
-// (falls back to plain scrub-on-drag) for views like "All time" that have no
-// meaningful "previous window".
-function ScrubbableChart({ def, prevDef, nextDef, canPage, windowOffset, domain, yTicks, onShiftWindow }: {
+// passing nextDef={null}.
+function ScrubbableChart({ def, prevDef, nextDef, windowOffset, domain, yTicks, onShiftWindow }: {
   def: PageDef;
   prevDef: ChartWindow | null;
   nextDef: ChartWindow | null;
-  canPage: boolean;
   windowOffset: number;
   // A fixed y-domain/ticks for this whole chart section (computed once by the
   // caller — e.g. from an exercise's full history, or a constant 0–100% —
@@ -425,15 +421,9 @@ function ScrubbableChart({ def, prevDef, nextDef, canPage, windowOffset, domain,
         if (s.timer) clearTimeout(s.timer);
       } else if (Math.abs(rawDx) > 8) {
         if (s.timer) clearTimeout(s.timer);
-        if (canPage) {
-          s.mode = 'pan';
-          panningRef.current = true;
-          setDx(clampDx(rawDx));
-        } else {
-          s.mode = 'scrub';
-          scrubbingRef.current = true;
-          setScrub(xToIndex(e.clientX));
-        }
+        s.mode = 'pan';
+        panningRef.current = true;
+        setDx(clampDx(rawDx));
       }
     } else if (s.mode === 'scrub') {
       setScrub(xToIndex(e.clientX));
@@ -481,50 +471,42 @@ function ScrubbableChart({ def, prevDef, nextDef, canPage, windowOffset, domain,
           onPointerUp={endGesture}
           onPointerCancel={endGesture}
         >
-          {canPage ? (
-            <div
-              onTransitionEnd={onTrackTransitionEnd}
-              className="flex items-start"
-              style={{
-                width: '300%',
-                transform: `translateX(calc(-33.3333% + ${dx}px))`,
-                transition: snapping ? 'transform 0.3s cubic-bezier(0.22,1,0.36,1)' : 'none',
-                willChange: 'transform',
-              }}
-            >
-              <div className="shrink-0" style={{ width: '33.3333%' }}>
-                {prevDef && (
-                  <ScrubChart
-                    points={prevDef.points} fillColor={prevDef.fillColor} maxLabels={prevDef.maxLabels}
-                    scrubIndex={null} yMin={domain.yMin} yMax={domain.yMax}
-                    showTodayDot={false}
-                  />
-                )}
-              </div>
-              <div className="shrink-0" style={{ width: '33.3333%' }}>
+          <div
+            onTransitionEnd={onTrackTransitionEnd}
+            className="flex items-start"
+            style={{
+              width: '300%',
+              transform: `translateX(calc(-33.3333% + ${dx}px))`,
+              transition: snapping ? 'transform 0.3s cubic-bezier(0.22,1,0.36,1)' : 'none',
+              willChange: 'transform',
+            }}
+          >
+            <div className="shrink-0" style={{ width: '33.3333%' }}>
+              {prevDef && (
                 <ScrubChart
-                  points={def.points} fillColor={def.fillColor} maxLabels={def.maxLabels}
-                  scrubIndex={scrub} yMin={domain.yMin} yMax={domain.yMax}
-                  showTodayDot={currentIsToday}
+                  points={prevDef.points} fillColor={prevDef.fillColor} maxLabels={prevDef.maxLabels}
+                  scrubIndex={null} yMin={domain.yMin} yMax={domain.yMax}
+                  showTodayDot={false}
                 />
-              </div>
-              <div className="shrink-0" style={{ width: '33.3333%' }}>
-                {nextDef && (
-                  <ScrubChart
-                    points={nextDef.points} fillColor={nextDef.fillColor} maxLabels={nextDef.maxLabels}
-                    scrubIndex={null} yMin={domain.yMin} yMax={domain.yMax}
-                    showTodayDot={nextIsToday}
-                  />
-                )}
-              </div>
+              )}
             </div>
-          ) : (
-            <ScrubChart
-              points={def.points} fillColor={def.fillColor} maxLabels={def.maxLabels}
-              scrubIndex={scrub} yMin={domain.yMin} yMax={domain.yMax}
-              showTodayDot={currentIsToday}
-            />
-          )}
+            <div className="shrink-0" style={{ width: '33.3333%' }}>
+              <ScrubChart
+                points={def.points} fillColor={def.fillColor} maxLabels={def.maxLabels}
+                scrubIndex={scrub} yMin={domain.yMin} yMax={domain.yMax}
+                showTodayDot={currentIsToday}
+              />
+            </div>
+            <div className="shrink-0" style={{ width: '33.3333%' }}>
+              {nextDef && (
+                <ScrubChart
+                  points={nextDef.points} fillColor={nextDef.fillColor} maxLabels={nextDef.maxLabels}
+                  scrubIndex={null} yMin={domain.yMin} yMax={domain.yMax}
+                  showTodayDot={nextIsToday}
+                />
+              )}
+            </div>
+          </div>
         </div>
         {/* Fixed overlay, outside the panning track — never moves while swiping. */}
         <YAxisLabels domain={domain} yTicks={yTicks} unit={def.unit} />
@@ -543,74 +525,6 @@ function StatCard({ label, value, sub }: { label: string; value: string; sub: st
       <div className="text-right shrink-0">
         <p className="text-[22px] font-bold text-white tabular-nums leading-none tracking-tight te-digit">{value}</p>
         <p className="text-[12px] mt-[4px]" style={{ color: 'rgba(244,241,236,0.35)' }}>{sub}</p>
-      </div>
-    </div>
-  );
-}
-
-function CustomRangeSlider({ value, onChange }: { value: number; onChange: (v: number) => void }) {
-  const trackRef = useRef<HTMLDivElement>(null);
-  const MIN = 7;
-  const MAX = 730;
-  const pct = ((value - MIN) / (MAX - MIN)) * 100;
-
-  const months = Math.round(value / 30.44);
-  const display =
-    value >= 700 || months >= 24
-      ? '2y'
-      : value >= 365 || months >= 12
-      ? '1y'
-      : value >= 60
-      ? `${months}mo`
-      : `${value}d`;
-
-  function getVal(clientX: number) {
-    const el = trackRef.current;
-    if (!el) return value;
-    const r = el.getBoundingClientRect();
-    return Math.round(MIN + Math.max(0, Math.min(1, (clientX - r.left) / r.width)) * (MAX - MIN));
-  }
-
-  return (
-    <div className="te-panel-dark rounded-xl px-4 py-[12px] mt-1.5">
-      <div className="flex items-center justify-between mb-[10px]">
-        <span className="te-label">Custom range</span>
-        <span className="text-[13px] font-bold text-white tabular-nums te-digit">{display}</span>
-      </div>
-      <div
-        ref={trackRef}
-        className="relative h-5 flex items-center cursor-pointer select-none"
-        onPointerDown={e => { e.currentTarget.setPointerCapture(e.pointerId); onChange(getVal(e.clientX)); }}
-        onPointerMove={e => { if (!e.buttons) return; onChange(getVal(e.clientX)); }}
-      >
-        <div
-          className="absolute inset-x-0 h-[5px] rounded-full"
-          style={{
-            background: 'linear-gradient(180deg, #121214 0%, #1a1a1c 100%)',
-            boxShadow: 'inset 0 2px 3px rgba(0,0,0,0.7), inset 0 -1px 0 rgba(255,255,255,0.04)',
-          }}
-        />
-        <div
-          className="absolute left-0 h-[5px] rounded-full"
-          style={{
-            width: `${pct}%`,
-            background: 'linear-gradient(180deg, #3de26a 0%, #28c354 100%)',
-            boxShadow: '0 0 8px rgba(40,195,84,0.55), inset 0 1px 0 rgba(255,255,255,0.25)',
-          }}
-        />
-        <div
-          className="absolute w-[20px] h-[20px] rounded-full -translate-x-1/2"
-          style={{
-            left: `${pct}%`,
-            background: 'linear-gradient(180deg, #f6f6f7 0%, #c9c9cc 100%)',
-            boxShadow: '0 2px 5px rgba(0,0,0,0.6), 0 1px 2px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.9)',
-            border: '1px solid rgba(0,0,0,0.2)',
-          }}
-        />
-      </div>
-      <div className="flex justify-between mt-[4px]">
-        <span className="te-label">1w</span>
-        <span className="te-label">2y</span>
       </div>
     </div>
   );
@@ -659,33 +573,29 @@ const RANGE_OPTIONS: { key: DayRange; label: string }[] = [
   { key: 7, label: '7d' },
   { key: 30, label: '30d' },
   { key: 90, label: '90d' },
-  { key: 'all', label: 'All' },
-  { key: 'custom', label: 'Custom' },
+  { key: 365, label: '12m' },
 ];
 
 function RangePicker({
-  range, customDays, onChange, onCustomChange,
+  range, onChange,
 }: {
-  range: DayRange; customDays: number; onChange: (r: DayRange) => void; onCustomChange: (d: number) => void;
+  range: DayRange; onChange: (r: DayRange) => void;
 }) {
   return (
-    <div>
-      <div className="flex gap-1 w-full">
-        {RANGE_OPTIONS.map(({ key, label }) => {
-          const active = range === key;
-          return (
-            <button
-              key={String(key)}
-              onClick={() => onChange(key)}
-              className={`${active ? 'te-toggle-on te-toggle-mono' : 'te-toggle-off'} flex-1 py-[6px] rounded-[10px] text-[11.5px] font-semibold select-none`}
-              style={{ color: active ? '#0a0908' : 'rgba(255,255,255,0.4)' }}
-            >
-              {label}
-            </button>
-          );
-        })}
-      </div>
-      {range === 'custom' && <CustomRangeSlider value={customDays} onChange={onCustomChange} />}
+    <div className="flex gap-1 w-full">
+      {RANGE_OPTIONS.map(({ key, label }) => {
+        const active = range === key;
+        return (
+          <button
+            key={key}
+            onClick={() => onChange(key)}
+            className={`${active ? 'te-toggle-on te-toggle-mono' : 'te-toggle-off'} flex-1 py-[6px] rounded-[10px] text-[11.5px] font-semibold select-none`}
+            style={{ color: active ? '#0a0908' : 'rgba(255,255,255,0.4)' }}
+          >
+            {label}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -715,19 +625,6 @@ function PageViewToggle({ view, onChange }: { view: ProgressPageView; onChange: 
       })}
     </div>
   );
-}
-
-function resolveRangeDays(range: DayRange, customDays: number, logs: WorkoutLog[]): number {
-  if (range === 'custom') return customDays;
-  if (range === 'all') {
-    if (!logs.length) return 30;
-    const earliest = logs.reduce((min, l) => {
-      const t = new Date(l.created_at).getTime();
-      return t < min ? t : min;
-    }, Date.now());
-    return Math.max(Math.ceil((Date.now() - earliest) / 86400000) + 1, 1);
-  }
-  return range;
 }
 
 function filterLogsByRange(logs: WorkoutLog[], rangeDays: number, endDate: Date = new Date()): WorkoutLog[] {
@@ -815,42 +712,6 @@ function buildContinuousChart(
   return sampleLong(points, rangeDays);
 }
 
-function buildEntryOnlyChart(
-  logs: WorkoutLog[],
-  toDisplay: (kg: number) => number,
-): ChartPoint[] {
-  const dailyBestMap = new Map<string, { value: number; date: Date }>();
-  for (const log of logs) {
-    const d = new Date(log.created_at);
-    const k = d.toDateString();
-    const v = toDisplay(log.weight);
-    const cur = dailyBestMap.get(k);
-    if (!cur || v > cur.value) dailyBestMap.set(k, { value: v, date: d });
-  }
-  const entries = Array.from(dailyBestMap.values()).sort((a, b) => a.date.getTime() - b.date.getTime());
-  // A single ever-logged entry can't draw a line — synthesize a second point
-  // so it still renders as a flat line instead of vanishing.
-  if (entries.length === 1) {
-    const only = entries[0];
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    if (today.getTime() !== only.date.getTime()) {
-      entries.push({ value: only.value, date: today });
-    } else {
-      const before = new Date(only.date); before.setDate(before.getDate() - 1);
-      entries.unshift({ value: only.value, date: before });
-    }
-  }
-  const totalSpan = entries.length >= 2
-    ? Math.ceil((entries[entries.length - 1].date.getTime() - entries[0].date.getTime()) / 86400000) + 1
-    : 30;
-  return entries.map(e => ({
-    value: e.value,
-    label: fmtDate(e.date),
-    shortLabel: fmtAxisLabel(e.date, totalSpan),
-    tooltipLabel: fmtFullDate(e.date),
-  }));
-}
-
 function buildCompletionChart(
   exercise: Exercise,
   filteredLogs: WorkoutLog[],
@@ -928,27 +789,21 @@ function buildWeightWindow(
   workingLogs: WorkoutLog[],
   rangeDays: number,
   endDate: Date,
-  isAll: boolean,
   toDisplay: (kg: number) => number,
   unit: WeightUnit,
 ): { points: ChartPoint[]; e1rm: { value: string; sub: string; has: boolean }; heaviest: { value: string; sub: string; has: boolean } } {
   const rangeExLogs = filterLogsByRange(workingLogs, rangeDays, endDate).filter(l => l.exercise_id === selected.id);
 
-  let points: ChartPoint[];
-  if (isAll) {
-    points = buildEntryOnlyChart(rangeExLogs, toDisplay);
-  } else {
-    const dailyBestMap = new Map<string, number>();
-    for (const log of rangeExLogs) {
-      const k = new Date(log.created_at).toDateString();
-      const v = toDisplay(log.weight);
-      const cur = dailyBestMap.get(k);
-      if (cur === undefined || v > cur) dailyBestMap.set(k, v);
-    }
-    const allDays = buildAllDaysInRange(rangeDays, endDate);
-    const seed = lastKnownWeightBefore(workingLogs, selected.id, allDays[0], toDisplay);
-    points = buildContinuousChart(allDays, dailyBestMap, rangeDays, seed);
+  const dailyBestMap = new Map<string, number>();
+  for (const log of rangeExLogs) {
+    const k = new Date(log.created_at).toDateString();
+    const v = toDisplay(log.weight);
+    const cur = dailyBestMap.get(k);
+    if (cur === undefined || v > cur) dailyBestMap.set(k, v);
   }
+  const allDays = buildAllDaysInRange(rangeDays, endDate);
+  const seed = lastKnownWeightBefore(workingLogs, selected.id, allDays[0], toDisplay);
+  const points = buildContinuousChart(allDays, dailyBestMap, rangeDays, seed);
 
   const e1rm = (() => {
     const cutoff = new Date(endDate); cutoff.setDate(cutoff.getDate() - rangeDays); cutoff.setHours(0, 0, 0, 0);
@@ -1113,22 +968,16 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
   const [pageView, setPageView] = useState<ProgressPageView>('exercise');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [weightRange, setWeightRange] = useState<DayRange>(30);
-  const [weightCustomDays, setWeightCustomDays] = useState(90);
   const [weightWindowOffset, setWeightWindowOffset] = useState(0);
   const [dailyRange, setDailyRange] = useState<DayRange>(30);
-  const [dailyCustomDays, setDailyCustomDays] = useState(90);
   const [dailyWindowOffset, setDailyWindowOffset] = useState(0);
   const [overallRange, setOverallRange] = useState<DayRange>(30);
-  const [overallCustomDays, setOverallCustomDays] = useState(90);
   const [overallWindowOffset, setOverallWindowOffset] = useState(0);
   const [exerciseOpen, setExerciseOpen] = useState(false);
   const [prOpen, setPrOpen] = useState(false);
-  const weightRangeDays = resolveRangeDays(weightRange, weightCustomDays, logs);
-  const weightIsAll = weightRange === 'all';
-  const dailyRangeDays = resolveRangeDays(dailyRange, dailyCustomDays, logs);
-  const dailyIsAll = dailyRange === 'all';
-  const overallRangeDays = resolveRangeDays(overallRange, overallCustomDays, logs);
-  const overallIsAll = overallRange === 'all';
+  const weightRangeDays: number = weightRange;
+  const dailyRangeDays: number = dailyRange;
+  const overallRangeDays: number = overallRange;
 
   // All-time personal records: the heaviest working set per exercise (ties
   // broken by more reps), with the date it was set.
@@ -1197,42 +1046,42 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
 
   // Reset each chart's paging whenever its duration (or, for the per-exercise
   // charts, the selected exercise) changes — a new window always starts at today.
-  useEffect(() => { setWeightWindowOffset(0); }, [weightRange, weightCustomDays, activeId]);
-  useEffect(() => { setDailyWindowOffset(0); }, [dailyRange, dailyCustomDays, activeId]);
-  useEffect(() => { setOverallWindowOffset(0); }, [overallRange, overallCustomDays]);
+  useEffect(() => { setWeightWindowOffset(0); }, [weightRange, activeId]);
+  useEffect(() => { setDailyWindowOffset(0); }, [dailyRange, activeId]);
+  useEffect(() => { setOverallWindowOffset(0); }, [overallRange]);
 
   // Weight-progress chart + its stat cards, driven by the weight range filter.
   // current/prev/next are the three panels the swipeable chart pages through.
   const weightAnalytics = useMemo(() => {
     if (!selected) return null;
-    const rangeLabel = rangeSuffix(weightRangeDays, weightIsAll).replace(/^\w/, c => c.toUpperCase());
+    const rangeLabel = rangeSuffix(weightRangeDays).replace(/^\w/, c => c.toUpperCase());
     const maxLabels = weightRangeDays <= 7 ? 7 : weightRangeDays <= 30 ? 6 : 5;
-    const current = buildWeightWindow(selected, workingLogs, weightRangeDays, windowEndDate(weightRangeDays, weightWindowOffset), weightIsAll, toDisplay, unit);
-    const prev = weightIsAll ? null : buildWeightWindow(selected, workingLogs, weightRangeDays, windowEndDate(weightRangeDays, weightWindowOffset + 1), false, toDisplay, unit);
-    const next = weightIsAll || weightWindowOffset === 0 ? null : buildWeightWindow(selected, workingLogs, weightRangeDays, windowEndDate(weightRangeDays, weightWindowOffset - 1), false, toDisplay, unit);
+    const current = buildWeightWindow(selected, workingLogs, weightRangeDays, windowEndDate(weightRangeDays, weightWindowOffset), toDisplay, unit);
+    const prev = buildWeightWindow(selected, workingLogs, weightRangeDays, windowEndDate(weightRangeDays, weightWindowOffset + 1), toDisplay, unit);
+    const next = weightWindowOffset === 0 ? null : buildWeightWindow(selected, workingLogs, weightRangeDays, windowEndDate(weightRangeDays, weightWindowOffset - 1), toDisplay, unit);
     return { rangeLabel, maxLabels, current, prev, next };
-  }, [selected, workingLogs, weightRangeDays, weightIsAll, weightWindowOffset, toDisplay, unit]);
+  }, [selected, workingLogs, weightRangeDays, weightWindowOffset, toDisplay, unit]);
 
   // Daily-completion chart (this exercise only) + its stat card.
   const dailyAnalytics = useMemo(() => {
     if (!selected) return null;
-    const rangeLabel = rangeSuffix(dailyRangeDays, dailyIsAll).replace(/^\w/, c => c.toUpperCase());
+    const rangeLabel = rangeSuffix(dailyRangeDays).replace(/^\w/, c => c.toUpperCase());
     const maxLabels = dailyRangeDays <= 7 ? 7 : dailyRangeDays <= 30 ? 6 : 5;
     const current = buildDailyWindow(selected, workingLogs, dailyRangeDays, windowEndDate(dailyRangeDays, dailyWindowOffset));
-    const prev = dailyIsAll ? null : buildDailyWindow(selected, workingLogs, dailyRangeDays, windowEndDate(dailyRangeDays, dailyWindowOffset + 1));
-    const next = dailyIsAll || dailyWindowOffset === 0 ? null : buildDailyWindow(selected, workingLogs, dailyRangeDays, windowEndDate(dailyRangeDays, dailyWindowOffset - 1));
+    const prev = buildDailyWindow(selected, workingLogs, dailyRangeDays, windowEndDate(dailyRangeDays, dailyWindowOffset + 1));
+    const next = dailyWindowOffset === 0 ? null : buildDailyWindow(selected, workingLogs, dailyRangeDays, windowEndDate(dailyRangeDays, dailyWindowOffset - 1));
     return { rangeLabel, maxLabels, current, prev, next };
-  }, [selected, workingLogs, dailyRangeDays, dailyIsAll, dailyWindowOffset]);
+  }, [selected, workingLogs, dailyRangeDays, dailyWindowOffset]);
 
   // Overall (aggregate, all exercises) Daily completion chart — Overall page only.
   const overallAnalytics = useMemo(() => {
-    const rangeLabel = rangeSuffix(overallRangeDays, overallIsAll).replace(/^\w/, c => c.toUpperCase());
+    const rangeLabel = rangeSuffix(overallRangeDays).replace(/^\w/, c => c.toUpperCase());
     const maxLabels = overallRangeDays <= 7 ? 7 : overallRangeDays <= 30 ? 6 : 5;
     const current = buildOverallWindow(overallRangeDays, windowEndDate(overallRangeDays, overallWindowOffset), logs, schedule, routines, exercises);
-    const prev = overallIsAll ? null : buildOverallWindow(overallRangeDays, windowEndDate(overallRangeDays, overallWindowOffset + 1), logs, schedule, routines, exercises);
-    const next = overallIsAll || overallWindowOffset === 0 ? null : buildOverallWindow(overallRangeDays, windowEndDate(overallRangeDays, overallWindowOffset - 1), logs, schedule, routines, exercises);
+    const prev = buildOverallWindow(overallRangeDays, windowEndDate(overallRangeDays, overallWindowOffset + 1), logs, schedule, routines, exercises);
+    const next = overallWindowOffset === 0 ? null : buildOverallWindow(overallRangeDays, windowEndDate(overallRangeDays, overallWindowOffset - 1), logs, schedule, routines, exercises);
     return { rangeLabel, maxLabels, current, prev, next };
-  }, [overallRangeDays, overallIsAll, overallWindowOffset, logs, schedule, routines, exercises]);
+  }, [overallRangeDays, overallWindowOffset, logs, schedule, routines, exercises]);
 
   if (!logs.length) {
     return (
@@ -1361,13 +1210,12 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
         <div>
           {/* Daily completion (aggregate across every exercise) — at the top */}
           <div>
-            <RangePicker range={overallRange} customDays={overallCustomDays} onChange={setOverallRange} onCustomChange={setOverallCustomDays} />
+            <RangePicker range={overallRange} onChange={setOverallRange} />
             <div className="mt-3">
               <ScrubbableChart
                 def={overallDef}
                 prevDef={overallPrevWindow}
                 nextDef={overallNextWindow}
-                canPage={!overallIsAll}
                 windowOffset={overallWindowOffset}
                 domain={PERCENT_DOMAIN}
                 yTicks={PERCENT_YTICKS}
@@ -1412,13 +1260,12 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
 
           {/* Weight progress — its own time filter */}
           <div className="mt-3">
-            <RangePicker range={weightRange} customDays={weightCustomDays} onChange={setWeightRange} onCustomChange={setWeightCustomDays} />
+            <RangePicker range={weightRange} onChange={setWeightRange} />
             <div className="mt-3">
               <ScrubbableChart
                 def={weightDef}
                 prevDef={weightPrevWindow}
                 nextDef={weightNextWindow}
-                canPage={!weightIsAll}
                 windowOffset={weightWindowOffset}
                 domain={weightDomain ?? { yMin: 0, yMax: 1 }}
                 yTicks={weightYTicks}
@@ -1433,13 +1280,12 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
 
           {/* Daily completion (this exercise) — its own time filter */}
           <div className="mt-6">
-            <RangePicker range={dailyRange} customDays={dailyCustomDays} onChange={setDailyRange} onCustomChange={setDailyCustomDays} />
+            <RangePicker range={dailyRange} onChange={setDailyRange} />
             <div className="mt-3">
               <ScrubbableChart
                 def={dailyDef}
                 prevDef={dailyPrevWindow}
                 nextDef={dailyNextWindow}
-                canPage={!dailyIsAll}
                 windowOffset={dailyWindowOffset}
                 domain={PERCENT_DOMAIN}
                 yTicks={PERCENT_YTICKS}
