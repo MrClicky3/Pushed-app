@@ -211,7 +211,7 @@ export default function AuthView({ onSignIn, onSignUp, onResend, onVerifyOtp, on
     return (
       <div
         className="min-h-screen flex flex-col items-center justify-center px-5"
-        style={{ background: '#0a0908', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+        style={{ background: '#010101', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
         <form onSubmit={handleSubmit} className="w-full max-w-[355px] flex flex-col items-center gap-[50px]">
 
@@ -313,7 +313,7 @@ export default function AuthView({ onSignIn, onSignUp, onResend, onVerifyOtp, on
     <div
       className="min-h-screen flex flex-col items-center justify-center pl-[max(16px,env(safe-area-inset-left))] pr-[max(16px,env(safe-area-inset-right))]"
       style={{
-        background: 'radial-gradient(ellipse 100% 50% at 50% -10%, rgba(244,241,236,0.09) 0%, #0a0908 55%)',
+        background: 'radial-gradient(ellipse 100% 50% at 50% -10%, rgba(244,241,236,0.09) 0%, #010101 55%)',
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
       }}
     >

@@ -34,7 +34,7 @@ export default class ErrorBoundary extends Component<Props, State> {
     return (
       <div
         className="min-h-screen flex flex-col items-center justify-center text-center px-8"
-        style={{ background: '#0a0908', color: '#f4f1ec', gap: 24 }}
+        style={{ background: '#010101', color: '#f4f1ec', gap: 24 }}
       >
         <img src="/apple-touch-icon.png" alt="" style={{ width: 56, height: 56, borderRadius: 16, opacity: 0.9 }} />
         <div style={{ maxWidth: 320 }}>

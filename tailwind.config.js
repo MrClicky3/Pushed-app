@@ -9,7 +9,7 @@ export default {
           lower: '#f2c08c',
           pr:    '#7fd57f',
           warn:  '#e8a657',
-          bg:    '#0a0908',
+          bg:    '#010101',
           surface: '#181614',
         },
         apple: {

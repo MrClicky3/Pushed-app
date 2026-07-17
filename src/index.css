@@ -25,7 +25,7 @@ body {
     system-ui, 'Helvetica Neue', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #0a0908;
+  background: #010101;
   color: #f4f1ec;
   letter-spacing: -0.01em;
 }
@@ -41,14 +41,14 @@ body {
 
   /* ─── TE Panel: flat matte surface ─── */
   .te-panel {
-    background: #141414;
+    background: #101010;
     border: 1px solid var(--te-border);
     border-radius: 18px;
   }
 
   /* ─── TE Panel Dark: slightly deeper matte surface for analytics bento cards ─── */
   .te-panel-dark {
-    background: #0f0f0f;
+    background: #0c0c0c;
     border: 1px solid var(--te-border);
     border-radius: 18px;
   }

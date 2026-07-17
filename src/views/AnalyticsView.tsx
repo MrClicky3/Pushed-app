@@ -101,10 +101,11 @@ function chartX(i: number, n: number) {
   return (i / Math.max(n - 1, 1)) * CW;
 }
 
-// Padded y-domain for a set of values — shared across the prev/current/next
-// panels of a swipeable chart so the line never jumps to a different vertical
-// scale mid-drag.
-function yDomainFor(pointSets: ChartPoint[][]): { dMin: number; dMax: number; yMin: number; yMax: number } {
+// Padded y-domain for a set of values. Computed once per chart section (e.g.
+// from an exercise's whole history, or a fixed 0–100 for percentages) rather
+// than per visible window, so paging through time never changes the scale —
+// only the time axis moves, never the vertical elevation of the line.
+function yDomainFor(pointSets: { value: number }[][]): { dMin: number; dMax: number; yMin: number; yMax: number } {
   const vals = pointSets.flat().map(p => p.value);
   const dMin = Math.min(...vals);
   const dMax = Math.max(...vals);
@@ -122,18 +123,20 @@ function yTicksFor(domain: { dMin: number; dMax: number; yMin: number; yMax: num
   return [all[0], all[Math.round(all.length / 3)], all[Math.round((2 * all.length) / 3)], all[all.length - 1]];
 }
 
+// Daily/Overall completion charts are always a 0–100% metric — a fixed
+// domain, computed once, so their scale never shifts while paging either.
+const PERCENT_DOMAIN = yDomainFor([[{ value: 0 }, { value: 100 }]]);
+const PERCENT_YTICKS = yTicksFor(PERCENT_DOMAIN);
+
 function ScrubChart({
-  points, unit, fillColor, maxLabels, scrubIndex, yMin, yMax, yTicks, showYLabels, showTodayDot,
+  points, fillColor, maxLabels, scrubIndex, yMin, yMax, showTodayDot,
 }: {
   points: ChartPoint[];
-  unit?: string;
   fillColor: string;
   maxLabels?: number;
   scrubIndex: number | null;
   yMin: number;
   yMax: number;
-  yTicks: number[];
-  showYLabels: boolean;
   showTodayDot: boolean;
 }) {
   const uid = useId().replace(/:/g, '');
@@ -224,32 +227,6 @@ function ScrubChart({
       <path d={areaD} fill={`url(#fill${uid})`} />
       <path d={lineD} fill="none" stroke="#ffffff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
 
-      {/* Y-axis labels overlay the line (rather than reserving a margin) so
-          the plotted line spans the full width edge-to-edge — required for a
-          continuous line across the seam when two windows are tiled for
-          swiping. */}
-      {showYLabels && yTicks.map(tick => {
-        const ty = py(tick);
-        const ly = Math.max(C_PT + 9, Math.min(C_PT + C_CH + 4, ty + 4));
-        const label = `${fmtYLabel(tick)}${unit ?? ''}`;
-        return (
-          <g key={tick}>
-            <rect x={2} y={ly - 12} width={Math.max(30, label.length * 7 + 8)} height={16} rx={4} fill="rgba(10,9,8,0.72)" />
-            <text
-              x={8} y={ly}
-              textAnchor="start"
-              fontSize="12.5"
-              fill="rgba(255,255,255,0.55)"
-              fontFamily={MONO}
-              fontWeight="500"
-              style={{ fontVariantNumeric: 'tabular-nums' }}
-            >
-              {label}
-            </text>
-          </g>
-        );
-      })}
-
       {hi === null && showTodayDot && (
         <circle cx={Math.min(latestX, CW - 6)} cy={latestY} r="4.5" fill="#ffffff" />
       )}
@@ -279,6 +256,48 @@ function ScrubChart({
           >
             {points[i].shortLabel ?? points[i].label}
           </text>
+        );
+      })}
+    </svg>
+  );
+}
+
+// Y-axis tick labels, rendered as a fixed overlay on top of the swipeable
+// chart's viewport (a sibling of the panning track, never inside it) so they
+// stay put — only the chart line itself moves while swiping.
+function YAxisLabels({ domain, yTicks, unit }: {
+  domain: { yMin: number; yMax: number };
+  yTicks: number[];
+  unit?: string;
+}) {
+  const TOTAL_H = C_PT + C_CH + C_XH;
+  const yRange = domain.yMax - domain.yMin || 1;
+  const py = (v: number) => C_PT + ((domain.yMax - v) / yRange) * C_CH;
+  return (
+    <svg
+      viewBox={`0 0 ${CW} ${TOTAL_H}`}
+      className="absolute inset-0 w-full h-full pointer-events-none"
+      style={{ display: 'block' }}
+    >
+      {yTicks.map(tick => {
+        const ty = py(tick);
+        const ly = Math.max(C_PT + 9, Math.min(C_PT + C_CH + 4, ty + 4));
+        const label = `${fmtYLabel(tick)}${unit ?? ''}`;
+        return (
+          <g key={tick}>
+            <rect x={2} y={ly - 12} width={Math.max(30, label.length * 7 + 8)} height={16} rx={4} fill="rgba(1,1,1,0.72)" />
+            <text
+              x={8} y={ly}
+              textAnchor="start"
+              fontSize="12.5"
+              fill="rgba(255,255,255,0.55)"
+              fontFamily={MONO}
+              fontWeight="500"
+              style={{ fontVariantNumeric: 'tabular-nums' }}
+            >
+              {label}
+            </text>
+          </g>
         );
       })}
     </svg>
@@ -328,12 +347,18 @@ const PAGE_THRESHOLD = 60;
 // passing nextDef={null}; passing canPage={false} disables paging entirely
 // (falls back to plain scrub-on-drag) for views like "All time" that have no
 // meaningful "previous window".
-function ScrubbableChart({ def, prevDef, nextDef, canPage, windowOffset, onShiftWindow }: {
+function ScrubbableChart({ def, prevDef, nextDef, canPage, windowOffset, domain, yTicks, onShiftWindow }: {
   def: PageDef;
   prevDef: ChartWindow | null;
   nextDef: ChartWindow | null;
   canPage: boolean;
   windowOffset: number;
+  // A fixed y-domain/ticks for this whole chart section (computed once by the
+  // caller — e.g. from an exercise's full history, or a constant 0–100% —
+  // not per visible window) so paging through time only moves the time axis;
+  // the line's vertical scale never jumps.
+  domain: { yMin: number; yMax: number };
+  yTicks: number[];
   onShiftWindow: (delta: 1 | -1) => void;
 }) {
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -346,15 +371,6 @@ function ScrubbableChart({ def, prevDef, nextDef, canPage, windowOffset, onShift
   const pendingShift = useRef(0);
 
   const nPts = def.points.length;
-
-  // A single y-domain shared across the prev/current/next panels so the line
-  // never rescales (and appears to jump) at the seam between windows while
-  // swiping — it's one continuous trend, just viewed through a moving window.
-  const domain = useMemo(
-    () => yDomainFor([prevDef?.points ?? [], def.points, nextDef?.points ?? []]),
-    [prevDef, def.points, nextDef],
-  );
-  const yTicks = useMemo(() => yTicksFor(domain), [domain]);
 
   // Only the panel that's actually "today" (offset 0) gets the latest-value
   // dot — prev/next panels continue into their neighbour, so an endpoint
@@ -455,59 +471,63 @@ function ScrubbableChart({ def, prevDef, nextDef, canPage, windowOffset, onShift
   return (
     <div className="pt-2 pb-1">
       <PageHeader def={def} scrubIndex={scrub} />
-      <div
-        ref={viewportRef}
-        className="mt-3 overflow-hidden"
-        style={{ touchAction: 'pan-y' }}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={endGesture}
-        onPointerCancel={endGesture}
-      >
-        {canPage ? (
-          <div
-            onTransitionEnd={onTrackTransitionEnd}
-            className="flex items-start"
-            style={{
-              width: '300%',
-              transform: `translateX(calc(-33.3333% + ${dx}px))`,
-              transition: snapping ? 'transform 0.3s cubic-bezier(0.22,1,0.36,1)' : 'none',
-              willChange: 'transform',
-            }}
-          >
-            <div className="shrink-0" style={{ width: '33.3333%' }}>
-              {prevDef && (
+      <div className="mt-3 relative">
+        <div
+          ref={viewportRef}
+          className="overflow-hidden"
+          style={{ touchAction: 'pan-y' }}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={endGesture}
+          onPointerCancel={endGesture}
+        >
+          {canPage ? (
+            <div
+              onTransitionEnd={onTrackTransitionEnd}
+              className="flex items-start"
+              style={{
+                width: '300%',
+                transform: `translateX(calc(-33.3333% + ${dx}px))`,
+                transition: snapping ? 'transform 0.3s cubic-bezier(0.22,1,0.36,1)' : 'none',
+                willChange: 'transform',
+              }}
+            >
+              <div className="shrink-0" style={{ width: '33.3333%' }}>
+                {prevDef && (
+                  <ScrubChart
+                    points={prevDef.points} fillColor={prevDef.fillColor} maxLabels={prevDef.maxLabels}
+                    scrubIndex={null} yMin={domain.yMin} yMax={domain.yMax}
+                    showTodayDot={false}
+                  />
+                )}
+              </div>
+              <div className="shrink-0" style={{ width: '33.3333%' }}>
                 <ScrubChart
-                  points={prevDef.points} unit={prevDef.unit} fillColor={prevDef.fillColor} maxLabels={prevDef.maxLabels}
-                  scrubIndex={null} yMin={domain.yMin} yMax={domain.yMax} yTicks={yTicks}
-                  showYLabels={false} showTodayDot={false}
+                  points={def.points} fillColor={def.fillColor} maxLabels={def.maxLabels}
+                  scrubIndex={scrub} yMin={domain.yMin} yMax={domain.yMax}
+                  showTodayDot={currentIsToday}
                 />
-              )}
+              </div>
+              <div className="shrink-0" style={{ width: '33.3333%' }}>
+                {nextDef && (
+                  <ScrubChart
+                    points={nextDef.points} fillColor={nextDef.fillColor} maxLabels={nextDef.maxLabels}
+                    scrubIndex={null} yMin={domain.yMin} yMax={domain.yMax}
+                    showTodayDot={nextIsToday}
+                  />
+                )}
+              </div>
             </div>
-            <div className="shrink-0" style={{ width: '33.3333%' }}>
-              <ScrubChart
-                points={def.points} unit={def.unit} fillColor={def.fillColor} maxLabels={def.maxLabels}
-                scrubIndex={scrub} yMin={domain.yMin} yMax={domain.yMax} yTicks={yTicks}
-                showYLabels showTodayDot={currentIsToday}
-              />
-            </div>
-            <div className="shrink-0" style={{ width: '33.3333%' }}>
-              {nextDef && (
-                <ScrubChart
-                  points={nextDef.points} unit={nextDef.unit} fillColor={nextDef.fillColor} maxLabels={nextDef.maxLabels}
-                  scrubIndex={null} yMin={domain.yMin} yMax={domain.yMax} yTicks={yTicks}
-                  showYLabels={false} showTodayDot={nextIsToday}
-                />
-              )}
-            </div>
-          </div>
-        ) : (
-          <ScrubChart
-            points={def.points} unit={def.unit} fillColor={def.fillColor} maxLabels={def.maxLabels}
-            scrubIndex={scrub} yMin={domain.yMin} yMax={domain.yMax} yTicks={yTicks}
-            showYLabels showTodayDot={currentIsToday}
-          />
-        )}
+          ) : (
+            <ScrubChart
+              points={def.points} fillColor={def.fillColor} maxLabels={def.maxLabels}
+              scrubIndex={scrub} yMin={domain.yMin} yMax={domain.yMax}
+              showTodayDot={currentIsToday}
+            />
+          )}
+        </div>
+        {/* Fixed overlay, outside the panning track — never moves while swiping. */}
+        <YAxisLabels domain={domain} yTicks={yTicks} unit={def.unit} />
       </div>
     </div>
   );
@@ -1165,6 +1185,16 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
 
   const catColor = selected ? categoryColor(selected.muscle_group) : 'rgba(244,241,236,0.3)';
 
+  // Weight progress's y-domain is fixed from the exercise's whole history
+  // (not the visible window) so paging through time never rescales the
+  // chart — only the time axis moves.
+  const weightDomain = useMemo(() => {
+    if (!selected) return null;
+    const vals = workingLogs.filter(l => l.exercise_id === selected.id).map(l => ({ value: toDisplay(l.weight) }));
+    return yDomainFor([vals]);
+  }, [selected, workingLogs, toDisplay]);
+  const weightYTicks = useMemo(() => weightDomain ? yTicksFor(weightDomain) : [], [weightDomain]);
+
   // Reset each chart's paging whenever its duration (or, for the per-exercise
   // charts, the selected exercise) changes — a new window always starts at today.
   useEffect(() => { setWeightWindowOffset(0); }, [weightRange, weightCustomDays, activeId]);
@@ -1339,6 +1369,8 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
                 nextDef={overallNextWindow}
                 canPage={!overallIsAll}
                 windowOffset={overallWindowOffset}
+                domain={PERCENT_DOMAIN}
+                yTicks={PERCENT_YTICKS}
                 onShiftWindow={delta => setOverallWindowOffset(o => Math.max(0, o - delta))}
               />
             </div>
@@ -1388,6 +1420,8 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
                 nextDef={weightNextWindow}
                 canPage={!weightIsAll}
                 windowOffset={weightWindowOffset}
+                domain={weightDomain ?? { yMin: 0, yMax: 1 }}
+                yTicks={weightYTicks}
                 onShiftWindow={delta => setWeightWindowOffset(o => Math.max(0, o - delta))}
               />
               <div className="space-y-1.5 pt-5">
@@ -1407,6 +1441,8 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
                 nextDef={dailyNextWindow}
                 canPage={!dailyIsAll}
                 windowOffset={dailyWindowOffset}
+                domain={PERCENT_DOMAIN}
+                yTicks={PERCENT_YTICKS}
                 onShiftWindow={delta => setDailyWindowOffset(o => Math.max(0, o - delta))}
               />
             </div>

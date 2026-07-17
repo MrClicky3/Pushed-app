@@ -334,6 +334,10 @@ export default function ScheduleModal({
           {/* Preferences */}
           <div>
             <p className="te-label mb-2 px-0.5">Preferences</p>
+
+            {/* Time settings — rest timer, barbell weight, and the calendar's
+                start-of-week day. Just spaced apart from the toggles below,
+                no separate heading. */}
             <div className="te-panel rounded-2xl overflow-hidden divide-y divide-white/[0.05]">
 
               {/* Rest timer duration */}
@@ -380,23 +384,6 @@ export default function ScheduleModal({
                 />
               </div>
 
-              {/* Weight unit — red toggle switch, same pattern as the other on/off rows */}
-              <button
-                onClick={() => onSetUnit(unit === 'kg' ? 'lbs' : 'kg')}
-                className="w-full flex items-center justify-between px-4 py-3.5 gap-3 active:bg-white/[0.03] transition-colors text-left"
-              >
-                <div className="min-w-0">
-                  <p className="text-[14px] font-medium text-[#f4f1ec] tracking-tight">Weight unit</p>
-                  <p className="te-label mt-0.5">Used across the app</p>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="te-mono text-[12px] font-semibold uppercase" style={{ color: 'rgba(244,241,236,0.4)' }}>{unit}</span>
-                  <div className="te-unit-track">
-                    <div className={`te-unit-lever ${unit === 'lbs' ? 'te-unit-lever-right' : ''}`} />
-                  </div>
-                </div>
-              </button>
-
               {/* Start week on — compact 3-way selector */}
               <div className="flex items-center justify-between px-4 py-3.5 gap-3">
                 <div className="min-w-0">
@@ -419,6 +406,28 @@ export default function ScheduleModal({
                   })}
                 </div>
               </div>
+
+            </div>
+
+            {/* Toggles — weight unit alongside the other on/off preferences */}
+            <div className="te-panel rounded-2xl overflow-hidden divide-y divide-white/[0.05] mt-3">
+
+              {/* Weight unit — red toggle switch, same pattern as the other on/off rows */}
+              <button
+                onClick={() => onSetUnit(unit === 'kg' ? 'lbs' : 'kg')}
+                className="w-full flex items-center justify-between px-4 py-3.5 gap-3 active:bg-white/[0.03] transition-colors text-left"
+              >
+                <div className="min-w-0">
+                  <p className="text-[14px] font-medium text-[#f4f1ec] tracking-tight">Weight unit</p>
+                  <p className="te-label mt-0.5">Used across the app</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="te-mono text-[12px] font-semibold uppercase" style={{ color: 'rgba(244,241,236,0.4)' }}>{unit}</span>
+                  <div className="te-unit-track">
+                    <div className={`te-unit-lever ${unit === 'lbs' ? 'te-unit-lever-right' : ''}`} />
+                  </div>
+                </div>
+              </button>
 
               {/* Show workout duration */}
               <button
@@ -489,7 +498,6 @@ export default function ScheduleModal({
                   })}
                 </div>
               </div>
-
 
             </div>
           </div>

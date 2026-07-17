@@ -619,7 +619,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
       <div
         className="max-w-lg mx-auto pl-[max(16px,env(safe-area-inset-left))] pr-[max(16px,env(safe-area-inset-right))]"
         style={{
-          paddingTop: 'max(60px, env(safe-area-inset-top, 0px) + 20px)',
+          paddingTop: 'max(68px, env(safe-area-inset-top, 0px) + 24px)',
           paddingBottom: focusMode ? 'calc(40px + env(safe-area-inset-bottom, 0px))' : 'calc(80px + env(safe-area-inset-bottom, 0px))',
           transition: 'padding-bottom 0.36s cubic-bezier(0.22,1,0.36,1)',
         }}
@@ -714,7 +714,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
         style={{
           position: 'fixed', left: 0, right: 0, bottom: 0,
           height: '42vh', zIndex: 39, pointerEvents: 'none',
-          background: 'linear-gradient(to top, #0a0908 0%, rgba(10,9,8,0.92) 20%, rgba(10,9,8,0.5) 50%, transparent 100%)',
+          background: 'linear-gradient(to top, #010101 0%, rgba(1,1,1,0.92) 20%, rgba(1,1,1,0.5) 50%, transparent 100%)',
           opacity: swipeDrag > 2 ? Math.min(1, swipeDrag / (SWIPE_THRESHOLD * 0.85)) : 0,
           transform: `scaleY(${swiping ? 0.55 + Math.min(swipeDrag / SWIPE_THRESHOLD, 1) * 0.45 : 0.55})`,
           transformOrigin: 'bottom center',
@@ -724,7 +724,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
       <div
         className="absolute bottom-0 left-0 right-0 z-40"
         style={{
-          background: 'linear-gradient(to bottom, rgba(10,9,8,0) 0%, rgba(10,9,8,0.92) 32%, #0a0908 58%)',
+          background: 'linear-gradient(to bottom, rgba(1,1,1,0) 0%, rgba(1,1,1,0.92) 32%, #010101 58%)',
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
         onTouchStart={onDockTouchStart}
@@ -1019,7 +1019,7 @@ function PasswordResetScreen({ onUpdate }: { onUpdate: (pw: string) => Promise<s
 
   return (
     <div className="min-h-screen bg-te-bg flex flex-col items-center justify-center pl-[max(16px,env(safe-area-inset-left))] pr-[max(16px,env(safe-area-inset-right))]"
-      style={{ background: 'radial-gradient(ellipse 100% 50% at 50% -10%, rgba(244,241,236,0.09) 0%, #0a0908 55%)' }}>
+      style={{ background: 'radial-gradient(ellipse 100% 50% at 50% -10%, rgba(244,241,236,0.09) 0%, #010101 55%)' }}>
       <div className="w-full max-w-sm flex flex-col gap-6">
         <div className="flex flex-col items-center gap-3">
           <img src="/apple-touch-icon.png" alt="" className="w-[72px] h-[72px] rounded-[22px]"
