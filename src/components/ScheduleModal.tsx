@@ -471,34 +471,34 @@ export default function ScheduleModal({
                 </div>
               </button>
 
-              {/* Accent color */}
-              <div className="px-4 py-3.5">
-                <p className="text-[14px] font-medium text-[#f4f1ec] tracking-tight">Accent color</p>
-                <p className="te-label mt-0.5">Toggles and body models</p>
-                <div className="flex items-center gap-3 mt-3">
-                  {ACCENT_ORDER.map(key => {
-                    const a = ACCENTS[key];
-                    const selected = accent === key;
-                    return (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => onSetAccent(key)}
-                        aria-label={a.label}
-                        className="rounded-full shrink-0 transition-transform active:scale-90"
-                        style={{
-                          width: 30, height: 30, borderRadius: '50%',
-                          background: a.color,
-                          boxShadow: selected
-                            ? `0 0 0 2px #0a0908, 0 0 0 4px ${a.color}`
-                            : 'inset 0 1px 2px rgba(255,255,255,0.35), inset 0 -1px 2px rgba(0,0,0,0.3)',
-                        }}
-                      />
-                    );
-                  })}
-                </div>
-              </div>
+            </div>
 
+            {/* Accent color — its own panel, spaced apart from the toggles */}
+            <div className="te-panel rounded-2xl px-4 py-3.5 mt-3">
+              <p className="text-[14px] font-medium text-[#f4f1ec] tracking-tight">Accent color</p>
+              <p className="te-label mt-0.5">Toggles and body models</p>
+              <div className="flex items-center gap-3 mt-3">
+                {ACCENT_ORDER.map(key => {
+                  const a = ACCENTS[key];
+                  const selected = accent === key;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => onSetAccent(key)}
+                      aria-label={a.label}
+                      className="rounded-full shrink-0 transition-transform active:scale-90"
+                      style={{
+                        width: 30, height: 30, borderRadius: '50%',
+                        background: a.color,
+                        boxShadow: selected
+                          ? `0 0 0 2px #0a0908, 0 0 0 4px ${a.color}`
+                          : 'inset 0 1px 2px rgba(255,255,255,0.35), inset 0 -1px 2px rgba(0,0,0,0.3)',
+                      }}
+                    />
+                  );
+                })}
+              </div>
             </div>
           </div>
 
