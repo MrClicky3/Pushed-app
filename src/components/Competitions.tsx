@@ -130,9 +130,9 @@ function StandingsList({ track, rows }: { track: CompetitionTrack; rows: Competi
   );
 }
 
-// Vote-to-cancel control — shown on pending/active competitions. Cancels the
-// moment every accepted participant has voted; a vote can be retracted
-// beforehand. `rows` (already fetched by the parent sheet) carries each
+// Vote-to-cancel — a deliberately low-key text link at the foot of the detail
+// sheet, not a headline action. Cancels the moment every accepted participant
+// has voted; a vote can be retracted beforehand. `rows` carries each
 // participant's live voted_cancel flag.
 function CancelVote({
   comp, rows, comps, onVoted,
@@ -161,28 +161,21 @@ function CancelVote({
     setBusy(false);
   }
 
+  const suffix = needed > 1 ? ` · ${votes}/${needed} agreed` : '';
+
   return (
-    <div className="te-panel rounded-2xl px-4 py-3.5">
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[14px] font-medium text-[#f4f1ec] tracking-tight">Cancel competition</p>
-          <p className="te-label mt-0.5">
-            {needed > 1 ? `${votes} of ${needed} agreed` : 'Needs everyone to agree'}
-          </p>
-        </div>
-        <button
-          onClick={toggle}
-          disabled={busy}
-          className={`shrink-0 rounded-xl font-semibold text-[13px] disabled:opacity-50 ${iVoted ? 'text-apple-red' : 'te-toggle-off'}`}
-          style={{
-            height: 38, padding: '0 16px',
-            ...(iVoted ? { background: 'rgba(255,69,58,0.1)', border: '1px solid rgba(255,69,58,0.25)' } : {}),
-          }}
-        >
-          {iVoted ? 'Voted — undo' : 'Vote to cancel'}
-        </button>
-      </div>
-    </div>
+    <button
+      onClick={toggle}
+      disabled={busy}
+      className="w-full text-center py-1.5 active:opacity-60 transition-opacity disabled:opacity-40"
+      style={{
+        fontFamily: "'Geist Mono', monospace", fontSize: 11, fontWeight: 500,
+        letterSpacing: '0.04em', textTransform: 'uppercase',
+        color: iVoted ? 'rgba(255,69,58,0.75)' : 'rgba(244,241,236,0.32)',
+      }}
+    >
+      {iVoted ? `Voted to cancel${suffix} · undo` : `Cancel competition${suffix}`}
+    </button>
   );
 }
 
@@ -452,7 +445,7 @@ function InviteCard({ comp, comps }: { comp: CompetitionSummary; comps: Competit
         <Trophy className="w-4 h-4 shrink-0" style={{ color: '#e8c15a' }} />
         <div className="flex-1 min-w-0">
           <p className="text-[15px] font-semibold text-[#f4f1ec] tracking-tight truncate">{comp.name}</p>
-          <p className="te-label mt-0.5">{trackLabel(comp.track)} · waiting for friend</p>
+          <p className="te-label mt-0.5">{trackLabel(comp.track)} · invited you</p>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2.5 mt-3">
@@ -475,65 +468,91 @@ function InviteCard({ comp, comps }: { comp: CompetitionSummary; comps: Competit
   );
 }
 
+// Small status chip: time-left (green, live) for active, or a muted label.
+function StatusPill({ text, live }: { text: string; live?: boolean }) {
+  return (
+    <span
+      className="shrink-0 whitespace-nowrap"
+      style={{
+        fontFamily: "'Geist Mono', monospace", fontSize: 10, fontWeight: 600,
+        letterSpacing: '0.04em', textTransform: 'uppercase', lineHeight: 1,
+        padding: '4px 8px', borderRadius: 100,
+        color: live ? '#7fd57f' : 'rgba(244,241,236,0.5)',
+        background: live ? 'rgba(127,213,127,0.12)' : 'rgba(255,255,255,0.05)',
+      }}
+    >
+      {text}
+    </span>
+  );
+}
+
 // ── Active / completed card ─────────────────────────────────────
+// Hevy-style: a title + status chip, then a compact ranked mini-leaderboard
+// (top 3, "you" highlighted). One glance answers name / who's winning / how
+// long left — no scattered stat clusters.
 function CompetitionCard({ comp, comps, onOpen }: {
   comp: CompetitionSummary;
   comps: CompetitionsApi;
   onOpen: () => void;
 }) {
-  const [me, setMe] = useState<CompetitionStanding | null>(null);
-  const [leader, setLeader] = useState<CompetitionStanding | null>(null);
-  const [total, setTotal] = useState<number>(comp.participant_count);
+  const [rows, setRows] = useState<CompetitionStanding[]>([]);
 
   useEffect(() => {
     if (comp.status !== 'active' && comp.status !== 'completed') return;
     let alive = true;
-    comps.getStandings(comp.id).then(rows => {
-      if (!alive) return;
-      setTotal(rows.filter(r => r.status === 'accepted').length || rows.length);
-      setMe(rows.find(r => r.is_self) ?? null);
-      setLeader(rows.find(r => r.rank === 1) ?? rows[0] ?? null);
-    });
+    comps.getStandings(comp.id).then(r => { if (alive) setRows(r); });
     return () => { alive = false; };
   }, [comp.id, comp.status, comps]);
 
   const active = comp.status === 'active';
-  const sc = me ? scoreText(comp.track, me) : null;
-  const rank = me?.rank ?? null;
-  const leaderSc = leader ? scoreText(comp.track, leader) : null;
+  const done = comp.status === 'completed';
+  const pill = active ? fmtLeft(comp.end_at, '') : done ? 'Final' : 'Pending';
+  const preview = rows.filter(r => r.status === 'accepted').slice(0, 3);
 
   return (
     <button
       onClick={onOpen}
       className="te-panel w-full rounded-2xl px-4 py-3.5 text-left active:bg-white/[0.04] transition-colors"
     >
-      <div className="flex items-center gap-3">
+      {/* Header — name + status chip */}
+      <div className="flex items-center gap-2.5">
         <div className="flex-1 min-w-0">
           <p className="text-[15px] font-semibold text-[#f4f1ec] tracking-tight truncate">{comp.name}</p>
-          <p className="te-label mt-1">
-            {trackLabel(comp.track)} · started {fmtStarted(comp.start_at)} · {active ? fmtLeft(comp.end_at, '') : 'final'}
-          </p>
+          <p className="te-label mt-1">{trackLabel(comp.track)}</p>
         </div>
-        {rank !== null && (
-          <div className="flex flex-col items-end shrink-0">
-            <span className="te-digit text-[18px] font-bold tabular-nums text-[#f4f1ec] leading-none">
-              #{rank}<span className="text-white/30 text-[13px] font-medium"> / {total}</span>
-            </span>
-            {sc && <span className="te-mono text-[12px] tabular-nums mt-1" style={{ color: sc.color }}>{sc.text}</span>}
-          </div>
-        )}
-        <ChevronRightIcon className="w-3.5 h-3.5 text-white/20 shrink-0" />
+        <StatusPill text={pill} live={active} />
       </div>
-      {leader && leaderSc && (
-        <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-white/[0.05]">
-          <Trophy className="w-3 h-3 shrink-0" style={{ color: '#e8c15a' }} />
-          <span className="text-[12px] font-medium text-white/50 truncate">
-            {leader.display_name || leader.username} leading
-          </span>
-          <span className="te-mono text-[12px] tabular-nums shrink-0 ml-auto" style={{ color: leaderSc.color }}>
-            {leaderSc.text}
-          </span>
+
+      {/* Ranked mini-leaderboard */}
+      {(active || done) && preview.length > 0 && (
+        <div className="mt-3 pt-3 border-t border-white/[0.05] space-y-2">
+          {preview.map((r, i) => {
+            const rank = r.rank ?? i + 1;
+            const s = scoreText(comp.track, r);
+            return (
+              <div key={r.user_id} className="flex items-center gap-2.5">
+                <span className="te-mono text-[12px] tabular-nums w-3.5 shrink-0" style={{ color: rank === 1 ? '#e8c15a' : 'rgba(244,241,236,0.4)' }}>
+                  {rank}
+                </span>
+                <Avatar name={r.display_name || r.username} avatarUrl={r.avatar_url} size={22} />
+                <span
+                  className="flex-1 min-w-0 text-[13px] font-medium tracking-tight truncate"
+                  style={{ color: r.is_self ? '#f4f1ec' : 'rgba(244,241,236,0.65)' }}
+                >
+                  {r.display_name || r.username}{r.is_self && <span className="text-white/30"> · you</span>}
+                </span>
+                <span className="te-digit text-[13px] font-bold tabular-nums shrink-0" style={{ color: s.color }}>
+                  {s.text}
+                </span>
+              </div>
+            );
+          })}
         </div>
+      )}
+
+      {/* Pending — a single quiet line */}
+      {comp.status === 'pending' && (
+        <p className="te-label mt-2">Waiting for friend to accept</p>
       )}
     </button>
   );

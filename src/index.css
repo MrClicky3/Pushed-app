@@ -88,22 +88,22 @@ body {
 
   /* ─── TE Toggle Off: raised button (idle) ─── */
   .te-toggle-off {
-    background: #222224;
+    background: #171719;
     box-shadow:
-      0 2px 0 #080808,
+      0 2px 0 #060606,
       0 3px 7px rgba(0,0,0,0.55),
-      inset 0 1px 0 rgba(255,255,255,0.07);
-    border: 1px solid #121214;
+      inset 0 1px 0 rgba(255,255,255,0.06);
+    border: 1px solid #0e0e10;
     transition: transform 80ms ease, box-shadow 80ms ease, background 80ms ease;
     transform: translateY(-1px);
   }
   .te-toggle-off:active {
     transform: translateY(1px);
     box-shadow:
-      0 0 0 #080808,
+      0 0 0 #060606,
       0 1px 2px rgba(0,0,0,0.4),
       inset 0 1px 3px rgba(0,0,0,0.5);
-    background: #222224;
+    background: #171719;
   }
 
   /* ─── TE Toggle On: pressed in (active) — physically depressed, accent-tinted ─── */

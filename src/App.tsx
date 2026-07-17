@@ -627,7 +627,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
           // scroll all the way up into the iPod-style scroll-depth effect's
           // (Log/Exercises pages) full-opacity zone, rather than being stuck
           // half-faded once it hits the end of the scrollable content.
-          paddingBottom: focusMode ? 'calc(40px + 30vh + env(safe-area-inset-bottom, 0px))' : 'calc(80px + 50vh + env(safe-area-inset-bottom, 0px))',
+          paddingBottom: focusMode ? 'calc(40px + 10vh + env(safe-area-inset-bottom, 0px))' : 'calc(80px + 17vh + env(safe-area-inset-bottom, 0px))',
           transition: 'padding-bottom 0.36s cubic-bezier(0.22,1,0.36,1)',
         }}
       >
