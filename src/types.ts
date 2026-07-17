@@ -135,6 +135,7 @@ export interface CompetitionSummary {
   start_at: string;
   end_at: string;
   status: CompetitionStatus;
+  cancelled_reason: 'insufficient_players' | 'mutual_agreement' | null;
   created_by: string;
   is_creator: boolean;
   my_status: ParticipantStatus;
@@ -155,6 +156,7 @@ export interface CompetitionStanding {
   scored_days: number;
   rank: number | null;
   is_self: boolean;
+  voted_cancel: boolean;
 }
 
 export interface Badge {

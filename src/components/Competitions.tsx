@@ -56,6 +56,12 @@ function trackLabel(t: CompetitionTrack): string {
   return t === 'volume' ? 'Volume' : 'Consistency';
 }
 
+function cancelledMessage(reason: CompetitionSummary['cancelled_reason']): string {
+  return reason === 'mutual_agreement'
+    ? 'All players agreed to end this early.'
+    : 'Not enough players accepted before the start.';
+}
+
 // ── Badge shelf (profile) ───────────────────────────────────────
 // Placeholder icons — will be swapped for Figma exports.
 export function BadgeShelf({ badges }: { badges: Badge[] }) {
@@ -124,6 +130,62 @@ function StandingsList({ track, rows }: { track: CompetitionTrack; rows: Competi
   );
 }
 
+// Vote-to-cancel control — shown on pending/active competitions. Cancels the
+// moment every accepted participant has voted; a vote can be retracted
+// beforehand. `rows` (already fetched by the parent sheet) carries each
+// participant's live voted_cancel flag.
+function CancelVote({
+  comp, rows, comps, onVoted,
+}: {
+  comp: CompetitionSummary;
+  rows: CompetitionStanding[];
+  comps: CompetitionsApi;
+  onVoted: () => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const accepted = rows.filter(r => r.status === 'accepted');
+  const me = rows.find(r => r.is_self);
+  if (!me || me.status !== 'accepted' || accepted.length === 0) return null;
+
+  const votes = accepted.filter(r => r.voted_cancel).length;
+  const needed = accepted.length;
+  const iVoted = !!me.voted_cancel;
+
+  async function toggle() {
+    if (!comp || busy) return;
+    setBusy(true);
+    feedback.skip();
+    if (iVoted) await comps.unvoteCancel(comp.id);
+    else await comps.voteCancel(comp.id);
+    onVoted();
+    setBusy(false);
+  }
+
+  return (
+    <div className="te-panel rounded-2xl px-4 py-3.5">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[14px] font-medium text-[#f4f1ec] tracking-tight">Cancel competition</p>
+          <p className="te-label mt-0.5">
+            {needed > 1 ? `${votes} of ${needed} agreed` : 'Needs everyone to agree'}
+          </p>
+        </div>
+        <button
+          onClick={toggle}
+          disabled={busy}
+          className={`shrink-0 rounded-xl font-semibold text-[13px] disabled:opacity-50 ${iVoted ? 'text-apple-red' : 'te-toggle-off'}`}
+          style={{
+            height: 38, padding: '0 16px',
+            ...(iVoted ? { background: 'rgba(255,69,58,0.1)', border: '1px solid rgba(255,69,58,0.25)' } : {}),
+          }}
+        >
+          {iVoted ? 'Voted — undo' : 'Vote to cancel'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Detail / results sheet ──────────────────────────────────────
 function CompetitionSheet({
   open, comp, comps, onClose, onRematch,
@@ -136,6 +198,11 @@ function CompetitionSheet({
 }) {
   const [rows, setRows] = useState<CompetitionStanding[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const loadRows = useCallback(() => {
+    if (!comp) return;
+    return comps.getStandings(comp.id).then(r => setRows(r));
+  }, [comp, comps]);
 
   useEffect(() => {
     if (!open || !comp) return;
@@ -169,7 +236,7 @@ function CompetitionSheet({
         {comp.status === 'cancelled' && (
           <div className="te-panel rounded-2xl px-4 py-6 text-center">
             <p className="text-[15px] font-semibold text-[#f4f1ec]">Cancelled</p>
-            <p className="text-[13px] text-white/45 mt-1 leading-snug">Not enough players accepted before the start.</p>
+            <p className="text-[13px] text-white/45 mt-1 leading-snug">{cancelledMessage(comp.cancelled_reason)}</p>
           </div>
         )}
 
@@ -184,6 +251,10 @@ function CompetitionSheet({
           loading
             ? <div className="te-panel rounded-2xl px-4 py-8 text-center te-label">Loading…</div>
             : <StandingsList track={comp.track} rows={rows} />
+        )}
+
+        {(comp.status === 'pending' || comp.status === 'active') && !loading && (
+          <CancelVote comp={comp} rows={rows} comps={comps} onVoted={loadRows} />
         )}
 
         {done && (
@@ -475,13 +546,17 @@ export function CompetitionsSection({ comps, friendsList }: {
 }) {
   const [createOpen, setCreateOpen] = useState(false);
   const [seed, setSeed] = useState<{ track: CompetitionTrack; participantIds: string[]; days: number; name: string } | null>(null);
-  const [detail, setDetail] = useState<CompetitionSummary | null>(null);
+  // Looked up by id (not a static snapshot) so the sheet reflects live status
+  // changes — e.g. it flips straight to "Cancelled" the instant a mutual
+  // cancel vote lands, without needing to be closed and reopened.
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const detail = detailId ? comps.competitions.find(c => c.id === detailId) ?? null : null;
 
   const openCreate = useCallback(() => { setSeed(null); setCreateOpen(true); }, []);
 
   const onRematch = useCallback((comp: CompetitionSummary, rows: CompetitionStanding[]) => {
     const days = Math.max(1, Math.round((new Date(comp.end_at).getTime() - new Date(comp.start_at).getTime()) / 86400000));
-    setDetail(null);
+    setDetailId(null);
     setSeed({
       track: comp.track,
       participantIds: rows.filter(r => !r.is_self).map(r => r.user_id),
@@ -522,9 +597,9 @@ export function CompetitionsSection({ comps, friendsList }: {
       ) : (
         <div className="space-y-2.5">
           {invites.map(c => <InviteCard key={c.id} comp={c} comps={comps} />)}
-          {active.map(c => <CompetitionCard key={c.id} comp={c} comps={comps} onOpen={() => setDetail(c)} />)}
-          {pendingMine.map(c => <CompetitionCard key={c.id} comp={c} comps={comps} onOpen={() => setDetail(c)} />)}
-          {completed.map(c => <CompetitionCard key={c.id} comp={c} comps={comps} onOpen={() => setDetail(c)} />)}
+          {active.map(c => <CompetitionCard key={c.id} comp={c} comps={comps} onOpen={() => setDetailId(c.id)} />)}
+          {pendingMine.map(c => <CompetitionCard key={c.id} comp={c} comps={comps} onOpen={() => setDetailId(c.id)} />)}
+          {completed.map(c => <CompetitionCard key={c.id} comp={c} comps={comps} onOpen={() => setDetailId(c.id)} />)}
         </div>
       )}
 
@@ -539,7 +614,7 @@ export function CompetitionsSection({ comps, friendsList }: {
         open={detail !== null}
         comp={detail}
         comps={comps}
-        onClose={() => setDetail(null)}
+        onClose={() => setDetailId(null)}
         onRematch={onRematch}
       />
     </div>

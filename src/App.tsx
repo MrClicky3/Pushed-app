@@ -363,6 +363,9 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
   const [extraRepsToast, setExtraRepsToast] = useState<{ exerciseName: string; extra: number } | null>(null);
   const [prToast, setPrToast] = useState<{ exerciseName: string; detail: string } | null>(null);
   const [scheduleOpen, setScheduleOpen] = useState(false);
+  // Set when the schedule sheet should jump straight to routine creation
+  // (the Logs page's no-routine prompt), instead of the main settings list.
+  const [scheduleInitialView, setScheduleInitialView] = useState<'routine' | undefined>(undefined);
   const [showProfile, setShowProfile] = useState(false);
   // When opening the profile to a specific section (e.g. from the Progress
   // page competition widget). Cleared once the profile closes.
@@ -619,8 +622,12 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
       <div
         className="max-w-lg mx-auto pl-[max(16px,env(safe-area-inset-left))] pr-[max(16px,env(safe-area-inset-right))]"
         style={{
-          paddingTop: 'max(68px, env(safe-area-inset-top, 0px) + 24px)',
-          paddingBottom: focusMode ? 'calc(40px + env(safe-area-inset-bottom, 0px))' : 'calc(80px + env(safe-area-inset-bottom, 0px))',
+          paddingTop: 'max(56px, env(safe-area-inset-top, 0px) + 18px)',
+          // The extra vh past the nav-bar clearance gives the last card room to
+          // scroll all the way up into the iPod-style scroll-depth effect's
+          // (Log/Exercises pages) full-opacity zone, rather than being stuck
+          // half-faded once it hits the end of the scrollable content.
+          paddingBottom: focusMode ? 'calc(40px + 30vh + env(safe-area-inset-bottom, 0px))' : 'calc(80px + 50vh + env(safe-area-inset-bottom, 0px))',
           transition: 'padding-bottom 0.36s cubic-bezier(0.22,1,0.36,1)',
         }}
       >
@@ -651,7 +658,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
           className="flex items-end justify-between"
           style={{ marginBottom: tab === 'log' ? 12 : 24 }}
         >
-          <h1 className="text-[36px] font-bold text-[#f4f1ec] leading-none" style={{ letterSpacing: '-0.04em' }}>
+          <h1 className="text-[37.5px] font-bold text-[#f4f1ec] leading-none" style={{ letterSpacing: '-0.04em' }}>
             {tabTitles[tab]}
           </h1>
           {/* Nudge down so the switch track sits on the title's baseline,
@@ -685,6 +692,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
             schedule={schedule}
             focusMode={focusMode}
             weekStartDay={weekStartDay}
+            onCreateRoutine={() => { setScheduleInitialView('routine'); setScheduleOpen(true); }}
           />
         ) : (
           <AnalyticsView
@@ -965,7 +973,8 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
 
       <ScheduleModal
         open={scheduleOpen}
-        onClose={() => setScheduleOpen(false)}
+        onClose={() => { setScheduleOpen(false); setScheduleInitialView(undefined); }}
+        initialView={scheduleInitialView}
         routines={routines}
         schedule={schedule}
         exercises={exercises}

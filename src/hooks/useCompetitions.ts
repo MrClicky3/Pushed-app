@@ -78,6 +78,24 @@ export function useCompetitions(scheduledDays: number[]) {
     return data as RpcResult;
   }, [reload]);
 
+  const voteCancel = useCallback(async (competitionId: string): Promise<RpcResult & { cancelled?: boolean }> => {
+    const { data, error } = await supabase.rpc('vote_cancel_competition', {
+      p_competition_id: competitionId,
+    });
+    await reload();
+    if (error) return { ok: false, reason: 'error' };
+    return data as RpcResult & { cancelled?: boolean };
+  }, [reload]);
+
+  const unvoteCancel = useCallback(async (competitionId: string): Promise<RpcResult> => {
+    const { data, error } = await supabase.rpc('unvote_cancel_competition', {
+      p_competition_id: competitionId,
+    });
+    await reload();
+    if (error) return { ok: false, reason: 'error' };
+    return data as RpcResult;
+  }, [reload]);
+
   const getStandings = useCallback(async (competitionId: string): Promise<CompetitionStanding[]> => {
     const { data } = await supabase.rpc('get_competition_standings', {
       p_competition_id: competitionId,
@@ -106,6 +124,8 @@ export function useCompetitions(scheduledDays: number[]) {
     createCompetition,
     acceptInvite,
     declineInvite,
+    voteCancel,
+    unvoteCancel,
     getStandings,
     loadBadges,
   };

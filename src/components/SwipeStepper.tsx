@@ -95,9 +95,9 @@ export default function SwipeStepper({
         className={`w-full bg-transparent text-white !text-[42px] font-bold te-mono focus:outline-none tabular-nums !leading-[32px] tracking-[-1px] text-left ${animClass}`}
         style={{ touchAction: 'none' }}
       />
-      <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex flex-col gap-0.5 pointer-events-none">
-        <ChevronUpIcon className="w-3 h-3 text-white/15" />
-        <ChevronDownIcon className="w-3 h-3 text-white/15" />
+      <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex flex-col gap-1.5 pointer-events-none">
+        <ChevronUpIcon className="w-[13.5px] h-[13.5px] text-white/15" />
+        <ChevronDownIcon className="w-[13.5px] h-[13.5px] text-white/15" />
       </div>
     </div>
   );

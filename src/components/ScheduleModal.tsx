@@ -41,6 +41,9 @@ type View =
 interface Props {
   open: boolean;
   onClose: () => void;
+  // Jumps straight to the "New routine" editor when the sheet opens, instead
+  // of the main settings list — used by the Logs page's no-routine prompt.
+  initialView?: 'routine';
   routines: Routine[];
   schedule: ScheduleDay[];
   exercises: Exercise[];
@@ -162,6 +165,7 @@ function fmtTimer(s: number) {
 export default function ScheduleModal({
   open,
   onClose,
+  initialView,
   routines,
   schedule,
   exercises,
@@ -201,6 +205,7 @@ export default function ScheduleModal({
   const [signOutConfirm, setSignOutConfirm] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [previewRoutine, setPreviewRoutine] = useState<Routine | null>(null);
+  const [dataMenuOpen, setDataMenuOpen] = useState(false);
 
   // Reset to main view when modal closes
   useEffect(() => {
@@ -211,9 +216,17 @@ export default function ScheduleModal({
         setEditingName(false);
         setSignOutConfirm(false);
         setPreviewRoutine(null);
+        setDataMenuOpen(false);
       }, 300);
     }
   }, [open]);
+
+  // Jump straight to the routine editor when opened for that purpose.
+  useEffect(() => {
+    if (open && initialView === 'routine') {
+      setView({ type: 'routine', routine: null });
+    }
+  }, [open, initialView]);
 
   // Populate editor when entering routine view
   useEffect(() => {
@@ -544,34 +557,19 @@ export default function ScheduleModal({
             </div>
           </div>
 
-          {/* Data export */}
+          {/* Data — opens a small popup with the export options */}
           <div>
             <p className="te-label mb-2 px-0.5">Data</p>
-            <div className="te-panel rounded-2xl overflow-hidden divide-y divide-white/[0.05]">
-              <button
-                onClick={() => downloadFile(buildCsv(logs, exercises), 'overload-export.csv', 'text/csv')}
-                className="w-full flex items-center justify-between px-4 py-3.5 active:bg-white/[0.04] transition-colors text-left"
-              >
-                <div>
-                  <p className="text-[14px] font-medium text-[#f4f1ec] tracking-tight">Export as CSV</p>
-                  <p className="te-label mt-0.5">{logs.length} log{logs.length !== 1 ? 's' : ''} · spreadsheet-friendly</p>
-                </div>
-                <ArrowDownTrayIcon className="w-4 h-4 shrink-0" style={{ color: 'rgba(244,241,236,0.3)' }} />
-              </button>
-              <button
-                onClick={() => downloadFile(
-                  JSON.stringify({ exported_at: new Date().toISOString(), exercises, logs }, null, 2),
-                  'overload-export.json', 'application/json',
-                )}
-                className="w-full flex items-center justify-between px-4 py-3.5 active:bg-white/[0.04] transition-colors text-left"
-              >
-                <div>
-                  <p className="text-[14px] font-medium text-[#f4f1ec] tracking-tight">Export as JSON</p>
-                  <p className="te-label mt-0.5">Full backup of exercises &amp; logs</p>
-                </div>
-                <ArrowDownTrayIcon className="w-4 h-4 shrink-0" style={{ color: 'rgba(244,241,236,0.3)' }} />
-              </button>
-            </div>
+            <button
+              onClick={() => setDataMenuOpen(true)}
+              className="te-panel w-full flex items-center justify-between px-4 py-3.5 rounded-2xl active:bg-white/[0.04] transition-colors text-left"
+            >
+              <div>
+                <p className="text-[14px] font-medium text-[#f4f1ec] tracking-tight">Export</p>
+                <p className="te-label mt-0.5">CSV or JSON</p>
+              </div>
+              <ChevronRightIcon className="w-3.5 h-3.5 text-white/20 shrink-0" />
+            </button>
           </div>
 
           {/* Account section */}
@@ -596,6 +594,35 @@ export default function ScheduleModal({
 
         </div>
         <ReportBugSheet open={reportOpen} onClose={() => setReportOpen(false)} context="Settings" />
+
+        {/* Data export — small popup with both formats */}
+        <Modal open={dataMenuOpen} onClose={() => setDataMenuOpen(false)} title="Export data">
+          <div className="te-panel rounded-2xl overflow-hidden divide-y divide-white/[0.05]">
+            <button
+              onClick={() => downloadFile(buildCsv(logs, exercises), 'overload-export.csv', 'text/csv')}
+              className="w-full flex items-center justify-between px-4 py-3.5 active:bg-white/[0.04] transition-colors text-left"
+            >
+              <div>
+                <p className="text-[14px] font-medium text-[#f4f1ec] tracking-tight">Export as CSV</p>
+                <p className="te-label mt-0.5">{logs.length} log{logs.length !== 1 ? 's' : ''} · spreadsheet-friendly</p>
+              </div>
+              <ArrowDownTrayIcon className="w-4 h-4 shrink-0" style={{ color: 'rgba(244,241,236,0.3)' }} />
+            </button>
+            <button
+              onClick={() => downloadFile(
+                JSON.stringify({ exported_at: new Date().toISOString(), exercises, logs }, null, 2),
+                'overload-export.json', 'application/json',
+              )}
+              className="w-full flex items-center justify-between px-4 py-3.5 active:bg-white/[0.04] transition-colors text-left"
+            >
+              <div>
+                <p className="text-[14px] font-medium text-[#f4f1ec] tracking-tight">Export as JSON</p>
+                <p className="te-label mt-0.5">Full backup of exercises &amp; logs</p>
+              </div>
+              <ArrowDownTrayIcon className="w-4 h-4 shrink-0" style={{ color: 'rgba(244,241,236,0.3)' }} />
+            </button>
+          </div>
+        </Modal>
       </FullPageSheet>
     );
   }

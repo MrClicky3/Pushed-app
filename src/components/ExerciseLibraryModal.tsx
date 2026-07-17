@@ -238,12 +238,12 @@ const CarouselCard = React.memo(function CarouselCard({ exercise, onTap, onToggl
 
       {/* Meta — strictly below the map, no overlap */}
       <div style={{ padding: '9px 10px 11px', display: 'flex', flexDirection: 'column', gap: 4, background: '#141414' }}>
-        <p className="text-[13px] font-semibold text-[#f4f1ec]" style={{ letterSpacing: '-0.01em', lineHeight: 1.25 }}>
+        <p className="text-[14.5px] font-semibold text-[#f4f1ec]" style={{ letterSpacing: '-0.01em', lineHeight: 1.25 }}>
           {exercise.name}
         </p>
         <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-          <EquipIcon type={exercise.equipment} size={12} />
-          <span className="te-label" style={{ color: 'rgba(255,255,255,0.38)' }}>
+          <EquipIcon type={exercise.equipment} size={13} />
+          <span className="te-label" style={{ color: 'rgba(255,255,255,0.38)', fontSize: 11.5 }}>
             {EQUIPMENT_LABELS[exercise.equipment]}
           </span>
         </div>

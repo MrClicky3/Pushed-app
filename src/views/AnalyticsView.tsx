@@ -128,7 +128,7 @@ const PERCENT_DOMAIN = yDomainFor([[{ value: 0 }, { value: 100 }]]);
 const PERCENT_YTICKS = yTicksFor(PERCENT_DOMAIN);
 
 function ScrubChart({
-  points, fillColor, maxLabels, scrubIndex, yMin, yMax, showTodayDot,
+  points, fillColor, maxLabels, scrubIndex, yMin, yMax,
 }: {
   points: ChartPoint[];
   fillColor: string;
@@ -136,7 +136,6 @@ function ScrubChart({
   scrubIndex: number | null;
   yMin: number;
   yMax: number;
-  showTodayDot: boolean;
 }) {
   const uid = useId().replace(/:/g, '');
   if (points.length < 2) return null;
@@ -144,7 +143,10 @@ function ScrubChart({
   const TOTAL_H = C_PT + C_CH + C_XH;
   const yRange = yMax - yMin || 1;
 
-  const py = (v: number) => C_PT + ((yMax - v) / yRange) * C_CH;
+  // Clamped so a value outside the domain (e.g. an edge-case seed of 0 below
+  // yMin) can never draw the line past the chart's own bottom edge, into the
+  // x-axis label row below it.
+  const py = (v: number) => Math.min(C_PT + C_CH, Math.max(C_PT, C_PT + ((yMax - v) / yRange) * C_CH));
   const xs = points.map((_, i) => chartX(i, points.length));
   const ys = points.map(p => py(p.value));
 
@@ -206,8 +208,6 @@ function ScrubChart({
   const hi = scrubIndex;
   const hx = hi != null ? xs[hi] : null;
   const hy = hi != null ? ys[hi] : null;
-  const latestX = xs[xs.length - 1];
-  const latestY = ys[ys.length - 1];
 
   return (
     <svg
@@ -226,10 +226,6 @@ function ScrubChart({
       <path d={areaD} fill={`url(#fill${uid})`} />
       <path d={lineD} fill="none" stroke="#ffffff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
 
-      {hi === null && showTodayDot && (
-        <circle cx={Math.min(latestX, CW - 6)} cy={latestY} r="4.5" fill="#ffffff" />
-      )}
-
       {hi !== null && hx !== null && hy !== null && (
         <>
           <line x1={hx} x2={hx} y1={C_PT - 2} y2={C_PT + C_CH} stroke="rgba(255,255,255,0.22)" strokeWidth="1.25" />
@@ -237,6 +233,10 @@ function ScrubChart({
           <circle cx={hx} cy={hy} r="6" fill="#ffffff" />
         </>
       )}
+
+      {/* Backing plate behind the date row — mostly solid so the line/area
+          never shows through the axis labels. */}
+      <rect x={0} y={C_PT + C_CH} width={CW} height={C_XH} fill="#010101" fillOpacity="0.8" />
 
       {labelIdxs.map((i, li) => {
         const first = li === 0;
@@ -278,6 +278,10 @@ function YAxisLabels({ domain, yTicks, unit }: {
       className="absolute inset-0 w-full h-full pointer-events-none"
       style={{ display: 'block' }}
     >
+      {/* Backing plate behind the label column — mostly solid so the chart
+          line/area never shows through the vertical legend. */}
+      <rect x={0} y={C_PT - 6} width={56} height={C_CH + 12} fill="#010101" fillOpacity="0.8" />
+
       {/* Axis bar — a fixed reference line the labels sit against, same idea
           as the plain-text bottom axis labels (no per-label backing boxes). */}
       <line x1={1.5} x2={1.5} y1={C_PT} y2={C_PT + C_CH} stroke="rgba(255,255,255,0.16)" strokeWidth="1.5" strokeLinecap="round" />
@@ -345,11 +349,10 @@ const PAGE_THRESHOLD = 60;
 // beat instead reveals the scrub crosshair over the current window. Vertical
 // drags fall through to page scroll. Paging into the future is blocked by
 // passing nextDef={null}.
-function ScrubbableChart({ def, prevDef, nextDef, windowOffset, domain, yTicks, onShiftWindow }: {
+function ScrubbableChart({ def, prevDef, nextDef, domain, yTicks, onShiftWindow }: {
   def: PageDef;
   prevDef: ChartWindow | null;
   nextDef: ChartWindow | null;
-  windowOffset: number;
   // A fixed y-domain/ticks for this whole chart section (computed once by the
   // caller — e.g. from an exercise's full history, or a constant 0–100% —
   // not per visible window) so paging through time only moves the time axis;
@@ -368,12 +371,6 @@ function ScrubbableChart({ def, prevDef, nextDef, windowOffset, domain, yTicks, 
   const pendingShift = useRef(0);
 
   const nPts = def.points.length;
-
-  // Only the panel that's actually "today" (offset 0) gets the latest-value
-  // dot — prev/next panels continue into their neighbour, so an endpoint
-  // marker there would be misleading.
-  const currentIsToday = windowOffset === 0;
-  const nextIsToday = windowOffset === 1;
 
   useEffect(() => {
     const el = viewportRef.current;
@@ -487,7 +484,6 @@ function ScrubbableChart({ def, prevDef, nextDef, windowOffset, domain, yTicks, 
                 <ScrubChart
                   points={prevDef.points} fillColor={prevDef.fillColor} maxLabels={prevDef.maxLabels}
                   scrubIndex={null} yMin={domain.yMin} yMax={domain.yMax}
-                  showTodayDot={false}
                 />
               )}
             </div>
@@ -495,7 +491,6 @@ function ScrubbableChart({ def, prevDef, nextDef, windowOffset, domain, yTicks, 
               <ScrubChart
                 points={def.points} fillColor={def.fillColor} maxLabels={def.maxLabels}
                 scrubIndex={scrub} yMin={domain.yMin} yMax={domain.yMax}
-                showTodayDot={currentIsToday}
               />
             </div>
             <div className="shrink-0" style={{ width: '33.3333%' }}>
@@ -503,7 +498,6 @@ function ScrubbableChart({ def, prevDef, nextDef, windowOffset, domain, yTicks, 
                 <ScrubChart
                   points={nextDef.points} fillColor={nextDef.fillColor} maxLabels={nextDef.maxLabels}
                   scrubIndex={null} yMin={domain.yMin} yMax={domain.yMax}
-                  showTodayDot={nextIsToday}
                 />
               )}
             </div>
@@ -522,11 +516,11 @@ function StatCard({ label, value, sub }: { label: string; value: string; sub: st
       className="rounded-[20px] px-[18px] py-[12px] flex items-center justify-between gap-3"
       style={{ background: '#0f0f0f', border: '1px solid #1a1a1a' }}
     >
-      <p className="text-[15px] font-semibold text-white tracking-tight">{label}</p>
-      <div className="text-right shrink-0">
-        <p className="text-[22px] font-bold text-white tabular-nums leading-none tracking-tight te-digit">{value}</p>
+      <div>
+        <p className="text-[15px] font-semibold text-white tracking-tight">{label}</p>
         <p className="text-[12px] mt-[4px]" style={{ color: 'rgba(244,241,236,0.35)' }}>{sub}</p>
       </div>
+      <p className="text-[22px] font-bold text-white tabular-nums leading-none tracking-tight te-digit shrink-0">{value}</p>
     </div>
   );
 }
@@ -1217,7 +1211,6 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
                 def={overallDef}
                 prevDef={overallPrevWindow}
                 nextDef={overallNextWindow}
-                windowOffset={overallWindowOffset}
                 domain={PERCENT_DOMAIN}
                 yTicks={PERCENT_YTICKS}
                 onShiftWindow={delta => setOverallWindowOffset(o => Math.max(0, o - delta))}
@@ -1267,7 +1260,6 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
                 def={weightDef}
                 prevDef={weightPrevWindow}
                 nextDef={weightNextWindow}
-                windowOffset={weightWindowOffset}
                 domain={weightDomain ?? { yMin: 0, yMax: 1 }}
                 yTicks={weightYTicks}
                 onShiftWindow={delta => setWeightWindowOffset(o => Math.max(0, o - delta))}
@@ -1287,7 +1279,6 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
                 def={dailyDef}
                 prevDef={dailyPrevWindow}
                 nextDef={dailyNextWindow}
-                windowOffset={dailyWindowOffset}
                 domain={PERCENT_DOMAIN}
                 yTicks={PERCENT_YTICKS}
                 onShiftWindow={delta => setDailyWindowOffset(o => Math.max(0, o - delta))}
