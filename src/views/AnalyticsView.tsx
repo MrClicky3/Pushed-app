@@ -278,25 +278,26 @@ function YAxisLabels({ domain, yTicks, unit }: {
       className="absolute inset-0 w-full h-full pointer-events-none"
       style={{ display: 'block' }}
     >
+      {/* Axis bar — a fixed reference line the labels sit against, same idea
+          as the plain-text bottom axis labels (no per-label backing boxes). */}
+      <line x1={1.5} x2={1.5} y1={C_PT} y2={C_PT + C_CH} stroke="rgba(255,255,255,0.16)" strokeWidth="1.5" strokeLinecap="round" />
       {yTicks.map(tick => {
         const ty = py(tick);
         const ly = Math.max(C_PT + 9, Math.min(C_PT + C_CH + 4, ty + 4));
         const label = `${fmtYLabel(tick)}${unit ?? ''}`;
         return (
-          <g key={tick}>
-            <rect x={2} y={ly - 12} width={Math.max(30, label.length * 7 + 8)} height={16} rx={4} fill="rgba(1,1,1,0.72)" />
-            <text
-              x={8} y={ly}
-              textAnchor="start"
-              fontSize="12.5"
-              fill="rgba(255,255,255,0.55)"
-              fontFamily={MONO}
-              fontWeight="500"
-              style={{ fontVariantNumeric: 'tabular-nums' }}
-            >
-              {label}
-            </text>
-          </g>
+          <text
+            key={tick}
+            x={8} y={ly}
+            textAnchor="start"
+            fontSize="12.5"
+            fill="rgba(255,255,255,0.4)"
+            fontFamily={MONO}
+            fontWeight="500"
+            style={{ fontVariantNumeric: 'tabular-nums' }}
+          >
+            {label}
+          </text>
         );
       })}
     </svg>
