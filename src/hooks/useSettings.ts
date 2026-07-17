@@ -3,11 +3,13 @@ import { isSoundEnabled, setSoundEnabled as applySound, isHapticsEnabled, setHap
 import { applyAccent, loadAccent, type AccentKey } from '../lib/accent';
 
 export type WeightUnit = 'kg' | 'lbs';
+export type WeekStartDay = 'saturday' | 'sunday' | 'monday';
 
 const STORAGE_KEY  = 'settings_weight_unit';
 const TIMER_KEY    = 'settings_timer_duration';
 const BARBELL_KEY  = 'settings_barbell_weight';
 const DURATION_KEY = 'settings_show_duration';
+const WEEK_START_KEY = 'settings_week_start_day';
 
 function load(): WeightUnit {
   try {
@@ -15,6 +17,14 @@ function load(): WeightUnit {
     if (v === 'lbs') return 'lbs';
   } catch {}
   return 'kg';
+}
+
+function loadWeekStartDay(): WeekStartDay {
+  try {
+    const v = localStorage.getItem(WEEK_START_KEY);
+    if (v === 'saturday' || v === 'sunday' || v === 'monday') return v;
+  } catch {}
+  return 'monday';
 }
 
 function loadTimerDuration(): number {
@@ -49,6 +59,7 @@ export function useSettings() {
   const [timerDuration, setTimerDurationState] = useState<number>(loadTimerDuration);
   const [barbellWeight, setBarbellWeightState] = useState<number>(loadBarbellWeight);
   const [showDuration, setShowDurationState] = useState<boolean>(loadShowDuration);
+  const [weekStartDay, setWeekStartDayState] = useState<WeekStartDay>(loadWeekStartDay);
   const [soundEnabled, setSoundEnabledState] = useState<boolean>(isSoundEnabled);
   const [hapticsEnabled, setHapticsEnabledState] = useState<boolean>(isHapticsEnabled);
   const [accent, setAccentState] = useState<AccentKey>(loadAccent);
@@ -73,6 +84,11 @@ export function useSettings() {
   const setShowDuration = useCallback((on: boolean) => {
     try { localStorage.setItem(DURATION_KEY, on ? 'on' : 'off'); } catch {}
     setShowDurationState(on);
+  }, []);
+
+  const setWeekStartDay = useCallback((d: WeekStartDay) => {
+    try { localStorage.setItem(WEEK_START_KEY, d); } catch {}
+    setWeekStartDayState(d);
   }, []);
 
   const setSoundEnabled = useCallback((on: boolean) => {
@@ -105,6 +121,7 @@ export function useSettings() {
     timerDuration, setTimerDuration,
     barbellWeight, setBarbellWeight,
     showDuration, setShowDuration,
+    weekStartDay, setWeekStartDay,
     soundEnabled, setSoundEnabled,
     hapticsEnabled, setHapticsEnabled,
     accent, setAccent,

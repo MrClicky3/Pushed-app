@@ -3,13 +3,25 @@ import {
   ChevronRightIcon,
   PlusIcon,
   ArrowDownTrayIcon,
+  QueueListIcon,
+  PencilSquareIcon,
 } from '@heroicons/react/24/outline';
 import FullPageSheet from './FullPageSheet';
+import Modal from './Modal';
 import type { Routine, ScheduleDay, WorkoutLog } from '../types';
 import type { Exercise } from '../types';
-import type { WeightUnit } from '../hooks/useSettings';
+import type { WeightUnit, WeekStartDay } from '../hooks/useSettings';
 import { ACCENTS, ACCENT_ORDER, type AccentKey } from '../lib/accent';
 import ReportBugSheet from './ReportBugSheet';
+
+// Right-hand load label for a routine-preview exercise row: "30kg" | "BW" | "BW +10kg"
+function loadLabel(ex: Exercise, unit: WeightUnit, toDisplay: (kg: number) => number): string {
+  if (ex.load_type === 'bodyweight') return 'BW';
+  if (ex.load_type === 'weighted_bw') {
+    return ex.weight > 0 ? `BW +${toDisplay(ex.weight)}${unit}` : 'BW';
+  }
+  return `${toDisplay(ex.weight)}${unit}`;
+}
 
 const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -45,6 +57,8 @@ interface Props {
   onSetBarbellWeight: (w: number) => void;
   showDuration: boolean;
   onSetShowDuration: (on: boolean) => void;
+  weekStartDay: WeekStartDay;
+  onSetWeekStartDay: (d: WeekStartDay) => void;
   soundEnabled: boolean;
   onSetSoundEnabled: (on: boolean) => void;
   hapticsEnabled: boolean;
@@ -164,6 +178,8 @@ export default function ScheduleModal({
   onSetBarbellWeight,
   showDuration,
   onSetShowDuration,
+  weekStartDay,
+  onSetWeekStartDay,
   soundEnabled,
   onSetSoundEnabled,
   hapticsEnabled,
@@ -184,6 +200,7 @@ export default function ScheduleModal({
   const [nameInput, setNameInput] = useState('');
   const [signOutConfirm, setSignOutConfirm] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [previewRoutine, setPreviewRoutine] = useState<Routine | null>(null);
 
   // Reset to main view when modal closes
   useEffect(() => {
@@ -193,6 +210,7 @@ export default function ScheduleModal({
         setConfirmDelete(false);
         setEditingName(false);
         setSignOutConfirm(false);
+        setPreviewRoutine(null);
       }, 300);
     }
   }, [open]);
@@ -362,23 +380,40 @@ export default function ScheduleModal({
                 />
               </div>
 
-              {/* Weight unit — toggle button */}
-              <div className="flex items-center justify-between px-4 py-3.5 gap-3">
+              {/* Weight unit — red toggle switch, same pattern as the other on/off rows */}
+              <button
+                onClick={() => onSetUnit(unit === 'kg' ? 'lbs' : 'kg')}
+                className="w-full flex items-center justify-between px-4 py-3.5 gap-3 active:bg-white/[0.03] transition-colors text-left"
+              >
                 <div className="min-w-0">
                   <p className="text-[14px] font-medium text-[#f4f1ec] tracking-tight">Weight unit</p>
                   <p className="te-label mt-0.5">Used across the app</p>
                 </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="te-mono text-[12px] font-semibold uppercase" style={{ color: 'rgba(244,241,236,0.4)' }}>{unit}</span>
+                  <div className="te-unit-track">
+                    <div className={`te-unit-lever ${unit === 'lbs' ? 'te-unit-lever-right' : ''}`} />
+                  </div>
+                </div>
+              </button>
+
+              {/* Start week on — compact 3-way selector */}
+              <div className="flex items-center justify-between px-4 py-3.5 gap-3">
+                <div className="min-w-0">
+                  <p className="text-[14px] font-medium text-[#f4f1ec] tracking-tight">Start week on</p>
+                  <p className="te-label mt-0.5">Log page calendar</p>
+                </div>
                 <div className="flex gap-1 shrink-0">
-                  {(['kg', 'lbs'] as const).map(u => {
-                    const active = unit === u;
+                  {([['saturday', 'Sat'], ['sunday', 'Sun'], ['monday', 'Mon']] as const).map(([d, label]) => {
+                    const active = weekStartDay === d;
                     return (
                       <button
-                        key={u}
-                        onClick={() => onSetUnit(u)}
-                        className={`${active ? 'te-toggle-on te-toggle-mono' : 'te-toggle-off'} rounded-lg select-none te-mono text-[13px] font-semibold uppercase`}
-                        style={{ width: 48, height: 34, color: active ? '#0a0908' : 'rgba(255,255,255,0.4)' }}
+                        key={d}
+                        onClick={() => onSetWeekStartDay(d)}
+                        className={`${active ? 'te-toggle-on te-toggle-mono' : 'te-toggle-off'} rounded-lg select-none te-mono text-[12px] font-semibold`}
+                        style={{ width: 42, height: 34, color: active ? '#0a0908' : 'rgba(255,255,255,0.4)' }}
                       >
-                        {u}
+                        {label}
                       </button>
                     );
                   })}
@@ -594,36 +629,76 @@ export default function ScheduleModal({
             </div>
           </div>
 
-          {/* Routines section */}
+          {/* Routines section — square bento cards, tap to preview */}
           <div>
             <p className="te-label mb-2 px-0.5">Routines</p>
-            {routines.length > 0 && (
-              <div className="te-panel rounded-2xl overflow-hidden divide-y divide-white/[0.05] mb-2">
-                {routines.map(r => (
-                  <button
-                    key={r.id}
-                    onClick={() => setView({ type: 'routine', routine: r })}
-                    className="w-full flex items-center px-4 py-4 gap-3 active:bg-white/[0.04] transition-colors text-left"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[14px] font-semibold text-[#f4f1ec] tracking-tight truncate">{r.name}</p>
-                      <p className="te-label mt-0.5">{r.exercise_ids.length} exercise{r.exercise_ids.length !== 1 ? 's' : ''}</p>
-                    </div>
-                    <ChevronRightIcon className="w-3.5 h-3.5 text-white/20 shrink-0" />
-                  </button>
-                ))}
-              </div>
-            )}
-            <button
-              onClick={() => setView({ type: 'routine', routine: null })}
-              className="te-panel w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl active:bg-white/[0.04] transition-colors"
-            >
-              <PlusIcon className="w-4 h-4 text-white/40" />
-              <span className="te-label">New routine</span>
-            </button>
+            <div className="grid grid-cols-2 gap-3">
+              {routines.map(r => (
+                <button
+                  key={r.id}
+                  onClick={() => setPreviewRoutine(r)}
+                  className="te-panel-dark rounded-[22px] aspect-square p-4 flex flex-col justify-between text-left active:opacity-80 transition-opacity"
+                >
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: 'rgba(244,241,236,0.08)' }}>
+                    <QueueListIcon className="w-4 h-4 text-white/50" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[15px] font-semibold text-[#f4f1ec] tracking-tight truncate">{r.name}</p>
+                    <p className="te-label mt-0.5">{r.exercise_ids.length} exercise{r.exercise_ids.length !== 1 ? 's' : ''}</p>
+                  </div>
+                </button>
+              ))}
+              <button
+                onClick={() => setView({ type: 'routine', routine: null })}
+                className="te-panel rounded-[22px] aspect-square flex flex-col items-center justify-center gap-2 active:bg-white/[0.04] transition-colors"
+              >
+                <PlusIcon className="w-5 h-5 text-white/40" />
+                <span className="te-label">New routine</span>
+              </button>
+            </div>
           </div>
 
         </div>
+
+        {/* Routine preview — read-only list of what's planned, with an edit shortcut */}
+        <Modal open={!!previewRoutine} onClose={() => setPreviewRoutine(null)} title={previewRoutine?.name ?? ''}>
+          {previewRoutine && (
+            <div className="space-y-3">
+              {previewRoutine.exercise_ids.length > 0 ? (
+                <div className="te-panel rounded-2xl overflow-hidden divide-y divide-white/[0.05]">
+                  {previewRoutine.exercise_ids.map(id => {
+                    const ex = exercises.find(e => e.id === id);
+                    if (!ex) return null;
+                    return (
+                      <div key={id} className="w-full h-[58px] flex items-center gap-3 px-4 min-w-0">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[14px] font-semibold text-white truncate" style={{ letterSpacing: '-0.17px' }}>
+                            {ex.name}
+                          </p>
+                          <p className="te-mono text-[11px] mt-[1px]" style={{ color: 'rgba(244,241,236,0.35)' }}>
+                            {ex.target_reps} x {ex.sets}
+                          </p>
+                        </div>
+                        <span className="te-mono text-[16px] font-semibold text-white/80 tabular-nums uppercase shrink-0 leading-none">
+                          {loadLabel(ex, unit, toDisplay)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="te-label text-center py-4">No exercises in this routine yet.</p>
+              )}
+              <button
+                onClick={() => { const r = previewRoutine; setPreviewRoutine(null); setView({ type: 'routine', routine: r }); }}
+                className="te-panel w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl active:bg-white/[0.04] transition-colors"
+              >
+                <PencilSquareIcon className="w-4 h-4 text-white/40" />
+                <span className="te-label">Edit routine</span>
+              </button>
+            </div>
+          )}
+        </Modal>
       </FullPageSheet>
     );
   }

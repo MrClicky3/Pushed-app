@@ -6,7 +6,7 @@ import ExerciseLibraryModal from '../components/ExerciseLibraryModal';
 import { EXERCISE_LIBRARY } from '../data/exerciseLibrary';
 import type { LibraryExercise } from '../data/exerciseLibrary';
 import type { Exercise, WorkoutLog, Routine, ScheduleDay } from '../types';
-import type { WeightUnit } from '../hooks/useSettings';
+import type { WeightUnit, WeekStartDay } from '../hooks/useSettings';
 import { feedback } from '../lib/feedback';
 import { loadDaySet, saveDaySet } from '../lib/skips';
 import { dayCompletionPct } from '../lib/streak';
@@ -23,6 +23,7 @@ interface Props {
   routines: Routine[];
   schedule: ScheduleDay[];
   focusMode?: boolean;
+  weekStartDay?: WeekStartDay;
 }
 
 // Small inline chip on a set row: warmup / drop / PR
@@ -47,7 +48,13 @@ function SetBadge({ kind }: { kind: 'warmup' | 'drop' | 'pr' }) {
 }
 
 // ── Date helpers ──────────────────────────────────────────────
-const DOW_INITIALS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+// Single-letter weekday initial, read directly off the date (not a
+// Monday-anchored array) so it stays correct regardless of the configured
+// week-start day.
+const DAY_INITIALS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']; // indexed by Date#getDay()
+function dayInitial(d: Date): string {
+  return DAY_INITIALS[d.getDay()];
+}
 
 function startOfDay(d: Date): Date {
   const n = new Date(d); n.setHours(0, 0, 0, 0); return n;
@@ -55,12 +62,21 @@ function startOfDay(d: Date): Date {
 function addDays(d: Date, days: number): Date {
   const n = new Date(d); n.setDate(n.getDate() + days); return n;
 }
-// Monday = 0 … Sunday = 6
+// Monday = 0 … Sunday = 6 — the schedule's canonical day-of-week index. This
+// is a fixed data-model convention (matches ScheduleDay.day_of_week) and is
+// independent of the user's display "start week on" preference.
 function dowMon(d: Date): number {
   return (d.getDay() + 6) % 7;
 }
-function mondayOf(d: Date): Date {
-  return addDays(startOfDay(d), -dowMon(d));
+
+const WEEK_START_JSDAY: Record<WeekStartDay, number> = { sunday: 0, monday: 1, saturday: 6 };
+
+// Start of the visual week strip containing `d`, anchored to the configured
+// start-of-week day (purely a display concern — the underlying schedule
+// day-of-week indices above are unaffected).
+function startOfWeekFor(d: Date, startDay: WeekStartDay): Date {
+  const diff = (d.getDay() - WEEK_START_JSDAY[startDay] + 7) % 7;
+  return addDays(startOfDay(d), -diff);
 }
 function isSameDay(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
@@ -165,11 +181,11 @@ function WeekRow({
     // combines with the neighbour's to make the spacing across the week seam
     // match the spacing within a week when swiping between weeks.
     <div className="flex items-center justify-around shrink-0" style={{ width: '33.3333%' }}>
-      {days.map((d, i) => (
+      {days.map(d => (
         <DayRing
           key={keyOf(d)}
           date={d}
-          initial={DOW_INITIALS[i]}
+          initial={dayInitial(d)}
           progress={progressFor(d)}
           isToday={isSameDay(d, today)}
           isSelected={isSameDay(d, selectedDate)}
@@ -473,7 +489,7 @@ function SessionRecapCard({
 // ── Main log view ─────────────────────────────────────────────
 type DisplayEntry = { exerciseId: string; exercise: Exercise | undefined; logs: WorkoutLog[] };
 
-export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExercise, onEdit, onDelete: _onDelete, unit, toDisplay, routines, schedule, focusMode = false }: Props) {
+export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExercise, onEdit, onDelete: _onDelete, unit, toDisplay, routines, schedule, focusMode = false, weekStartDay = 'monday' }: Props) {
   const [viewLibraryEx, setViewLibraryEx]     = useState<LibraryExercise | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -481,7 +497,10 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
   const today = useMemo(() => startOfDay(new Date()), []);
   const todayKey = useMemo(() => keyOf(today), [today]);
   const [selectedDate, setSelectedDate] = useState<Date>(today);
-  const [weekStart, setWeekStart]       = useState<Date>(() => mondayOf(today));
+  const [weekStart, setWeekStart]       = useState<Date>(() => startOfWeekFor(today, weekStartDay));
+  // The Settings sheet can change this while the Log page stays mounted
+  // underneath — re-anchor the calendar to the newly configured start day.
+  useEffect(() => { setWeekStart(startOfWeekFor(today, weekStartDay)); }, [weekStartDay, today]);
 
   // Skip + collapse state persist to localStorage (per day) so they survive
   // switching tabs; a new day resets automatically.
