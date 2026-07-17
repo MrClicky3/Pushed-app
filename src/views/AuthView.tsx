@@ -344,34 +344,56 @@ export default function AuthView({ onSignIn, onSignUp, onResend, onVerifyOtp, on
 
           {step === 'verify' && (
             <div className="space-y-4">
+              {/* Primary path — the confirmation link. It's the reliable way in:
+                  opening it on this device signs the user in automatically, so
+                  they never depend on the fast-expiring email code. */}
+              <div
+                className="w-12 h-12 rounded-full mx-auto flex items-center justify-center"
+                style={{ background: 'rgba(244,241,236,0.12)' }}
+              >
+                <svg className="w-6 h-6" viewBox="0 0 20 20" fill="none">
+                  <path d="M3 5.5L10 11l7-5.5M3 5.5h14v10H3V5.5z" stroke="#f4f1ec" strokeWidth="1.5" strokeLinejoin="round"/>
+                </svg>
+              </div>
               <div className="text-center space-y-1">
-                <p className="text-[16px] font-semibold text-[#f4f1ec] tracking-tight">Check your email</p>
-                <p className="text-[13px]" style={{ color: 'rgba(244,241,236,0.4)' }}>
-                  Enter the 6-digit code sent to <span className="text-white/70">{email}</span>
+                <p className="text-[16px] font-semibold text-[#f4f1ec] tracking-tight">Confirm your email</p>
+                <p className="text-[13px] leading-relaxed" style={{ color: 'rgba(244,241,236,0.45)' }}>
+                  We sent a confirmation link to <span className="text-white/70">{email}</span>. Open it on this
+                  device to finish — you'll be signed in automatically.
                 </p>
               </div>
-              <input
-                type="text" inputMode="numeric" autoComplete="one-time-code"
-                value={otp} onChange={e => handleOtpChange(e.target.value)}
-                placeholder="000000" maxLength={6} autoFocus disabled={loading}
-                className="w-full text-center rounded-2xl px-4 py-5 text-[32px] font-bold te-mono text-white placeholder:text-white/15 focus:outline-none disabled:opacity-50 transition-opacity"
-                style={{ letterSpacing: '0.25em', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.045)' }}
-              />
-              {error && <p className="text-[13px] text-center" style={{ color: '#ff453a' }}>{error}</p>}
-              {loading && <div className="flex justify-center"><div className="w-5 h-5 border-2 border-white/20 border-t-[#f4f1ec] rounded-full animate-spin" /></div>}
+
               <div className="flex flex-col items-center gap-1">
                 <button onClick={handleResend} disabled={resendCooldown > 0}
                   className="text-[13px] font-semibold disabled:opacity-40 transition-opacity"
                   style={{ color: '#f4f1ec' }}>
-                  {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend code'}
+                  {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend email'}
                 </button>
                 {resendMsg && <p className="text-[12px]" style={{ color: resendMsg === 'Sent!' ? '#30d158' : '#ff453a' }}>{resendMsg}</p>}
               </div>
+
+              {/* Secondary fallback — the 6-digit code, for anyone who opened the
+                  email on another device. De-emphasised since it expires quickly. */}
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
+                <span className="text-[11px] whitespace-nowrap" style={{ color: 'rgba(244,241,236,0.3)' }}>or enter the code</span>
+                <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
+              </div>
+              <input
+                type="text" inputMode="numeric" autoComplete="one-time-code"
+                value={otp} onChange={e => handleOtpChange(e.target.value)}
+                placeholder="000000" maxLength={6} disabled={loading}
+                className="w-full text-center rounded-2xl px-4 py-4 text-[28px] font-bold te-mono text-white placeholder:text-white/15 focus:outline-none disabled:opacity-50 transition-opacity"
+                style={{ letterSpacing: '0.25em', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.045)' }}
+              />
+              {error && <p className="text-[13px] text-center" style={{ color: '#ff453a' }}>{error}</p>}
+              {loading && <div className="flex justify-center"><div className="w-5 h-5 border-2 border-white/20 border-t-[#f4f1ec] rounded-full animate-spin" /></div>}
+
               <div className="h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
               <p className="text-[12px] text-center" style={{ color: 'rgba(244,241,236,0.3)' }}>
-                Or click the link in the email, then{' '}
+                Already confirmed?{' '}
                 <button onClick={() => { setStep('form'); setMode('signin'); setError(null); setOtp(''); }}
-                  className="font-semibold" style={{ color: '#f4f1ec' }}>sign in here →</button>
+                  className="font-semibold" style={{ color: '#f4f1ec' }}>Sign in →</button>
               </p>
             </div>
           )}
