@@ -861,6 +861,8 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
         unit={unit}
         toDisplay={toDisplay}
         fromDisplay={fromDisplay}
+        categoryColors={categoryColors}
+        onSetCategoryColor={setCategoryColor}
       />
 
       <ExerciseLibraryModal
@@ -1020,8 +1022,6 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
         onSetHapticsEnabled={setHapticsEnabled}
         accent={accent}
         onSetAccent={setAccent}
-        categoryColors={categoryColors}
-        onSetCategoryColor={setCategoryColor}
         unit={unit}
         onSetUnit={setUnit}
         toDisplay={toDisplay}

@@ -179,7 +179,7 @@ export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, 
                   key={ex.id}
                   data-card
                   className="rounded-te-md overflow-hidden"
-                  style={{ background: 'var(--te-surface-3)', border: '1px solid var(--te-border)', boxShadow: '0 0 7.5px rgba(0,0,0,0.25)', transformOrigin: 'center center', willChange: 'transform, opacity' }}
+                  style={{ background: 'var(--te-card)', border: '1px solid var(--te-border)', boxShadow: '0 0 7.5px rgba(0,0,0,0.25)', transformOrigin: 'center center', willChange: 'transform, opacity' }}
                 >
                   <ExerciseCard
                     exercise={ex}

@@ -1212,8 +1212,11 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
           <div className="space-y-5">
             {prGroups.map(({ group, label, items }) => (
               <div key={group}>
-                <div className="flex items-center gap-2 mb-3 pb-2.5 px-1" style={{ borderBottom: '1px solid var(--te-border)' }}>
-                  <span className="te-label">{label}</span>
+                {/* Divider matches the Exercises page category header (e.g.
+                    "UPPER — 18") one-for-one: same surface-3 hairline, same
+                    te-label pair, so the two grouped lists read identically. */}
+                <div className="flex items-center gap-2 mb-3 pb-2.5 px-1" style={{ borderBottom: '1px solid var(--te-surface-3)' }}>
+                  <span className="te-label" style={{ color: 'var(--te-text-4)' }}>{label}</span>
                   <span className="te-label ml-auto">{items.length}</span>
                 </div>
                 <div className="overflow-hidden divide-y divide-[color:var(--te-border)]" style={BENTO}>

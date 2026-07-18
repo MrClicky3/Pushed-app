@@ -24,6 +24,14 @@ export const CATEGORY_PALETTE: Swatch[] = [
   { key: 'white',  label: 'White',  color: '#f4f1ec' },
 ];
 
+// The minimal 4-swatch set offered in the Add Exercise sheet. A deliberate
+// subset of the full palette (which still backs any value already stored) —
+// includes the two category defaults so nothing looks unselected on open.
+export const PICKER_SWATCH_KEYS = ['purple', 'orange', 'blue', 'green'] as const;
+export const PICKER_SWATCHES: Swatch[] = PICKER_SWATCH_KEYS.map(
+  k => CATEGORY_PALETTE.find(s => s.key === k)!,
+);
+
 // Matches the long-standing hard-coded defaults so nothing shifts on upgrade.
 export const CATEGORY_DEFAULTS: Record<CategoryKey, string> = {
   upper: 'purple', lower: 'orange', push: 'red', pull: 'blue', legs: 'green', core: 'yellow',

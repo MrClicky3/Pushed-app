@@ -3,14 +3,16 @@ import { CheckIcon } from '@heroicons/react/24/outline';
 import Modal from './Modal';
 import { SECTION_LABEL, ToggleButton } from './SheetControls';
 import SwipeStepper from './SwipeStepper';
+import { PICKER_SWATCHES, type CategoryColors, type CategoryKey } from '../lib/categoryColors';
 import type { Exercise, LoadType } from '../types';
 import type { WeightUnit } from '../hooks/useSettings';
 
-const GROUPS = [
-  'upper', 'lower',
-  'chest', 'upper back', 'lower back', 'shoulders',
-  'biceps', 'triceps', 'forearms',
-  'quads', 'hamstrings', 'glutes', 'calves', 'core',
+// Exercises are categorised by body half only. The granular muscle-group list
+// (chest, biceps, quads, …) was dropped: it drove nothing but the category
+// colour, and upper/lower is all the grouping the app actually uses.
+const GROUPS: { key: string; label: string }[] = [
+  { key: 'upper', label: 'Upper body' },
+  { key: 'lower', label: 'Lower body' },
 ];
 
 const LOAD_TYPES: { key: LoadType; label: string }[] = [
@@ -18,6 +20,14 @@ const LOAD_TYPES: { key: LoadType; label: string }[] = [
   { key: 'bodyweight', label: 'Bodyweight' },
   { key: 'weighted_bw', label: 'Weighted BW' },
 ];
+
+// Collapse any stored muscle_group (including legacy granular ones like
+// 'quads' or 'chest') onto the two body halves, so editing an older exercise
+// still lands on a valid toggle.
+const LOWER_GROUPS = new Set(['lower', 'legs', 'lower back', 'quads', 'hamstrings', 'glutes', 'calves']);
+function normalizeGroup(g: string): 'upper' | 'lower' {
+  return LOWER_GROUPS.has(g) ? 'lower' : 'upper';
+}
 
 interface Props {
   open: boolean;
@@ -29,9 +39,11 @@ interface Props {
   unit: WeightUnit;
   toDisplay: (kg: number) => number;
   fromDisplay: (val: number) => number;
+  categoryColors: CategoryColors;
+  onSetCategoryColor: (cat: CategoryKey, paletteKey: string) => void;
 }
 
-export default function ExerciseModal({ open, onClose, onSave, onDelete, exercise, prefill, unit, toDisplay, fromDisplay }: Props) {
+export default function ExerciseModal({ open, onClose, onSave, onDelete, exercise, prefill, unit, toDisplay, fromDisplay, categoryColors, onSetCategoryColor }: Props) {
   const [name, setName] = useState('');
   const [group, setGroup] = useState('upper');
   const [loadType, setLoadType] = useState<LoadType>('weighted');
@@ -46,14 +58,14 @@ export default function ExerciseModal({ open, onClose, onSave, onDelete, exercis
     setConfirmDelete(false);
     if (exercise) {
       setName(exercise.name);
-      setGroup(exercise.muscle_group);
+      setGroup(normalizeGroup(exercise.muscle_group));
       setLoadType(exercise.load_type ?? 'weighted');
       setReps(String(exercise.target_reps));
       setSets(String(exercise.sets));
       setDisplayWeight(String(toDisplay(exercise.weight)));
     } else if (prefill) {
       setName(prefill.name);
-      setGroup(prefill.muscle_group);
+      setGroup(normalizeGroup(prefill.muscle_group));
       setLoadType('weighted');
       setReps('');
       setSets('');
@@ -117,21 +129,46 @@ export default function ExerciseModal({ open, onClose, onSave, onDelete, exercis
         </div>
 
         <div className="space-y-2.5">
-          <p style={SECTION_LABEL}>Muscle group</p>
-          <div
-            className="flex gap-2.5 overflow-x-auto pb-1 -mx-4 px-4"
-            style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
-          >
+          <p style={SECTION_LABEL}>Body</p>
+          <div className="grid grid-cols-2 gap-2.5">
             {GROUPS.map(g => (
               <ToggleButton
-                key={g}
-                active={group === g}
-                onClick={() => setGroup(g)}
-                label={g}
-                className="shrink-0 px-3.5"
+                key={g.key}
+                active={group === g.key}
+                onClick={() => setGroup(g.key)}
+                label={g.label}
                 heightPx={36}
               />
             ))}
+          </div>
+        </div>
+
+        <div className="space-y-2.5">
+          {/* Colour is a property of the category, not the individual exercise:
+              picking here recolours every exercise sharing this body half (its
+              dot and progress-chart fill). Four presets, no custom picker. */}
+          <p style={SECTION_LABEL}>Color</p>
+          <div className="flex items-center gap-3">
+            {PICKER_SWATCHES.map(sw => {
+              const selected = categoryColors[group as CategoryKey] === sw.key;
+              return (
+                <button
+                  key={sw.key}
+                  type="button"
+                  onClick={() => onSetCategoryColor(group as CategoryKey, sw.key)}
+                  aria-label={sw.label}
+                  aria-pressed={selected}
+                  className="rounded-full shrink-0 transition-transform active:scale-90"
+                  style={{
+                    width: 30, height: 30, borderRadius: '50%',
+                    background: sw.color,
+                    boxShadow: selected
+                      ? `0 0 0 2px var(--te-ink), 0 0 0 4px ${sw.color}`
+                      : 'inset 0 1px 2px rgba(255,255,255,0.3), inset 0 -1px 2px rgba(0,0,0,0.3)',
+                  }}
+                />
+              );
+            })}
           </div>
         </div>
 

@@ -12,7 +12,7 @@ import type { Routine, ScheduleDay, WorkoutLog } from '../types';
 import type { Exercise } from '../types';
 import type { WeightUnit, WeekStartDay } from '../hooks/useSettings';
 import { ACCENTS, ACCENT_ORDER, type AccentKey } from '../lib/accent';
-import { categoryVar, CATEGORY_KEYS, CATEGORY_LABELS as CAT_LABELS, CATEGORY_PALETTE, type CategoryColors, type CategoryKey } from '../lib/categoryColors';
+import { categoryVar, CATEGORY_KEYS } from '../lib/categoryColors';
 import ReportBugSheet from './ReportBugSheet';
 
 // Right-hand load label for a routine-preview exercise row: "30kg" | "BW" | "BW +10kg"
@@ -67,8 +67,6 @@ interface Props {
   onSetHapticsEnabled: (on: boolean) => void;
   accent: AccentKey;
   onSetAccent: (key: AccentKey) => void;
-  categoryColors: CategoryColors;
-  onSetCategoryColor: (cat: CategoryKey, paletteKey: string) => void;
   unit: WeightUnit;
   onSetUnit: (u: WeightUnit) => void;
   toDisplay: (kg: number) => number;
@@ -191,8 +189,6 @@ export default function ScheduleModal({
   onSetHapticsEnabled,
   accent,
   onSetAccent,
-  categoryColors,
-  onSetCategoryColor,
   unit,
   onSetUnit,
   toDisplay,
@@ -525,43 +521,10 @@ export default function ScheduleModal({
               </div>
             </div>
 
-            {/* Category colors — one swatch row per exercise category */}
-            <div className="te-panel rounded-te-md px-4 py-3.5 mt-3">
-              <p className="text-[15px] font-medium te-t1 tracking-tight">Category colors</p>
-              <p className="text-[13px] te-t3 mt-0.5 leading-snug">Exercise dots and progress charts</p>
-              <div className="mt-3 space-y-3">
-                {CATEGORY_KEYS.map(cat => (
-                  <div key={cat} className="flex items-center gap-3">
-                    <div className="flex items-center gap-2 shrink-0" style={{ width: 74 }}>
-                      <span className="w-[6px] h-[6px] rounded-full shrink-0" style={{ background: categoryVar(cat) }} />
-                      <span className="te-label">{CAT_LABELS[cat]}</span>
-                    </div>
-                    <div className="flex items-center gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-                      {CATEGORY_PALETTE.map(sw => {
-                        const selected = categoryColors[cat] === sw.key;
-                        return (
-                          <button
-                            key={sw.key}
-                            type="button"
-                            onClick={() => onSetCategoryColor(cat, sw.key)}
-                            aria-label={`${CAT_LABELS[cat]} ${sw.label}`}
-                            aria-pressed={selected}
-                            className="rounded-full shrink-0 transition-transform active:scale-90"
-                            style={{
-                              width: 20, height: 20, borderRadius: '50%',
-                              background: sw.color,
-                              boxShadow: selected
-                                ? `0 0 0 2px var(--te-ink), 0 0 0 3px ${sw.color}`
-                                : 'inset 0 1px 2px rgba(255,255,255,0.3), inset 0 -1px 2px rgba(0,0,0,0.3)',
-                            }}
-                          />
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            {/* Category colours moved into the Add Exercise sheet — you now set
+                a body half's colour where you pick the body half, so the whole
+                colour system lives in one place instead of a settings panel
+                divorced from the exercises it recolours. */}
           </div>
 
           {/* Profile section */}
