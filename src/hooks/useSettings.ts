@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { isSoundEnabled, setSoundEnabled as applySound, isHapticsEnabled, setHapticsEnabled as applyHaptics } from '../lib/feedback';
 import { applyAccent, loadAccent, type AccentKey } from '../lib/accent';
+import { applyCategoryColors, loadCategoryColors, type CategoryColors, type CategoryKey } from '../lib/categoryColors';
 
 export type WeightUnit = 'kg' | 'lbs';
 export type WeekStartDay = 'saturday' | 'sunday' | 'monday';
@@ -63,6 +64,7 @@ export function useSettings() {
   const [soundEnabled, setSoundEnabledState] = useState<boolean>(isSoundEnabled);
   const [hapticsEnabled, setHapticsEnabledState] = useState<boolean>(isHapticsEnabled);
   const [accent, setAccentState] = useState<AccentKey>(loadAccent);
+  const [categoryColors, setCategoryColorsState] = useState<CategoryColors>(loadCategoryColors);
 
   const setUnit = useCallback((u: WeightUnit) => {
     try { localStorage.setItem(STORAGE_KEY, u); } catch {}
@@ -106,6 +108,14 @@ export function useSettings() {
     setAccentState(key);
   }, []);
 
+  const setCategoryColor = useCallback((cat: CategoryKey, paletteKey: string) => {
+    setCategoryColorsState(prev => {
+      const next = { ...prev, [cat]: paletteKey };
+      applyCategoryColors(next); // persists + updates CSS variables live
+      return next;
+    });
+  }, []);
+
   function toDisplay(kg: number): number {
     if (unit === 'lbs') return Math.round(kg * 2.20462 * 2) / 2;
     return kg;
@@ -125,5 +135,6 @@ export function useSettings() {
     soundEnabled, setSoundEnabled,
     hapticsEnabled, setHapticsEnabled,
     accent, setAccent,
+    categoryColors, setCategoryColor,
   };
 }

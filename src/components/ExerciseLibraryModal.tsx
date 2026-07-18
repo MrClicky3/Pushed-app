@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { MagnifyingGlassIcon, XMarkIcon, CheckIcon } from '@heroicons/react/24/outline';
 import Model from '@phelian/react-body-highlighter';
 import type { Muscle } from '@phelian/react-body-highlighter';
@@ -29,6 +29,7 @@ const CARD_BG    = '#141414';
 const FIELD_BG   = '#1b1b1b';
 const HAIRLINE   = 'var(--te-border-strong)';   // matches the app's border tokens
 const PLACEHOLDER = '#5c5a58';
+const MINI_BG    = '#0d0d0d';   // muscle-filter previews sit darker than the fields
 const SAVED = '__saved__';   // sentinel filter for user-saved exercises
 
 const POSTERIOR = new Set<string>([
@@ -49,7 +50,6 @@ const MUSCLE_CATEGORY: Record<string, string> = {
   'quadriceps':'Quads','hamstring':'Hamstrings & Glutes','gluteal':'Hamstrings & Glutes',
   'calves':'Calves','left-soleus':'Calves','right-soleus':'Calves',
 };
-const CATEGORY_ORDER = ['Chest','Back','Shoulders','Biceps','Triceps','Core','Quads','Hamstrings & Glutes','Calves','Forearms'];
 function getCategory(ex: LibraryExercise) { return MUSCLE_CATEGORY[ex.primaryMuscles[0]] ?? 'Other'; }
 
 // Muscle-filter cards shown under the search bar. Each highlights the
@@ -84,7 +84,6 @@ function EquipIcon({ type, size = 13, color = 'rgba(255,255,255,0.38)' }: { type
 const SvgCheck = ({ c }: { c: string }) => <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 6" stroke={c} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/></svg>;
 const SvgX     = ({ c }: { c: string }) => <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke={c} strokeWidth="2.6" strokeLinecap="round"/></svg>;
 const SvgPlus  = ({ c }: { c: string }) => <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke={c} strokeWidth="2.2" strokeLinecap="round"/></svg>;
-const SvgBack  = ({ c }: { c: string }) => <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke={c} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>;
 const SvgBookmark = ({ c }: { c: string }) => <svg width="20" height="20" viewBox="0 0 24 24" fill={c}><path d="M6 3.5h12a1 1 0 0 1 1 1V20a.75.75 0 0 1-1.18.61L12 16.9l-5.82 3.71A.75.75 0 0 1 5 20V4.5a1 1 0 0 1 1-1z"/></svg>;
 
 // ── Exercise animation — autoplays, no controls ───────────────
@@ -121,20 +120,21 @@ const MiniMuscleCard = React.memo(function MiniMuscleCard({ filter, active, onTo
       style={{
         flexShrink: 0, width: 56, height: 65, borderRadius: 15,
         position: 'relative', overflow: 'hidden', cursor: 'pointer',
-        background: active ? 'rgba(255,255,255,0.06)' : FIELD_BG,
+        background: active ? 'rgba(255,255,255,0.05)' : MINI_BG,
         border: `1px solid ${active ? '#ffffff' : HAIRLINE}`,
         boxShadow: active ? '0 0 0 1px #ffffff' : 'none',
       }}
     >
       <div style={{
         position: 'absolute',
-        [filter.isUpper ? 'top' : 'bottom']: filter.isUpper ? -6 : -46,
+        // Lower-body figures sit higher so the target muscles stay in frame.
+        [filter.isUpper ? 'top' : 'bottom']: filter.isUpper ? -6 : -28,
         left: '50%', transform: 'translateX(-50%)', width: '112%',
       }}>
         <Model
           type={filter.view}
           data={data}
-          bodyColor={active ? '#3d3d3d' : '#343434'}
+          bodyColor={active ? '#333333' : '#2b2b2b'}
           highlightedColors={[accentHex()]}
           style={{ width: '100%' }}
         />
@@ -159,17 +159,17 @@ const CarouselCard = React.memo(function CarouselCard({ exercise, onTap, onToggl
       onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onTap(); } }}
       className="active:opacity-80 transition-opacity"
       style={{
-        flexShrink: 0, width: 'calc((100vw - 50px) / 2)', maxWidth: 182, height: 240,
+        width: '100%', height: 240,
         display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
         position: 'relative', background: CARD_BG, border: `1px solid ${HAIRLINE}`,
         borderRadius: 20, overflow: 'hidden', cursor: 'pointer', textAlign: 'left',
-        scrollSnapAlign: 'start',
       }}
     >
       {/* Muscle model fills the card (solid card background, single scrim below) */}
       <div style={{
         position: 'absolute',
-        [isUpper ? 'top' : 'bottom']: isUpper ? 26 : -6,
+        // Lower-body figures sit higher so the target muscles stay in frame.
+        [isUpper ? 'top' : 'bottom']: isUpper ? 26 : 14,
         left: '50%', transform: 'translateX(-50%)', width: '58%',
       }}>
         <Model type={view} data={mapData} bodyColor="#343434" highlightedColors={[accentHex()]} style={{ width: '100%' }} />
@@ -217,79 +217,27 @@ const CarouselCard = React.memo(function CarouselCard({ exercise, onTap, onToggl
   );
 });
 
-// ── Carousel with dot indicator ───────────────────────────────
-function CarouselSection({ category, count, exercises, onTap, isAdded, onToggleAdd }: {
-  category: string;
-  count: number;
+// ── Flat A–Z grid of exercise cards ──────────────────────────
+function ExerciseGrid({ exercises, onTap, isAdded, onToggleAdd }: {
   exercises: LibraryExercise[];
   onTap: (ex: LibraryExercise) => void;
   isAdded: (ex: LibraryExercise) => boolean;
   onToggleAdd: (id: string) => void;
 }) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [activeIdx, setActiveIdx] = useState(0);
-
-  const handleScroll = useCallback(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    // At the end of the track the last card is fully visible even though its
-    // left edge never reaches the container start — snap the indicator to last.
-    if (el.scrollLeft + el.clientWidth >= el.scrollWidth - 2) {
-      setActiveIdx(exercises.length - 1);
-      return;
-    }
-    const card = el.querySelector<HTMLElement>('[data-card]');
-    const cardW = (card?.offsetWidth ?? 170) + 10;
-    setActiveIdx(Math.min(Math.round(el.scrollLeft / cardW), exercises.length - 1));
-  }, [exercises.length]);
-
   return (
-    <div style={{ marginBottom: 14 }}>
-      {/* Section header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 0 9px', margin: '0 20px 12px', borderBottom: `1px solid ${HAIRLINE}` }}>
-        <span className="te-label" style={{ color: 'rgba(244,241,236,0.55)' }}>{category}</span>
-        <span className="te-label ml-auto" style={{ color: 'rgba(244,241,236,0.55)' }}>{count}</span>
-      </div>
-
-      {/* Horizontal scroll */}
-      <div
-        ref={scrollRef}
-        onScroll={handleScroll}
-        style={{
-          display: 'flex', gap: 10,
-          overflowX: 'auto', scrollbarWidth: 'none',
-          WebkitOverflowScrolling: 'touch' as never,
-          scrollSnapType: 'x mandatory',
-          scrollPaddingLeft: 20,
-          paddingTop: 2, paddingBottom: 4,
-        }}
-      >
-        <div style={{ flexShrink: 0, width: 10 }} />
-        {exercises.map(ex => (
-          <span data-card key={ex.id} style={{ display: 'flex' }}>
-            <CarouselCard
-              exercise={ex}
-              onTap={() => onTap(ex)}
-              onToggleAdd={() => onToggleAdd(ex.id)}
-              added={isAdded(ex)}
-            />
-          </span>
-        ))}
-        <div style={{ flexShrink: 0, width: 10 }} />
-      </div>
-
-      {/* Dot indicators */}
-      {exercises.length > 1 && (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 6, marginTop: 8 }}>
-          {exercises.map((_, i) => (
-            <div key={i} style={{
-              width: 6, height: 6, borderRadius: 99,
-              background: i === activeIdx ? ACCENT : 'rgba(255,255,255,0.16)',
-              transition: 'all 0.25s ease',
-            }} />
-          ))}
-        </div>
-      )}
+    <div style={{
+      display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10,
+      padding: '0 20px',
+    }}>
+      {exercises.map(ex => (
+        <CarouselCard
+          key={ex.id}
+          exercise={ex}
+          onTap={() => onTap(ex)}
+          onToggleAdd={() => onToggleAdd(ex.id)}
+          added={isAdded(ex)}
+        />
+      ))}
     </div>
   );
 }
@@ -435,18 +383,9 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, existing
         EQUIPMENT_LABELS[e.equipment].toLowerCase().includes(q)
       );
     }
-    return list;
+    // One flat A–Z list — no category grouping.
+    return list.slice().sort((a, b) => a.name.localeCompare(b.name));
   }, [muscleCat, search, addedIds, existingNames]);
-
-  const grouped = useMemo(() => {
-    const map = new Map<string, LibraryExercise[]>();
-    for (const ex of filtered) {
-      const cat = getCategory(ex);
-      if (!map.has(cat)) map.set(cat, []);
-      map.get(cat)!.push(ex);
-    }
-    return CATEGORY_ORDER.filter(c => map.has(c)).map(c => ({ category: c, exercises: map.get(c)! }));
-  }, [filtered]);
 
   // Only offer muscle filters that actually have exercises.
   const availableFilters = useMemo(() => {
@@ -568,18 +507,8 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, existing
   // ── Library list view (detail pops up on top) ────────────────
   return (
     <>
-    <FullPageSheet open={open} onClose={handleClose}>
+    <FullPageSheet open={open} onClose={handleClose} title="Exercise Library">
       <div style={{ margin: 0, position: 'relative' }}>
-
-        {/* Header — back arrow + red title inline */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 20px 16px' }}>
-          <button onClick={handleClose} style={{ width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0 }}>
-            <SvgBack c="#fff" />
-          </button>
-          <h1 className="text-[19px] font-semibold whitespace-nowrap" style={{ color: '#f4f1ec', letterSpacing: '-0.01em', lineHeight: 1 }}>
-            Exercise Library
-          </h1>
-        </div>
 
         {/* Search — pill */}
         <div style={{ padding: '0 20px 16px' }}>
@@ -589,7 +518,7 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, existing
               value={search} onChange={e => setSearch(e.target.value)}
               onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
               placeholder="Search exercises"
-              className="text-[15px] text-white"
+              className="text-[15px] text-white placeholder:text-white/25"
               style={{ flex: 1, background: 'none', border: 'none', outline: 'none', letterSpacing: '-0.01em' }}
             />
             {search && (
@@ -614,7 +543,8 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, existing
           >
             <SvgBookmark c={muscleCat === SAVED ? '#ffffff' : 'rgba(255,255,255,0.32)'} />
           </button>
-          <div style={{ flexShrink: 0, width: 1, height: 38, background: HAIRLINE, marginRight: 2 }} />
+          {/* Divider — centred between the bookmark and the previews */}
+          <div style={{ flexShrink: 0, width: 1, height: 38, background: 'rgba(255,255,255,0.18)', marginLeft: 2, marginRight: 11 }} />
           {availableFilters.map(f => (
             <MiniMuscleCard
               key={f.cat}
@@ -625,25 +555,20 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, existing
           ))}
         </div>
 
-        {/* Grouped carousels */}
-        {grouped.length === 0 ? (
+        {/* One flat A–Z list of every matching exercise */}
+        {filtered.length === 0 ? (
           <div style={{ padding: '40px 20px', textAlign: 'center' }}>
             <p className="text-[16px] font-semibold text-[#f4f1ec] mb-2">No exercises found</p>
-            <p className="te-label">Try a different search or muscle.</p>
+            <p className="te-label">{muscleCat === SAVED ? 'Save exercises with the + button.' : 'Try a different search or muscle.'}</p>
           </div>
         ) : (
           <div style={{ paddingBottom: 24 }}>
-            {grouped.map(({ category, exercises }) => (
-              <CarouselSection
-                key={category}
-                category={category}
-                count={exercises.length}
-                exercises={exercises}
-                onTap={setSelected}
-                isAdded={isAdded}
-                onToggleAdd={toggleAdd}
-              />
-            ))}
+            <ExerciseGrid
+              exercises={filtered}
+              onTap={setSelected}
+              isAdded={isAdded}
+              onToggleAdd={toggleAdd}
+            />
           </div>
         )}
 

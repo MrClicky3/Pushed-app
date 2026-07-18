@@ -624,36 +624,6 @@ export default function ProfilePage({
       }}
       onTransitionEnd={() => setDragSnapping(false)}
     >
-      {/* Back — pinned above the scroll content, doesn't scroll with the page */}
-      <button
-        onClick={onClose}
-        className="absolute flex items-center justify-center active:opacity-60 transition-opacity"
-        style={{ top: 'calc(env(safe-area-inset-top, 0px) + 14px)', left: 14, width: 32, height: 32 }}
-        aria-label="Back"
-      >
-        <ChevronLeftIcon className="w-5 h-5 text-white/60" />
-      </button>
-
-      {/* Report a bug — mirrors the back button, top-right, also pinned */}
-      <button
-        onClick={() => setReportOpen(true)}
-        className="absolute flex items-center gap-1.5 rounded-full active:opacity-80 transition-opacity"
-        style={{
-          top: 'calc(env(safe-area-inset-top, 0px) + 14px)', right: 14, height: 32, padding: '0 12px 0 10px',
-          background: 'linear-gradient(180deg, #3b82f6 0%, #2563eb 100%)',
-          boxShadow: '0 3px 12px rgba(37,99,235,0.35), inset 0 1px 0 rgba(255,255,255,0.18)',
-          border: '1px solid rgba(255,255,255,0.14)',
-        }}
-        aria-label="Report a bug"
-      >
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M8 2l1.5 2.5M16 2l-1.5 2.5" />
-          <rect x="7" y="6" width="10" height="12" rx="5" />
-          <path d="M12 6v12M3 10h4M17 10h4M3 15h4M17 15h4M4 6l3 2M20 6l-3 2M4 19l3-2M20 19l-3-2" />
-        </svg>
-        <span className="text-[11px] font-bold text-white tracking-tight">Bug</span>
-      </button>
-
       <AvatarPickerSheet
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
@@ -670,11 +640,42 @@ export default function ProfilePage({
           else and the page can be pulled to refresh from the very top. */}
       <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
         <div className="max-w-lg mx-auto pl-[max(16px,env(safe-area-inset-left))] pr-[max(16px,env(safe-area-inset-right))] space-y-6" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 32px)' }}>
-          {/* Identity band */}
+          {/* Header row — scrolls with the page, nothing is pinned */}
           <div
-            className="flex flex-col items-center gap-3"
-            style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 68px)' }}
+            className="flex items-center justify-between"
+            style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 14px)' }}
           >
+            <button
+              onClick={onClose}
+              className="flex items-center justify-center active:opacity-60 transition-opacity -ml-2"
+              style={{ width: 40, height: 40 }}
+              aria-label="Back"
+            >
+              <ChevronLeftIcon className="w-6 h-6 text-white/70" />
+            </button>
+
+            <button
+              onClick={() => setReportOpen(true)}
+              className="flex items-center gap-1.5 rounded-full active:opacity-80 transition-opacity"
+              style={{
+                height: 32, padding: '0 12px 0 10px',
+                background: 'linear-gradient(180deg, #3b82f6 0%, #2563eb 100%)',
+                boxShadow: '0 3px 12px rgba(37,99,235,0.35), inset 0 1px 0 rgba(255,255,255,0.18)',
+                border: '1px solid rgba(255,255,255,0.14)',
+              }}
+              aria-label="Report a bug"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M8 2l1.5 2.5M16 2l-1.5 2.5" />
+                <rect x="7" y="6" width="10" height="12" rx="5" />
+                <path d="M12 6v12M3 10h4M17 10h4M3 15h4M17 15h4M4 6l3 2M20 6l-3 2M4 19l3-2M20 19l-3-2" />
+              </svg>
+              <span className="text-[11px] font-bold text-white tracking-tight">Bug</span>
+            </button>
+          </div>
+
+          {/* Identity band */}
+          <div className="flex flex-col items-center gap-3">
             <button
               onClick={() => setPickerOpen(true)}
               className="relative shrink-0 active:opacity-70 transition-opacity"

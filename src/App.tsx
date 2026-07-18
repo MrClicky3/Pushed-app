@@ -30,6 +30,7 @@ import EdgeSwipePeek from './components/EdgeSwipePeek';
 import UsernameSetupModal from './components/UsernameSetupModal';
 import ExerciseLibraryModal from './components/ExerciseLibraryModal';
 import { calcStreak, calcConsistency } from './lib/streak';
+import { loadWorkoutDoneAt, skipDayKey } from './lib/skips';
 import { feedback } from './lib/feedback';
 import type { LibraryExercise } from './data/exerciseLibrary';
 import type { Exercise, WorkoutLog, SetType } from './types';
@@ -58,21 +59,35 @@ function formatSessionAge(dateStr: string): string {
   return `Started ${Math.floor(mins / 60)}h ${mins % 60}min ago`;
 }
 
+// Frozen total once the workout is finished — the counter stops here.
+function formatSessionTotal(startStr: string, endMs: number): string {
+  const mins = Math.max(0, Math.floor((endMs - new Date(startStr).getTime()) / 60000));
+  if (mins < 1) return 'Worked out for: <1min';
+  if (mins < 60) return `Worked out for: ${mins}min`;
+  return `Worked out for: ${Math.floor(mins / 60)}h ${mins % 60}min`;
+}
+
 // Session indicator that replaces the greeting at the top. Shows how long ago
 // today's workout started; when no session is active it pans out the bottom
 // and collapses away (and back in when one starts).
-function SessionIndicator({ sessionStart }: { sessionStart: string | null }) {
+function SessionIndicator({ sessionStart, doneAt }: { sessionStart: string | null; doneAt: number | null }) {
   const active = !!sessionStart;
+  const finished = active && doneAt !== null;
   const [, setTick] = useState(0);
   const lastText = useRef('');
 
   useEffect(() => {
-    if (!active) return;
+    // Once the workout is finished the total is fixed — stop ticking.
+    if (!active || finished) return;
     const id = setInterval(() => setTick(t => t + 1), 30000);
     return () => clearInterval(id);
-  }, [active]);
+  }, [active, finished]);
 
-  if (sessionStart) lastText.current = formatSessionAge(sessionStart);
+  if (sessionStart) {
+    lastText.current = doneAt !== null
+      ? formatSessionTotal(sessionStart, doneAt)
+      : formatSessionAge(sessionStart);
+  }
 
   return (
     <div
@@ -86,7 +101,7 @@ function SessionIndicator({ sessionStart }: { sessionStart: string | null }) {
       }}
     >
       <span className="te-label" style={{ color: 'rgba(244,241,236,0.5)', whiteSpace: 'nowrap' }}>
-        {sessionStart ? formatSessionAge(sessionStart) : lastText.current}
+        {lastText.current}
       </span>
     </div>
   );
@@ -276,6 +291,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
     soundEnabled, setSoundEnabled,
     hapticsEnabled, setHapticsEnabled,
     accent, setAccent,
+    categoryColors, setCategoryColor,
     weekStartDay, setWeekStartDay,
   } = useSettings();
   const { routines, schedule, addRoutine, updateRoutine, deleteRoutine, assignDay } = useSchedule(userId);
@@ -388,6 +404,10 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
     }
     return earliest;
   }, [logs]);
+
+  // Set when today's workout is completed, which freezes the header counter.
+  // Seeded from storage so it survives a reload / tab switch.
+  const [workoutDoneAt, setWorkoutDoneAt] = useState<number | null>(() => loadWorkoutDoneAt(skipDayKey()));
 
   // Rest timer
   const [timerRemaining, setTimerRemaining] = useState<number | null>(null);
@@ -622,7 +642,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
       <div
         className="max-w-lg mx-auto pl-[max(16px,env(safe-area-inset-left))] pr-[max(16px,env(safe-area-inset-right))]"
         style={{
-          paddingTop: 'max(56px, env(safe-area-inset-top, 0px) + 18px)',
+          paddingTop: 'max(28px, env(safe-area-inset-top, 0px) + 8px)',
           // The extra vh past the nav-bar clearance gives the last card room to
           // scroll all the way up into the iPod-style scroll-depth effect's
           // (Log/Exercises pages) full-opacity zone, rather than being stuck
@@ -643,7 +663,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
                 on the row, not the collapsing wrapper, so focus mode still
                 collapses cleanly). */}
             <div className="flex items-center justify-between mb-1" style={{ paddingTop: 9, paddingBottom: 3, paddingRight: 3 }}>
-              <SessionIndicator sessionStart={showDuration ? sessionStart : null} />
+              <SessionIndicator sessionStart={showDuration ? sessionStart : null} doneAt={workoutDoneAt} />
               <button
                 onClick={() => setShowProfile(true)}
                 className="active:opacity-70 transition-opacity shrink-0"
@@ -680,6 +700,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
           />
         ) : tab === 'log' ? (
           <LogsView
+            onWorkoutComplete={setWorkoutDoneAt}
             logs={logs}
             exercises={exercises}
             onAdd={() => setLogModal({ open: true, exercise: null, editLog: null })}
@@ -999,6 +1020,8 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
         onSetHapticsEnabled={setHapticsEnabled}
         accent={accent}
         onSetAccent={setAccent}
+        categoryColors={categoryColors}
+        onSetCategoryColor={setCategoryColor}
         unit={unit}
         onSetUnit={setUnit}
         toDisplay={toDisplay}

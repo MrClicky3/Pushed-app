@@ -12,6 +12,7 @@ import type { Routine, ScheduleDay, WorkoutLog } from '../types';
 import type { Exercise } from '../types';
 import type { WeightUnit, WeekStartDay } from '../hooks/useSettings';
 import { ACCENTS, ACCENT_ORDER, type AccentKey } from '../lib/accent';
+import { categoryVar, CATEGORY_KEYS, CATEGORY_LABELS as CAT_LABELS, CATEGORY_PALETTE, type CategoryColors, type CategoryKey } from '../lib/categoryColors';
 import ReportBugSheet from './ReportBugSheet';
 
 // Right-hand load label for a routine-preview exercise row: "30kg" | "BW" | "BW +10kg"
@@ -66,6 +67,8 @@ interface Props {
   onSetHapticsEnabled: (on: boolean) => void;
   accent: AccentKey;
   onSetAccent: (key: AccentKey) => void;
+  categoryColors: CategoryColors;
+  onSetCategoryColor: (cat: CategoryKey, paletteKey: string) => void;
   unit: WeightUnit;
   onSetUnit: (u: WeightUnit) => void;
   toDisplay: (kg: number) => number;
@@ -188,6 +191,8 @@ export default function ScheduleModal({
   onSetHapticsEnabled,
   accent,
   onSetAccent,
+  categoryColors,
+  onSetCategoryColor,
   unit,
   onSetUnit,
   toDisplay,
@@ -521,6 +526,44 @@ export default function ScheduleModal({
                 })}
               </div>
             </div>
+
+            {/* Category colors — one swatch row per exercise category */}
+            <div className="te-panel rounded-2xl px-4 py-3.5 mt-3">
+              <p className="text-[14px] font-medium text-[#f4f1ec] tracking-tight">Category colors</p>
+              <p className="te-label mt-0.5">Exercise dots and progress charts</p>
+              <div className="mt-3 space-y-3">
+                {CATEGORY_KEYS.map(cat => (
+                  <div key={cat} className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 shrink-0" style={{ width: 74 }}>
+                      <span className="w-[6px] h-[6px] rounded-full shrink-0" style={{ background: categoryVar(cat) }} />
+                      <span className="te-label">{CAT_LABELS[cat]}</span>
+                    </div>
+                    <div className="flex items-center gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+                      {CATEGORY_PALETTE.map(sw => {
+                        const selected = categoryColors[cat] === sw.key;
+                        return (
+                          <button
+                            key={sw.key}
+                            type="button"
+                            onClick={() => onSetCategoryColor(cat, sw.key)}
+                            aria-label={`${CAT_LABELS[cat]} ${sw.label}`}
+                            aria-pressed={selected}
+                            className="rounded-full shrink-0 transition-transform active:scale-90"
+                            style={{
+                              width: 20, height: 20, borderRadius: '50%',
+                              background: sw.color,
+                              boxShadow: selected
+                                ? `0 0 0 2px #0a0908, 0 0 0 3px ${sw.color}`
+                                : 'inset 0 1px 2px rgba(255,255,255,0.3), inset 0 -1px 2px rgba(0,0,0,0.3)',
+                            }}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* Profile section */}
@@ -819,21 +862,11 @@ export default function ScheduleModal({
                       <div className="flex items-center gap-2 mb-2 px-0.5">
                         <span
                           className="w-[5px] h-[5px] rounded-full shrink-0"
-                          style={{
-                            background:
-                              group === 'upper' ? 'var(--te-upper)'
-                              : group === 'lower' ? 'var(--te-lower)'
-                              : 'rgba(244,241,236,0.3)',
-                          }}
+                          style={{ background: categoryVar(group) }}
                         />
                         <span
                           className="te-label"
-                          style={{
-                            color:
-                              group === 'upper' ? 'var(--te-upper)'
-                              : group === 'lower' ? 'var(--te-lower)'
-                              : undefined,
-                          }}
+                          style={{ color: CATEGORY_KEYS.includes(group as never) ? categoryVar(group) : undefined }}
                         >
                           {GROUP_LABEL[group] ?? group.charAt(0).toUpperCase() + group.slice(1)}
                         </span>
