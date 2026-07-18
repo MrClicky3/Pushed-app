@@ -52,10 +52,16 @@ function fmtTimer(s: number) {
   return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 }
 
+// Sessions are inferred from the first log of the day, so a morning set plus
+// an evening set would read as a 12-hour "workout" — past this cap the header
+// stops pretending to know the duration.
+const SESSION_CAP_MINS = 4 * 60;
+
 function formatSessionAge(dateStr: string): string {
   const mins = Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000);
   if (mins < 1) return 'Started just now';
   if (mins < 60) return `Started ${mins}min ago`;
+  if (mins >= SESSION_CAP_MINS) return 'Worked out today';
   return `Started ${Math.floor(mins / 60)}h ${mins % 60}min ago`;
 }
 
@@ -64,6 +70,7 @@ function formatSessionTotal(startStr: string, endMs: number): string {
   const mins = Math.max(0, Math.floor((endMs - new Date(startStr).getTime()) / 60000));
   if (mins < 1) return 'Worked out for: <1min';
   if (mins < 60) return `Worked out for: ${mins}min`;
+  if (mins >= SESSION_CAP_MINS) return 'Worked out today';
   return `Worked out for: ${Math.floor(mins / 60)}h ${mins % 60}min`;
 }
 
