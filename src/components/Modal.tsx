@@ -108,9 +108,12 @@ export default function Modal({ open, onClose, title, children, onBack, noPadTop
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     const target = e.target as HTMLElement;
+    // Text fields and opt-out elements (sliders etc.) keep their own gestures;
+    // everything else — including buttons and list rows — can start the
+    // drag-to-dismiss. A tap still clicks, since the drag only engages once the
+    // finger passes the downward threshold.
     if (target.closest('input, textarea, select, [data-no-drag]')) return;
     const fromHandle = !!target.closest('[data-drag-handle]');
-    if (target.closest('button') && !fromHandle) return;
     drag.current = {
       startY: e.clientY,
       startTime: Date.now(),
@@ -207,7 +210,7 @@ export default function Modal({ open, onClose, title, children, onBack, noPadTop
         )}
         <div
           ref={contentRef}
-          className={`pl-[max(19px,env(safe-area-inset-left))] pr-[max(19px,env(safe-area-inset-right))] ${noPadTop ? 'pt-0' : 'pt-2.5'} ${noPadBottom ? 'pb-[env(safe-area-inset-bottom)]' : 'pb-[max(20px,env(safe-area-inset-bottom))]'} overflow-y-auto overscroll-contain`}
+          className={`flex-1 min-h-0 pl-[max(19px,env(safe-area-inset-left))] pr-[max(19px,env(safe-area-inset-right))] ${noPadTop ? 'pt-0' : 'pt-2.5'} ${noPadBottom ? 'pb-[env(safe-area-inset-bottom)]' : 'pb-[max(20px,env(safe-area-inset-bottom))]'} overflow-y-auto overscroll-contain`}
           style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
         >
           {children}

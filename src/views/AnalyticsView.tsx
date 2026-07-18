@@ -966,7 +966,7 @@ function StreakCard({ logs, schedule, routines, exercises }: {
 }
 
 export default function AnalyticsView({ logs, exercises, unit, toDisplay, routines, schedule, competitions, onOpenCompetitions }: Props) {
-  const [pageView, setPageView] = useState<ProgressPageView>('exercise');
+  const [pageView, setPageView] = useState<ProgressPageView>('overall');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [weightRange, setWeightRange] = useState<DayRange>(30);
   const [weightWindowOffset, setWeightWindowOffset] = useState(0);
@@ -1212,9 +1212,9 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
           <div className="space-y-5">
             {prGroups.map(({ group, label, items }) => (
               <div key={group}>
-                <div className="flex items-center gap-2 mb-2 px-1">
-                  <span className="te-label" style={{ color: 'rgba(244,241,236,0.55)' }}>{label}</span>
-                  <span className="te-label ml-auto" style={{ color: 'rgba(244,241,236,0.55)' }}>{items.length}</span>
+                <div className="flex items-center gap-2 mb-3 pb-2.5 px-1" style={{ borderBottom: '1px solid #1a1a1a' }}>
+                  <span className="te-label" style={{ color: 'rgba(244,241,236,0.35)' }}>{label}</span>
+                  <span className="te-label ml-auto" style={{ color: 'rgba(244,241,236,0.35)' }}>{items.length}</span>
                 </div>
                 <div className="overflow-hidden divide-y divide-white/[0.05]" style={BENTO}>
                   {items.map(pr => (
