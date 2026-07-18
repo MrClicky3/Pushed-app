@@ -8,6 +8,8 @@ interface Props {
   onEdit: () => void;
   unit: WeightUnit;
   toDisplay: (kg: number) => number;
+  /** Est-1RM change vs the previous month, in % (null = not enough history). */
+  trendPct?: number | null;
 }
 
 // Right-hand load label: "30kg" | "BW" | "BW +10kg"
@@ -19,7 +21,23 @@ function loadLabel(ex: Exercise, unit: WeightUnit, toDisplay: (kg: number) => nu
   return `${toDisplay(ex.weight)}${unit}`;
 }
 
-export default function ExerciseCard({ exercise, lastLog, onEdit, unit, toDisplay }: Props) {
+// ▲/▼ month-over-month strength trend (est. 1RM). Quietly omitted until two
+// months of history exist — a missing chip is neutral, a wrong one is noise.
+function TrendChip({ pct }: { pct: number }) {
+  const up = pct >= 0;
+  const color = up ? 'var(--te-pr)' : 'var(--te-warn)';
+  const shown = Math.abs(Math.round(pct * 10) / 10);
+  return (
+    <span
+      className="te-mono shrink-0 tabular-nums"
+      style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.02em', color }}
+    >
+      {up ? '▲' : '▼'} {shown}%
+    </span>
+  );
+}
+
+export default function ExerciseCard({ exercise, lastLog, onEdit, unit, toDisplay, trendPct }: Props) {
   // Line: green if target hit, subtle grey otherwise
   const hit = lastLog && lastLog.reps_done >= exercise.target_reps;
   const lineColor = !lastLog
@@ -38,8 +56,9 @@ export default function ExerciseCard({ exercise, lastLog, onEdit, unit, toDispla
         <p className="text-[17px] font-semibold te-t1 truncate" style={{ letterSpacing: '-0.17px' }}>
           {exercise.name}
         </p>
-        <p className="te-mono text-[13px] mt-[1px]" style={{ color: 'var(--te-text-4)', fontFeatureSettings: '"tnum"' }}>
+        <p className="te-mono text-[13px] mt-[1px] flex items-center gap-2" style={{ color: 'var(--te-text-4)', fontFeatureSettings: '"tnum"' }}>
           {exercise.target_reps} x {exercise.sets}
+          {trendPct !== null && trendPct !== undefined && <TrendChip pct={trendPct} />}
         </p>
       </div>
       {/* Same step as the exercise name: the load is the row's value, not its

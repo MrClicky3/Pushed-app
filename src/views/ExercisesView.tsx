@@ -76,6 +76,31 @@ export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, 
     return logs.find(l => l.exercise_id === exerciseId);
   }
 
+  // Month-over-month strength trend per exercise: best est. 1RM (Epley) in the
+  // last 30 days vs the 30 days before. Null until both windows have data.
+  const trendById = useMemo(() => {
+    const now = Date.now();
+    const d30 = now - 30 * 86400000;
+    const d60 = now - 60 * 86400000;
+    const cur = new Map<string, number>();
+    const prev = new Map<string, number>();
+    for (const l of logs) {
+      if (l.set_type === 'warmup' || l.weight <= 0) continue;
+      const t = new Date(l.created_at).getTime();
+      if (t < d60) continue;
+      const est = l.weight * (1 + l.reps_done / 30);
+      const bucket = t >= d30 ? cur : prev;
+      if (est > (bucket.get(l.exercise_id) ?? 0)) bucket.set(l.exercise_id, est);
+    }
+    const out = new Map<string, number | null>();
+    for (const ex of exercises) {
+      const c = cur.get(ex.id) ?? 0;
+      const p = prev.get(ex.id) ?? 0;
+      out.set(ex.id, c > 0 && p > 0 ? ((c - p) / p) * 100 : null);
+    }
+    return out;
+  }, [logs, exercises]);
+
   const orderedGroups = GROUP_ORDER.filter(g => groups[g]);
   const otherGroups = Object.keys(groups).filter(g => !GROUP_ORDER.includes(g)).sort();
   const groupOrder = [...orderedGroups, ...otherGroups];
@@ -187,6 +212,7 @@ export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, 
                     onEdit={() => onEdit(ex)}
                     unit={unit}
                     toDisplay={toDisplay}
+                    trendPct={trendById.get(ex.id)}
                   />
                 </div>
               ))}

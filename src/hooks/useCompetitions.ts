@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
+import { recordBaseline } from '../lib/compSnapshots';
 import type { CompetitionSummary, CompetitionStanding, Badge, CompetitionTrack } from '../types';
 
 export interface CreateCompetitionInput {
@@ -35,6 +36,12 @@ function deviceTimezone(): string {
 export function useCompetitions(scheduledDays: number[]) {
   const [competitions, setCompetitions] = useState<CompetitionSummary[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Standings cache — every fetch lands here so season records, badge detail
+  // and the continue-season prompt can read standings that cards already
+  // loaded, without re-fetching. `standingsVersion` bumps to re-render readers.
+  const standingsCacheRef = useRef(new Map<string, CompetitionStanding[]>());
+  const [standingsVersion, setStandingsVersion] = useState(0);
 
   const reload = useCallback(async () => {
     const { data } = await supabase.rpc('get_my_competitions');
@@ -100,8 +107,21 @@ export function useCompetitions(scheduledDays: number[]) {
     const { data } = await supabase.rpc('get_competition_standings', {
       p_competition_id: competitionId,
     });
-    return (data as CompetitionStanding[]) ?? [];
+    const rows = (data as CompetitionStanding[]) ?? [];
+    standingsCacheRef.current.set(competitionId, rows);
+    setStandingsVersion(v => v + 1);
+    // Freeze today's baseline off the first fetch of the day — powers the
+    // recap card's "what today's session did" delta.
+    const me = rows.find(r => r.is_self);
+    if (me) recordBaseline(competitionId, { score: me.score ?? null, delta: me.delta ?? null });
+    return rows;
   }, []);
+
+  const getCachedStandings = useCallback(
+    (competitionId: string): CompetitionStanding[] | undefined => standingsCacheRef.current.get(competitionId),
+    // Re-created whenever new standings land so memoized consumers recompute.
+    [standingsVersion], // eslint-disable-line react-hooks/exhaustive-deps
+  );
 
   // Badges for the badge shelf — the caller's own, or a friend's (RLS gates
   // visibility). Newest first.
@@ -127,6 +147,8 @@ export function useCompetitions(scheduledDays: number[]) {
     voteCancel,
     unvoteCancel,
     getStandings,
+    getCachedStandings,
+    standingsVersion,
     loadBadges,
   };
 }

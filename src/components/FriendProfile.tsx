@@ -4,8 +4,10 @@
 import { useState, useEffect } from 'react';
 import Modal from './Modal';
 import Avatar from './Avatar';
+import { feedback } from '../lib/feedback';
 import type { WeightUnit } from '../hooks/useSettings';
 import type { ProfileLite } from '../hooks/useFriends';
+import type { useFistBumps } from '../hooks/useFistBumps';
 import type { FriendActivity, ActivityWindow } from '../types';
 
 export interface FriendProfileTarget {
@@ -39,7 +41,7 @@ function StatCard({ label, value, sub }: { label: string; value: string; sub: st
 }
 
 export default function FriendProfile({
-  open, onClose, target, loadFriendProfile, loadFriendActivity, unit, toDisplay,
+  open, onClose, target, loadFriendProfile, loadFriendActivity, unit, toDisplay, fistBumps,
 }: {
   open: boolean;
   onClose: () => void;
@@ -48,11 +50,14 @@ export default function FriendProfile({
   loadFriendActivity: (id: string) => Promise<FriendActivity | null>;
   unit: WeightUnit;
   toDisplay: (kg: number) => number;
+  fistBumps?: ReturnType<typeof useFistBumps>;
 }) {
   const [bio, setBio] = useState<string | null>(null);
   const [activity, setActivity] = useState<FriendActivity | null>(null);
   const [win, setWin] = useState<WindowKey>('d7');
   const [loading, setLoading] = useState(true);
+  // 'idle' → can bump · 'sent' → bumped today · 'hidden' → feature not live
+  const [bumpState, setBumpState] = useState<'idle' | 'sent' | 'hidden'>('hidden');
 
   useEffect(() => {
     if (!open || !target) return;
@@ -61,6 +66,7 @@ export default function FriendProfile({
     setBio(null);
     setActivity(null);
     setWin('d7');
+    setBumpState('hidden');
     Promise.all([loadFriendProfile(target.user_id), loadFriendActivity(target.user_id)])
       .then(([p, a]) => {
         if (!alive) return;
@@ -68,8 +74,22 @@ export default function FriendProfile({
         setActivity(a);
         setLoading(false);
       });
+    // Fist bump availability + today's state, feature-detected (null = the
+    // migration isn't live yet → keep the button hidden).
+    fistBumps?.bumpedToday(target.user_id).then(already => {
+      if (!alive) return;
+      setBumpState(already === null ? 'hidden' : already ? 'sent' : 'idle');
+    });
     return () => { alive = false; };
-  }, [open, target, loadFriendProfile, loadFriendActivity]);
+  }, [open, target, loadFriendProfile, loadFriendActivity, fistBumps]);
+
+  async function bump() {
+    if (!target || !fistBumps || bumpState !== 'idle') return;
+    feedback.log();
+    setBumpState('sent'); // optimistic — a dupe just stays "sent"
+    const res = await fistBumps.sendBump(target.user_id);
+    if (!res.ok && res.reason === 'unavailable') setBumpState('hidden');
+  }
 
   if (!target) return null;
   const name = target.display_name || target.username;
@@ -86,6 +106,28 @@ export default function FriendProfile({
             <p className="te-label mt-1">@{target.username}</p>
           </div>
           {bio && <p className="text-[15px] te-t2 leading-snug text-center max-w-[280px]">{bio}</p>}
+
+          {/* One-tap fist bump — accountability without a comment thread */}
+          {bumpState !== 'hidden' && (
+            <button
+              onClick={bump}
+              disabled={bumpState === 'sent'}
+              className="flex items-center gap-2 rounded-full px-4 active:opacity-80 transition-all"
+              style={{
+                height: 38,
+                background: bumpState === 'sent' ? 'rgba(48,209,88,0.12)' : '#f4f1ec',
+                border: bumpState === 'sent' ? '1px solid color-mix(in srgb, var(--te-success) 25%, transparent)' : '1px solid transparent',
+              }}
+            >
+              <span className="text-[15px] leading-none">👊</span>
+              <span
+                className="text-[13px] font-semibold tracking-tight"
+                style={{ color: bumpState === 'sent' ? 'var(--te-success)' : 'var(--te-ink)' }}
+              >
+                {bumpState === 'sent' ? 'Bumped today' : 'Fist bump'}
+              </span>
+            </button>
+          )}
         </div>
 
         <div>

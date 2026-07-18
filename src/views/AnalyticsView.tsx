@@ -6,7 +6,7 @@ import { CompetitionMiniWidget } from '../components/Competitions';
 import type { Exercise, WorkoutLog, Routine, ScheduleDay } from '../types';
 import type { WeightUnit } from '../hooks/useSettings';
 import type { useCompetitions } from '../hooks/useCompetitions';
-import { calcStreak, dayCompletionPct } from '../lib/streak';
+import { calcStreak, dayCompletionPct, isScheduledDay, buildCompletedDays } from '../lib/streak';
 import { accentHex } from '../lib/accent';
 import { categoryVar, categoryHex } from '../lib/categoryColors';
 
@@ -718,6 +718,7 @@ function buildCompletionChart(
   filteredLogs: WorkoutLog[],
   rangeDays: number,
   endDate: Date = new Date(),
+  isPlannedDay?: (d: Date) => boolean,
 ): { points: ChartPoint[]; avg: number } {
   const perDay = new Map<string, number>();
   for (const log of filteredLogs) {
@@ -726,11 +727,17 @@ function buildCompletionChart(
   }
   const targetSets = Math.max(exercise.sets, 1);
   const allDays = buildAllDaysInRange(rangeDays, endDate);
+  const todayKey = new Date().toDateString();
   const raw: number[] = [];
   const points: ChartPoint[] = allDays.map(day => {
     const sets = perDay.get(day.toDateString()) ?? 0;
     const pctVal = Math.min(100, Math.round((sets / targetSets) * 100));
-    raw.push(pctVal);
+    // The average scores training days only — days this exercise was planned
+    // or actually logged. Rest days aren't zeros, they're not part of the
+    // plan; a still-empty today gets a pass too (the day isn't over).
+    const relevant = pctVal > 0
+      || (isPlannedDay ? isPlannedDay(day) && day.toDateString() !== todayKey : false);
+    if (relevant) raw.push(pctVal);
     return {
       value: pctVal,
       label: fmtDate(day),
@@ -754,10 +761,15 @@ function buildOverallCompletionChart(
   exercises: Exercise[],
 ): { points: ChartPoint[]; avg: number } {
   const allDays = buildAllDaysInRange(rangeDays, endDate);
+  const todayKey = new Date().toDateString();
   const raw: number[] = [];
   const points: ChartPoint[] = allDays.map(day => {
     const pctVal = Math.round(dayCompletionPct(day, logs, schedule, routines, exercises) * 100);
-    raw.push(pctVal);
+    // Average over training days only: scheduled days (except a still-empty
+    // today) and days with actual logs. Rest days are not zeros to atone for.
+    const relevant = pctVal > 0
+      || (isScheduledDay(day, schedule, routines) && day.toDateString() !== todayKey);
+    if (relevant) raw.push(pctVal);
     return {
       value: pctVal,
       label: fmtDate(day),
@@ -841,9 +853,18 @@ function buildDailyWindow(
   workingLogs: WorkoutLog[],
   rangeDays: number,
   endDate: Date,
+  schedule: ScheduleDay[],
+  routines: Routine[],
 ): { points: ChartPoint[]; avg: number } {
   const rangeExLogs = filterLogsByRange(workingLogs, rangeDays, endDate).filter(l => l.exercise_id === selected.id);
-  return buildCompletionChart(selected, rangeExLogs, rangeDays, endDate);
+  // A day is "planned" for this exercise when its weekday's routine includes it.
+  const isPlanned = (d: Date) => {
+    const dow = (d.getDay() + 6) % 7;
+    const entry = schedule.find(s => s.day_of_week === dow);
+    const routine = entry?.routine_id ? routines.find(r => r.id === entry.routine_id) : null;
+    return !!routine && routine.exercise_ids.includes(selected.id);
+  };
+  return buildCompletionChart(selected, rangeExLogs, rangeDays, endDate, isPlanned);
 }
 
 // One window of the Overall (aggregate) Daily completion chart.
@@ -923,6 +944,119 @@ function GroupedExercisePicker({
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+// "This week" hero — the honest headline. Scheduled days completed vs planned
+// so far, with a 7-dot week strip. Rest days render as faint dots, not
+// failures; future scheduled days as hollow rings still to fill.
+function ThisWeekCard({ logs, schedule, routines, exercises }: {
+  logs: WorkoutLog[];
+  schedule: ScheduleDay[];
+  routines: Routine[];
+  exercises: Exercise[];
+}) {
+  const week = useMemo(() => {
+    const completed = buildCompletedDays(logs, schedule, routines, exercises);
+    const trained = new Set<string>();
+    for (const l of logs) {
+      if (l.set_type === 'warmup') continue;
+      const d = new Date(l.created_at);
+      trained.add(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`);
+    }
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+    const INITIALS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    let scheduledSoFar = 0, scheduledTotal = 0, doneScheduled = 0, trainedDays = 0;
+    const days = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      const k = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+      const scheduled = isScheduledDay(d, schedule, routines);
+      const isPast = d < today;
+      const isToday = d.getTime() === today.getTime();
+      const done = completed.has(k);
+      const didTrain = trained.has(k);
+      if (scheduled) {
+        scheduledTotal++;
+        if (isPast || isToday) scheduledSoFar++;
+        if (done) doneScheduled++;
+      }
+      if (done || didTrain) trainedDays++;
+      return { initial: INITIALS[i], scheduled, isPast, isToday, done, didTrain };
+    });
+    return { days, scheduledSoFar, scheduledTotal, doneScheduled, trainedDays };
+  }, [logs, schedule, routines, exercises]);
+
+  const { days, scheduledSoFar, scheduledTotal, doneScheduled, trainedDays } = week;
+  const behind = Math.max(0, scheduledSoFar - doneScheduled - (days.find(d => d.isToday)?.scheduled && !days.find(d => d.isToday)?.done ? 1 : 0));
+  const onPlan = scheduledTotal > 0 && behind === 0;
+
+  const headline = scheduledTotal > 0
+    ? `${doneScheduled} of ${scheduledTotal} scheduled days`
+    : trainedDays > 0
+    ? `${trainedDays} day${trainedDays === 1 ? '' : 's'} trained`
+    : 'No workouts yet';
+
+  return (
+    <div className="px-4 py-3.5" style={BENTO}>
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="te-label" style={{ color: 'var(--te-text-4)' }}>This week</p>
+          <p className="text-[17px] font-bold te-t1 tracking-tight mt-1 leading-none">{headline}</p>
+        </div>
+        {scheduledTotal > 0 && (
+          <span
+            className="shrink-0 whitespace-nowrap"
+            style={{
+              fontFamily: MONO, fontSize: 10, fontWeight: 600, letterSpacing: '0.06em',
+              textTransform: 'uppercase', lineHeight: 1, padding: '4px 8px', borderRadius: 9999,
+              color: onPlan ? 'var(--te-success)' : 'var(--te-warn)',
+              background: onPlan ? 'rgba(48,209,88,0.12)' : 'rgba(232,166,87,0.12)',
+            }}
+          >
+            {onPlan ? 'On plan' : `${behind} behind`}
+          </span>
+        )}
+      </div>
+      <div className="flex items-center justify-between mt-3.5">
+        {days.map((d, i) => {
+          const credited = d.done || (!d.scheduled && d.didTrain);
+          const missed = d.scheduled && d.isPast && !d.done;
+          const upcoming = d.scheduled && !d.isPast && !d.done;
+          return (
+            <div key={i} className="flex flex-col items-center gap-1.5" style={{ width: 26 }}>
+              <span
+                className="flex items-center justify-center rounded-full"
+                style={{
+                  width: 20, height: 20,
+                  background: credited ? 'rgba(48,209,88,0.16)' : 'transparent',
+                  border: credited
+                    ? '1.5px solid color-mix(in srgb, var(--te-success) 55%, transparent)'
+                    : upcoming
+                    ? `1.5px solid ${d.isToday ? 'var(--te-accent)' : 'var(--te-border-strong)'}`
+                    : missed
+                    ? '1.5px solid rgba(255,69,58,0.3)'
+                    : '1.5px solid transparent',
+                }}
+              >
+                <span style={{
+                  fontSize: 9, fontWeight: 600,
+                  color: credited ? 'var(--te-success)'
+                    : d.isToday ? 'var(--te-accent)'
+                    : missed ? 'rgba(255,69,58,0.55)'
+                    : d.scheduled ? 'var(--te-text-3)' : 'var(--te-text-4)',
+                }}>
+                  {d.initial}
+                </span>
+              </span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -1089,11 +1223,11 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
     if (!selected) return null;
     const rangeLabel = rangeSuffix(dailyRangeDays).replace(/^\w/, c => c.toUpperCase());
     const maxLabels = dailyRangeDays <= 7 ? 7 : dailyRangeDays <= 30 ? 6 : 5;
-    const current = buildDailyWindow(selected, workingLogs, dailyRangeDays, windowEndDate(dailyRangeDays, dailyWindowOffset));
-    const prev = buildDailyWindow(selected, workingLogs, dailyRangeDays, windowEndDate(dailyRangeDays, dailyWindowOffset + 1));
-    const next = dailyWindowOffset === 0 ? null : buildDailyWindow(selected, workingLogs, dailyRangeDays, windowEndDate(dailyRangeDays, dailyWindowOffset - 1));
+    const current = buildDailyWindow(selected, workingLogs, dailyRangeDays, windowEndDate(dailyRangeDays, dailyWindowOffset), schedule, routines);
+    const prev = buildDailyWindow(selected, workingLogs, dailyRangeDays, windowEndDate(dailyRangeDays, dailyWindowOffset + 1), schedule, routines);
+    const next = dailyWindowOffset === 0 ? null : buildDailyWindow(selected, workingLogs, dailyRangeDays, windowEndDate(dailyRangeDays, dailyWindowOffset - 1), schedule, routines);
     return { rangeLabel, maxLabels, current, prev, next };
-  }, [selected, workingLogs, dailyRangeDays, dailyWindowOffset]);
+  }, [selected, workingLogs, dailyRangeDays, dailyWindowOffset, schedule, routines]);
 
   // Overall (aggregate, all exercises) Daily completion chart — Overall page only.
   const overallAnalytics = useMemo(() => {
@@ -1244,7 +1378,12 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
 
       {pageView === 'overall' ? (
         <div>
-          {/* Daily completion (aggregate across every exercise) — at the top */}
+          {/* This week — the page's headline: effort vs plan, not raw % */}
+          <div className="mb-4">
+            <ThisWeekCard logs={logs} schedule={schedule} routines={routines} exercises={exercises} />
+          </div>
+
+          {/* Daily completion (aggregate across every exercise) */}
           <div>
             <RangePicker range={overallRange} onChange={setOverallRange} />
             <div className="mt-3">
