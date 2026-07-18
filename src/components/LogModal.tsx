@@ -8,6 +8,7 @@ import { EXERCISE_LIBRARY } from '../data/exerciseLibrary';
 import type { Exercise, WorkoutLog, SetType } from '../types';
 import type { WeightUnit } from '../hooks/useSettings';
 import { feedback } from '../lib/feedback';
+import { categoryVar } from '../lib/categoryColors';
 import { accentHex } from '../lib/accent';
 
 const SET_TYPES: { key: SetType; label: string }[] = [
@@ -100,9 +101,7 @@ interface Props {
 }
 
 function GroupChip({ group }: { group: string }) {
-  const isUpper = group === 'upper';
-  const isLower = group === 'lower';
-  const dotColor = isUpper ? 'var(--te-upper)' : isLower ? 'var(--te-lower)' : 'rgba(244,241,236,0.3)';
+  const dotColor = categoryVar(group);
   return (
     <div className="flex items-center gap-1.5">
       <span className="w-[5px] h-[5px] rounded-full shrink-0" style={{ background: dotColor }} />

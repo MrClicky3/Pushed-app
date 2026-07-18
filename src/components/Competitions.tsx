@@ -143,6 +143,7 @@ function CancelVote({
   onVoted: () => void;
 }) {
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const accepted = rows.filter(r => r.status === 'accepted');
   const me = rows.find(r => r.is_self);
   if (!me || me.status !== 'accepted' || accepted.length === 0) return null;
@@ -154,28 +155,42 @@ function CancelVote({
   async function toggle() {
     if (!comp || busy) return;
     setBusy(true);
+    setError(null);
     feedback.skip();
-    if (iVoted) await comps.unvoteCancel(comp.id);
-    else await comps.voteCancel(comp.id);
-    onVoted();
-    setBusy(false);
+    try {
+      // The RPC resolves with { ok: false } rather than throwing when the
+      // server rejects it (or the function is missing), so check the result —
+      // otherwise a failed vote looks identical to a successful one.
+      const res = iVoted ? await comps.unvoteCancel(comp.id) : await comps.voteCancel(comp.id);
+      if (!res?.ok) setError("Couldn't register your vote — try again.");
+      onVoted();
+    } catch {
+      setError("Couldn't register your vote — try again.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   const suffix = needed > 1 ? ` · ${votes}/${needed} agreed` : '';
 
   return (
-    <button
-      onClick={toggle}
-      disabled={busy}
-      className="w-full text-center py-1.5 active:opacity-60 transition-opacity disabled:opacity-40"
-      style={{
-        fontFamily: "'Geist Mono', monospace", fontSize: 11, fontWeight: 500,
-        letterSpacing: '0.04em', textTransform: 'uppercase',
-        color: iVoted ? 'rgba(255,69,58,0.75)' : 'rgba(244,241,236,0.32)',
-      }}
-    >
-      {iVoted ? `Voted to cancel${suffix} · undo` : `Cancel competition${suffix}`}
-    </button>
+    <div>
+      <button
+        onClick={toggle}
+        disabled={busy}
+        className="w-full text-center py-1.5 active:opacity-60 transition-opacity disabled:opacity-40"
+        style={{
+          fontFamily: "'Geist Mono', monospace", fontSize: 11, fontWeight: 500,
+          letterSpacing: '0.04em', textTransform: 'uppercase',
+          color: iVoted ? 'rgba(255,69,58,0.75)' : 'rgba(244,241,236,0.32)',
+        }}
+      >
+        {iVoted ? `Voted to cancel${suffix} · undo` : `Cancel competition${suffix}`}
+      </button>
+      {error && (
+        <p className="te-label text-center mt-1" style={{ color: '#ff453a' }}>{error}</p>
+      )}
+    </div>
   );
 }
 

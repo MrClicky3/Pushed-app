@@ -8,6 +8,7 @@ import type { WeightUnit } from '../hooks/useSettings';
 import type { useCompetitions } from '../hooks/useCompetitions';
 import { calcStreak, dayCompletionPct } from '../lib/streak';
 import { accentHex } from '../lib/accent';
+import { categoryVar, categoryHex } from '../lib/categoryColors';
 
 interface Props {
   logs: WorkoutLog[];
@@ -33,6 +34,15 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 const MONO = "'Geist Mono', 'SF Mono', ui-monospace, monospace";
+
+// Every bento block on this page shares one surface: same background,
+// same border colour and thickness, same corner radius.
+const BENTO_RADIUS = 20;
+const BENTO: React.CSSProperties = {
+  background: '#0f0f0f',
+  border: '1px solid var(--te-border)',
+  borderRadius: BENTO_RADIUS,
+};
 
 function fmtDate(d: Date) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -60,9 +70,8 @@ function rangeSuffix(rangeDays: number): string {
 }
 
 function categoryColor(group: string): string {
-  if (group === 'upper') return '#9b8cf2';
-  if (group === 'lower') return '#f2c08c';
-  return accentHex();
+  const hex = categoryHex(group);
+  return hex.startsWith('#') ? hex : accentHex();
 }
 
 
@@ -510,14 +519,14 @@ function ScrubbableChart({ def, prevDef, nextDef, domain, yTicks, onShiftWindow 
 function StatCard({ label, value, sub }: { label: string; value: string; sub: string }) {
   return (
     <div
-      className="rounded-[20px] px-[18px] py-[12px] flex items-center justify-between gap-3"
-      style={{ background: '#0f0f0f', border: '1px solid var(--te-border)' }}
+      className="px-[14px] py-[9px] flex items-center justify-between gap-3"
+      style={BENTO}
     >
-      <div>
-        <p className="text-[15px] font-semibold text-white tracking-tight">{label}</p>
-        <p className="text-[12px] mt-[4px]" style={{ color: 'rgba(244,241,236,0.35)' }}>{sub}</p>
+      <div className="min-w-0">
+        <p className="text-[13.5px] font-semibold text-white tracking-tight">{label}</p>
+        <p className="text-[11px] mt-[2px] truncate" style={{ color: 'rgba(244,241,236,0.35)' }}>{sub}</p>
       </div>
-      <p className="text-[22px] font-bold text-white tabular-nums leading-none tracking-tight te-digit shrink-0">{value}</p>
+      <p className="text-[18px] font-bold text-white tabular-nums leading-none tracking-tight te-digit shrink-0">{value}</p>
     </div>
   );
 }
@@ -595,8 +604,8 @@ function RangePicker({
 type ProgressPageView = 'exercise' | 'overall';
 
 const PAGE_VIEW_OPTIONS: { key: ProgressPageView; label: string }[] = [
-  { key: 'exercise', label: 'Per exercise' },
   { key: 'overall', label: 'Overall' },
+  { key: 'exercise', label: 'Per exercise' },
 ];
 
 function PageViewToggle({ view, onChange }: { view: ProgressPageView; onChange: (v: ProgressPageView) => void }) {
@@ -883,14 +892,14 @@ function GroupedExercisePicker({
   const allGroups = [...orderedGroups, ...otherGroups];
 
   return (
-    <div className="te-panel-dark rounded-2xl overflow-hidden">
+    <div className="overflow-hidden" style={BENTO}>
       {allGroups.map((group, gi) => (
         <div key={group}>
           {gi > 0 && <div className="h-px bg-white/[0.06] mx-3" />}
           <div className="px-4 pt-4 pb-1">
             <div className="flex items-center gap-2">
               <span className="w-[5px] h-[5px] rounded-full shrink-0 inline-block" style={{
-                background: group === 'upper' ? 'var(--te-upper)' : group === 'lower' ? 'var(--te-lower)' : 'rgba(244,241,236,0.3)',
+                background: categoryVar(group),
               }} />
               <p className="te-label">
                 {CATEGORY_LABELS[group] ?? (group.charAt(0).toUpperCase() + group.slice(1))}
@@ -938,8 +947,8 @@ function StreakCard({ logs, schedule, routines, exercises }: {
       {items.map(({ value, label }) => (
         <div
           key={label}
-          className="flex-1 flex flex-col items-center justify-center gap-1.5 h-[60px] rounded-[20px]"
-          style={{ background: '#141210', border: '1px solid var(--te-border)' }}
+          className="flex-1 flex flex-col items-center justify-center gap-1.5 h-[60px]"
+          style={BENTO}
         >
           <span className="text-[17px] font-bold tabular-nums leading-none te-digit text-white tracking-[-0.17px]">
             {value}
@@ -983,14 +992,35 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
       }
     }
     return Array.from(map.entries())
-      .map(([id, pr]) => ({
-        id,
-        name: exercises.find(e => e.id === id)?.name ?? 'Unknown',
-        label: pr.weight > 0 ? `${Math.round(toDisplay(pr.weight))}${unit} × ${pr.reps}` : `${pr.reps} reps`,
-        date: pr.date,
-      }))
+      .map(([id, pr]) => {
+        const ex = exercises.find(e => e.id === id);
+        return {
+          id,
+          name: ex?.name ?? 'Unknown',
+          group: ex?.muscle_group ?? 'other',
+          label: pr.weight > 0 ? `${Math.round(toDisplay(pr.weight))}${unit} × ${pr.reps}` : `${pr.reps} reps`,
+          date: pr.date,
+        };
+      })
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [logs, exercises, toDisplay, unit]);
+
+  // Personal records split by muscle group — works for weighted, bodyweight
+  // and any custom group, with known groups ordered first.
+  const prGroups = useMemo(() => {
+    const map = new Map<string, typeof prs>();
+    for (const pr of prs) {
+      if (!map.has(pr.group)) map.set(pr.group, []);
+      map.get(pr.group)!.push(pr);
+    }
+    const known = CATEGORY_ORDER.filter(g => map.has(g));
+    const rest = Array.from(map.keys()).filter(g => !CATEGORY_ORDER.includes(g)).sort();
+    return [...known, ...rest].map(group => ({
+      group,
+      label: CATEGORY_LABELS[group] ?? group.charAt(0).toUpperCase() + group.slice(1),
+      items: map.get(group)!,
+    }));
+  }, [prs]);
 
   const withLogs = useMemo(
     () => exercises
@@ -1160,10 +1190,11 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
     <>
       <button
         onClick={() => setPrOpen(true)}
-        className="te-panel-dark w-full rounded-2xl px-4 py-3.5 mt-3 flex items-center gap-3 active:bg-white/[0.04] transition-colors text-left"
+        className="w-full px-4 py-3.5 mt-3 flex items-center gap-3 active:bg-white/[0.04] transition-colors text-left"
+        style={BENTO}
       >
-        <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: 'rgba(48,209,88,0.14)' }}>
-          <TrophyIcon className="w-4 h-4" style={{ color: '#30d158' }} />
+        <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: 'rgba(255,255,255,0.08)' }}>
+          <TrophyIcon className="w-4 h-4" style={{ color: '#ffffff' }} />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-[15px] font-semibold text-[#f4f1ec] tracking-tight">Personal records</p>
@@ -1176,16 +1207,26 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
 
       <Modal open={prOpen} onClose={() => setPrOpen(false)} title="Personal records">
         {prs.length === 0 ? (
-          <div className="te-panel-dark rounded-2xl px-4 py-8 text-center te-label">No records yet</div>
+          <div className="px-4 py-8 text-center te-label" style={BENTO}>No records yet</div>
         ) : (
-          <div className="te-panel-dark rounded-2xl overflow-hidden divide-y divide-white/[0.05]">
-            {prs.map(pr => (
-              <div key={pr.id} className="flex items-center px-4 py-[14px] gap-3">
-                <div className="flex-1 min-w-0">
-                  <p className="text-[15px] font-semibold text-[#f4f1ec] tracking-tight truncate">{pr.name}</p>
-                  <p className="te-label mt-0.5">{fmtFullDate(new Date(pr.date))}</p>
+          <div className="space-y-5">
+            {prGroups.map(({ group, label, items }) => (
+              <div key={group}>
+                <div className="flex items-center gap-2 mb-2 px-1">
+                  <span className="te-label" style={{ color: 'rgba(244,241,236,0.55)' }}>{label}</span>
+                  <span className="te-label ml-auto" style={{ color: 'rgba(244,241,236,0.55)' }}>{items.length}</span>
                 </div>
-                <span className="te-digit text-[18px] font-bold tabular-nums text-[#f4f1ec] shrink-0">{pr.label}</span>
+                <div className="overflow-hidden divide-y divide-white/[0.05]" style={BENTO}>
+                  {items.map(pr => (
+                    <div key={pr.id} className="flex items-center px-4 py-[14px] gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[15px] font-semibold text-[#f4f1ec] tracking-tight truncate">{pr.name}</p>
+                        <p className="te-label mt-0.5">{fmtFullDate(new Date(pr.date))}</p>
+                      </div>
+                      <span className="te-digit text-[18px] font-bold tabular-nums text-[#f4f1ec] shrink-0">{pr.label}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
@@ -1262,8 +1303,17 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
                 onShiftWindow={delta => setWeightWindowOffset(o => Math.max(0, o - delta))}
               />
               <div className="space-y-1.5 pt-5">
-                {weightAnalytics.current.e1rm.has && <StatCard label="Estimated 1RM" value={weightAnalytics.current.e1rm.value} sub={weightAnalytics.current.e1rm.sub} />}
-                {weightAnalytics.current.heaviest.has && <StatCard label="Heaviest weight" value={weightAnalytics.current.heaviest.value} sub={weightAnalytics.current.heaviest.sub} />}
+                {/* Always shown — a dash stands in until there's data to report. */}
+                <StatCard
+                  label="Estimated 1RM"
+                  value={weightAnalytics.current.e1rm.has ? weightAnalytics.current.e1rm.value : '–'}
+                  sub={weightAnalytics.current.e1rm.has ? weightAnalytics.current.e1rm.sub : 'No data yet'}
+                />
+                <StatCard
+                  label="Heaviest weight"
+                  value={weightAnalytics.current.heaviest.has ? weightAnalytics.current.heaviest.value : '–'}
+                  sub={weightAnalytics.current.heaviest.has ? weightAnalytics.current.heaviest.sub : 'No data yet'}
+                />
               </div>
             </div>
           </div>

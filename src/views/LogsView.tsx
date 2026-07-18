@@ -8,7 +8,7 @@ import type { LibraryExercise } from '../data/exerciseLibrary';
 import type { Exercise, WorkoutLog, Routine, ScheduleDay } from '../types';
 import type { WeightUnit, WeekStartDay } from '../hooks/useSettings';
 import { feedback } from '../lib/feedback';
-import { loadDaySet, saveDaySet } from '../lib/skips';
+import { loadDaySet, saveDaySet, saveWorkoutDoneAt, isWorkoutDone } from '../lib/skips';
 import { dayCompletionPct } from '../lib/streak';
 
 interface Props {
@@ -25,6 +25,8 @@ interface Props {
   focusMode?: boolean;
   weekStartDay?: WeekStartDay;
   onCreateRoutine: () => void;
+  /** Fired when the day's workout is marked complete (epoch ms). */
+  onWorkoutComplete?: (at: number) => void;
 }
 
 // Small inline chip on a set row: warmup / drop / PR
@@ -490,7 +492,7 @@ function SessionRecapCard({
 // ── Main log view ─────────────────────────────────────────────
 type DisplayEntry = { exerciseId: string; exercise: Exercise | undefined; logs: WorkoutLog[] };
 
-export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExercise, onEdit, onDelete: _onDelete, unit, toDisplay, routines, schedule, focusMode = false, weekStartDay = 'monday', onCreateRoutine }: Props) {
+export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExercise, onEdit, onDelete: _onDelete, unit, toDisplay, routines, schedule, focusMode = false, weekStartDay = 'monday', onCreateRoutine, onWorkoutComplete }: Props) {
   const [viewLibraryEx, setViewLibraryEx]     = useState<LibraryExercise | null>(null);
   const [noRoutineDismissed, setNoRoutineDismissed] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
@@ -522,11 +524,14 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
   // Manual "workout complete" for the day — persisted, and read by the recap
   // card below so a session can be finished at any time (>=1 set). One-way:
   // once set, there's no UI path back to incomplete for today.
-  const [workoutDone, setWorkoutDone] = useState<boolean>(() => loadDaySet('workoutdone', todayKey).size > 0);
+  const [workoutDone, setWorkoutDone] = useState<boolean>(() => isWorkoutDone(todayKey));
   function completeWorkout() {
     if (workoutDone) return;
     setWorkoutDone(true);
-    saveDaySet('workoutdone', todayKey, new Set(['done']));
+    const at = Date.now();
+    saveWorkoutDoneAt(todayKey, at);
+    // Lets the header stop its live session counter and show the total.
+    onWorkoutComplete?.(at);
     feedback.workoutDone();
   }
 
