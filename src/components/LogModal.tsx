@@ -248,10 +248,112 @@ function Stepper({
   );
 }
 
+// ── Plate calculator ────────────────────────────────────────────
+// Per-side plate breakdown for barbell loads, from the user's configured bar
+// weight. Display-unit aware; greedy decomposition over standard plates.
+const PLATES_KG = [25, 20, 15, 10, 5, 2.5, 1.25, 0.5];
+const PLATES_LBS = [45, 35, 25, 10, 5, 2.5];
+
+function platesPerSide(totalDisplay: number, barDisplay: number, unit: WeightUnit): { plates: number[]; leftover: number } | null {
+  const perSide = (totalDisplay - barDisplay) / 2;
+  if (barDisplay <= 0 || perSide < 0) return null;
+  const denoms = unit === 'lbs' ? PLATES_LBS : PLATES_KG;
+  const plates: number[] = [];
+  let rest = perSide;
+  for (const p of denoms) {
+    while (rest >= p - 1e-9) { plates.push(p); rest = Math.round((rest - p) * 1000) / 1000; }
+  }
+  return { plates, leftover: rest };
+}
+
+function fmtPlate(v: number): string {
+  return Number.isInteger(v) ? String(v) : String(Math.round(v * 100) / 100);
+}
+
+function PlateCalc({ weightDisplay, barbellKg, unit, toDisplay }: {
+  weightDisplay: number;
+  barbellKg: number;
+  unit: WeightUnit;
+  toDisplay: (kg: number) => number;
+}) {
+  const [open, setOpen] = useState(() => {
+    try { return localStorage.getItem('plate_calc_open') === '1'; } catch { return false; }
+  });
+  function toggle() {
+    setOpen(o => {
+      try { localStorage.setItem('plate_calc_open', o ? '0' : '1'); } catch { /* ignore */ }
+      return !o;
+    });
+  }
+
+  const barDisplay = toDisplay(barbellKg);
+  const breakdown = platesPerSide(weightDisplay, barDisplay, unit);
+
+  return (
+    <div className="rounded-te-md overflow-hidden" style={{ background: 'var(--te-well)', border: '1px solid var(--te-border)' }}>
+      <button
+        type="button"
+        onClick={toggle}
+        className="w-full flex items-center justify-between px-3.5 py-2.5 active:bg-white/[0.03] transition-colors"
+      >
+        <span className="te-label" style={{ color: 'var(--te-text-3)' }}>
+          Plates per side · bar {fmtPlate(barDisplay)}{unit}
+        </span>
+        <ChevronDownIcon
+          className="w-3.5 h-3.5 te-t4 transition-transform duration-200"
+          style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
+        />
+      </button>
+      <div className="grid" style={{ gridTemplateRows: open ? '1fr' : '0fr', transition: 'grid-template-rows 200ms ease' }}>
+        <div style={{ overflow: 'hidden' }}>
+          <div className="px-3.5 pb-3 pt-0.5">
+            {!breakdown ? (
+              <p className="te-label" style={{ color: 'var(--te-text-4)' }}>Set a barbell weight in Settings to use this.</p>
+            ) : breakdown.plates.length === 0 ? (
+              <p className="te-label" style={{ color: 'var(--te-text-4)' }}>
+                {weightDisplay <= barDisplay ? 'Empty bar (or lighter than the bar).' : 'Bar only.'}
+              </p>
+            ) : (
+              <div className="flex items-center flex-wrap gap-1.5">
+                {breakdown.plates.map((p, i) => {
+                  // Plate pill height scales with weight so the row reads like
+                  // a loaded sleeve at a glance.
+                  const max = unit === 'lbs' ? 45 : 25;
+                  const h = 22 + Math.round((p / max) * 14);
+                  return (
+                    <span
+                      key={i}
+                      className="te-mono tabular-nums flex items-center justify-center rounded-[5px] shrink-0"
+                      style={{
+                        fontSize: 10, fontWeight: 700, minWidth: 30, height: h,
+                        padding: '0 5px',
+                        background: 'var(--te-border-strong)',
+                        border: '1px solid rgba(244,241,236,0.14)',
+                        color: 'var(--te-text-1)',
+                      }}
+                    >
+                      {fmtPlate(p)}
+                    </span>
+                  );
+                })}
+                {breakdown.leftover > 0.01 && (
+                  <span className="te-label" style={{ color: 'var(--te-warn)' }}>
+                    +{fmtPlate(Math.round(breakdown.leftover * 100) / 100)}{unit} left over
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function LogModal({
   open, onClose, onSave, onUpdate, onDelete,
   exercise, exercises = [], editLog,
-  unit, toDisplay, fromDisplay,
+  unit, toDisplay, fromDisplay, barbellWeight,
 }: Props) {
   const [step, setStep] = useState<'pick' | 'log'>('log');
   const [selected, setSelected] = useState<Exercise | null>(null);
@@ -380,6 +482,11 @@ export default function LogModal({
           min={0}
           fractional={true}
         />
+
+        {/* Plate calculator — barbell-loaded exercises only */}
+        {(selected?.load_type ?? 'weighted') === 'weighted' && (
+          <PlateCalc weightDisplay={displayWeight} barbellKg={barbellWeight} unit={unit} toDisplay={toDisplay} />
+        )}
 
         {/* Set type — horizontally scrollable (room for more types later) */}
         <div className="flex gap-2.5 overflow-x-auto -my-1 py-1" style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>

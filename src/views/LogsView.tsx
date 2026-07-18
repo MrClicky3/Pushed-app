@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { QueueListIcon, PlusIcon, CheckIcon, ChevronDownIcon, ForwardIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { QueueListIcon, PlusIcon, CheckIcon, ChevronDownIcon, ForwardIcon, XMarkIcon, TrophyIcon } from '@heroicons/react/24/outline';
 import { BookOpenIcon } from '@heroicons/react/24/solid';
 import EmptyState from '../components/EmptyState';
 import ExerciseLibraryModal from '../components/ExerciseLibraryModal';
@@ -7,9 +7,13 @@ import { EXERCISE_LIBRARY } from '../data/exerciseLibrary';
 import type { LibraryExercise } from '../data/exerciseLibrary';
 import type { Exercise, WorkoutLog, Routine, ScheduleDay } from '../types';
 import type { WeightUnit, WeekStartDay } from '../hooks/useSettings';
+import type { useCompetitions } from '../hooks/useCompetitions';
+import type { useFistBumps, BumpSender } from '../hooks/useFistBumps';
+import Avatar from '../components/Avatar';
 import { feedback } from '../lib/feedback';
 import { loadDaySet, saveDaySet, saveWorkoutDoneAt, isWorkoutDone } from '../lib/skips';
 import { dayCompletionPct } from '../lib/streak';
+import { baselineFor, todayKey as compTodayKey } from '../lib/compSnapshots';
 
 interface Props {
   logs: WorkoutLog[];
@@ -27,6 +31,10 @@ interface Props {
   onCreateRoutine: () => void;
   /** Fired when the day's workout is marked complete (epoch ms). */
   onWorkoutComplete?: (at: number) => void;
+  /** Reports whether the selected calendar day is in the future (blocks adds). */
+  onFutureSelectedChange?: (future: boolean) => void;
+  competitions?: ReturnType<typeof useCompetitions>;
+  fistBumps?: ReturnType<typeof useFistBumps>;
 }
 
 // Small inline chip on a set row: warmup / drop / PR
@@ -367,16 +375,28 @@ function recapStorageKey(suffix: string) {
   return `recap-${suffix}-${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 }
 
+// One competition's movement today: "62% → 71%" with the name beside it.
+interface CompContribution {
+  id: string;
+  name: string;
+  text: string;
+  improved: boolean;
+}
+
 function SessionRecapCard({
   logs,
   exercises,
   unit,
   toDisplay,
+  competitions,
+  fistBumps,
 }: {
   logs: WorkoutLog[];
   exercises: Exercise[];
   unit: WeightUnit;
   toDisplay: (kg: number) => number;
+  competitions?: ReturnType<typeof useCompetitions>;
+  fistBumps?: ReturnType<typeof useFistBumps>;
 }) {
   const [headline] = useState(
     () => RECAP_HEADLINES[Math.floor(Math.random() * RECAP_HEADLINES.length)]
@@ -384,6 +404,48 @@ function SessionRecapCard({
   const [dismissed, setDismissed] = useState(
     () => localStorage.getItem(recapStorageKey('dismissed')) === '1'
   );
+
+  // What today's session did to each active competition — live standings vs
+  // the baseline frozen on the day's first fetch. Only rows that actually
+  // moved are shown; no movement, no noise.
+  const [contribs, setContribs] = useState<CompContribution[]>([]);
+  useEffect(() => {
+    if (!competitions || dismissed) return;
+    const active = competitions.competitions.filter(c => c.status === 'active');
+    if (active.length === 0) { setContribs([]); return; }
+    let alive = true;
+    Promise.all(active.map(async c => {
+      const rows = await competitions.getStandings(c.id);
+      const me = rows.find(r => r.is_self);
+      if (!me) return null;
+      const base = baselineFor(c.id);
+      if (!base || base.dayKey !== compTodayKey()) return null;
+      const cur = c.track === 'volume' ? (me.delta ?? null) : (me.score ?? null);
+      const prev = c.track === 'volume' ? base.delta : base.score;
+      if (cur === null || prev === null || Math.round(cur) === Math.round(prev)) return null;
+      const fmt = (v: number) => c.track === 'volume' ? `${v > 0 ? '+' : ''}${Math.round(v)}%` : `${Math.round(v)}%`;
+      return {
+        id: c.id,
+        name: c.name,
+        text: `${fmt(prev)} → ${fmt(cur)}`,
+        improved: cur > prev,
+      } as CompContribution;
+    })).then(rows => {
+      if (alive) setContribs(rows.filter((r): r is CompContribution => r !== null));
+    });
+    return () => { alive = false; };
+    // Refetch when today's log count changes — each set can move a standing.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [competitions?.competitions, logs.length, dismissed]);
+
+  // Fist bumps received today (hidden until the migration is live).
+  const [bumps, setBumps] = useState<BumpSender[]>([]);
+  useEffect(() => {
+    if (!fistBumps || dismissed) return;
+    let alive = true;
+    fistBumps.loadBumpsForMeToday().then(b => { if (alive) setBumps(b); });
+    return () => { alive = false; };
+  }, [fistBumps, dismissed]);
 
   function dismiss() {
     localStorage.setItem(recapStorageKey('dismissed'), '1');
@@ -485,6 +547,42 @@ function SessionRecapCard({
           ))}
         </div>
       )}
+
+      {/* Competition movement — what this session did to your standings */}
+      {contribs.length > 0 && (
+        <div className="divide-y divide-[color:var(--te-border)]" style={{ borderTop: '1px solid var(--te-border)' }}>
+          {contribs.map(c => (
+            <div key={c.id} className="flex items-center justify-between px-3.5 py-2 gap-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <TrophyIcon className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--te-gold)' }} />
+                <p className="text-[13px] font-semibold te-t2 tracking-tight truncate">{c.name}</p>
+              </div>
+              <p
+                className="te-mono text-[11px] font-semibold tabular-nums shrink-0"
+                style={{ color: c.improved ? 'var(--te-success)' : 'var(--te-text-3)' }}
+              >
+                {c.text}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Fist bumps received today */}
+      {bumps.length > 0 && (
+        <div className="flex items-center gap-2.5 px-3.5 py-2.5" style={{ borderTop: '1px solid var(--te-border)' }}>
+          <span className="text-[15px] leading-none">👊</span>
+          <div className="flex -space-x-1.5 shrink-0">
+            {bumps.slice(0, 4).map(b => (
+              <Avatar key={b.id} name={b.display_name || b.username} avatarUrl={b.avatar_url} size={18} />
+            ))}
+          </div>
+          <p className="text-[13px] te-t3 truncate">
+            {bumps.map(b => b.display_name || b.username).slice(0, 2).join(' & ')}
+            {bumps.length > 2 ? ` +${bumps.length - 2}` : ''} bumped you
+          </p>
+        </div>
+      )}
     </div>
   );
 }
@@ -492,7 +590,7 @@ function SessionRecapCard({
 // ── Main log view ─────────────────────────────────────────────
 type DisplayEntry = { exerciseId: string; exercise: Exercise | undefined; logs: WorkoutLog[] };
 
-export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExercise, onEdit, onDelete: _onDelete, unit, toDisplay, routines, schedule, focusMode = false, weekStartDay = 'monday', onCreateRoutine, onWorkoutComplete }: Props) {
+export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExercise, onEdit, onDelete: _onDelete, unit, toDisplay, routines, schedule, focusMode = false, weekStartDay = 'monday', onCreateRoutine, onWorkoutComplete, onFutureSelectedChange, competitions, fistBumps }: Props) {
   const [viewLibraryEx, setViewLibraryEx]     = useState<LibraryExercise | null>(null);
   const [noRoutineDismissed, setNoRoutineDismissed] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
@@ -565,6 +663,13 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
   }
 
   const isToday = isSameDay(selectedDate, today);
+  const isFuture = selectedDate > today && !isToday;
+
+  // Let the shell know when a future day is selected so the global swipe-add
+  // can refuse (you can't log days that haven't happened).
+  useEffect(() => { onFutureSelectedChange?.(isFuture); }, [isFuture, onFutureSelectedChange]);
+  // Reset on unmount (tab switch) so the block doesn't leak to other tabs.
+  useEffect(() => () => onFutureSelectedChange?.(false), [onFutureSelectedChange]);
 
   const libraryByName = useMemo(() =>
     new Map(EXERCISE_LIBRARY.map(e => [e.name.toLowerCase(), e])),
@@ -859,12 +964,19 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
             title="Your exercises will appear here"
             subtitle="Go to Exercises first and create an exercise to start logging."
           />
+        ) : isFuture ? (
+          // Future day — nothing can be logged here yet
+          <EmptyState
+            icon={<QueueListIcon className="w-7 h-7 te-t4" />}
+            title={selectedRoutine ? `${selectedRoutine.name} is planned` : 'Rest day planned'}
+            subtitle="This day hasn't happened yet."
+          />
         ) : selectedRoutine ? (
           // Day has a planned routine but nothing was recorded
           <EmptyState
             icon={<QueueListIcon className="w-7 h-7 te-t4" />}
             title="No workout logged"
-            subtitle={isToday ? 'Tap + to log a workout.' : 'Nothing was recorded on this day.'}
+            subtitle={isToday ? 'Swipe up to log a workout.' : 'Nothing was recorded on this day.'}
           />
         ) : (
           // Day has no routine scheduled
@@ -1084,7 +1196,7 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
 
       {isToday && workoutDone && (
         <div className="mt-3">
-          <SessionRecapCard logs={logs} exercises={exercises} unit={unit} toDisplay={toDisplay} />
+          <SessionRecapCard logs={logs} exercises={exercises} unit={unit} toDisplay={toDisplay} competitions={competitions} fistBumps={fistBumps} />
         </div>
       )}
 

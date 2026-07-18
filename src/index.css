@@ -529,6 +529,18 @@ input, textarea, select {
   animation: toast-in-out 3.2s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+/* Quick text-only error: pops in, holds a beat, fades away. */
+@keyframes fade-out-late {
+  0%   { opacity: 0; transform: translateY(4px); }
+  8%   { opacity: 1; transform: translateY(0); }
+  70%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.animate-fade-out-late {
+  animation: fade-out-late 1.7s ease both;
+}
+
 /* Deliberately plain — a quick fade with the faintest lift, no bounce or spin. */
 @keyframes check-pop {
   0%   { transform: scale(0.96); opacity: 0; }

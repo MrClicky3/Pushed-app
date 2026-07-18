@@ -2,9 +2,9 @@
 // consistency (% of your own scheduled days done) and volume (% change vs a
 // frozen baseline). Standings are always fetched live from the server; the
 // client never computes or caches a rank. See supabase/migrations for rules.
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { PlusIcon, ChevronRightIcon, ClockIcon } from '@heroicons/react/24/outline';
-import { Trophy, Medal, Award, CheckCircle2 } from 'lucide-react';
+import { Trophy, Medal, Award, CheckCircle2, Swords } from 'lucide-react';
 import Modal from './Modal';
 import Avatar from './Avatar';
 import { ToggleButton } from './SheetControls';
@@ -72,34 +72,119 @@ function cancelledMessage(reason: CompetitionSummary['cancelled_reason']): strin
     : 'Not enough players accepted before the start.';
 }
 
-// ── Badge shelf (profile) ───────────────────────────────────────
-// Placeholder icons — will be swapped for Figma exports.
-export function BadgeShelf({ badges }: { badges: Badge[] }) {
+// ── Badge case ──────────────────────────────────────────────────
+// Each badge carries its story: which competition, against whom, the final
+// score, and when. Tapping a badge opens the story sheet; icons are still
+// placeholders pending Figma exports.
+function fmtBadgeDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+}
+
+function BadgeDetailSheet({ badge, comps, onClose }: {
+  badge: Badge | null;
+  comps: CompetitionsApi;
+  onClose: () => void;
+}) {
+  const [rows, setRows] = useState<CompetitionStanding[]>([]);
+  const [loading, setLoading] = useState(true);
+  const comp = badge?.competition_id
+    ? comps.competitions.find(c => c.id === badge.competition_id) ?? null
+    : null;
+
+  useEffect(() => {
+    if (!badge || !comp) { setRows([]); setLoading(false); return; }
+    let alive = true;
+    setLoading(true);
+    const cached = comps.getCachedStandings(comp.id);
+    if (cached) { setRows(cached); setLoading(false); return; }
+    comps.getStandings(comp.id).then(r => { if (alive) { setRows(r); setLoading(false); } });
+    return () => { alive = false; };
+  }, [badge, comp, comps]);
+
+  if (!badge) return null;
+  const meta = TIER_META[badge.tier];
+  const Icon = meta.Icon;
+  const pair = duelPair(rows);
+
+  return (
+    <Modal open={!!badge} onClose={onClose} title="Badge">
+      <div className="space-y-4">
+        <div className="flex flex-col items-center gap-3 pt-1">
+          <div
+            className="flex items-center justify-center rounded-full"
+            style={{ width: 72, height: 72, background: 'var(--te-border)', border: `1.5px solid ${meta.color}66` }}
+          >
+            <Icon className="w-9 h-9" style={{ color: meta.color }} strokeWidth={1.6} />
+          </div>
+          <div className="text-center">
+            <p className="text-[20px] font-bold te-t1 tracking-tight">{meta.label}</p>
+            <p className="te-label mt-1">{fmtBadgeDate(badge.awarded_at)}</p>
+          </div>
+        </div>
+
+        {comp ? (
+          <>
+            <div className="te-panel rounded-te-md px-4 py-3.5">
+              <p className="text-[15px] font-semibold te-t1 tracking-tight truncate">{comp.name}</p>
+              <p className="te-label mt-1">
+                {trackLabel(comp.track)} · {comp.participant_count === 2 ? 'duel' : `${comp.participant_count} players`} · {fmtStarted(comp.start_at)} – {fmtStarted(comp.end_at)}
+              </p>
+            </div>
+            {loading ? (
+              <div className="te-panel rounded-te-md px-4 py-6 text-center te-label">Loading…</div>
+            ) : pair ? (
+              <div className="te-panel rounded-te-md px-4 py-4">
+                <DuelFaceOff track={comp.track} me={pair.me} them={pair.them} done />
+              </div>
+            ) : rows.length > 0 ? (
+              <StandingsList track={comp.track} rows={rows} />
+            ) : null}
+          </>
+        ) : (
+          <p className="te-label text-center py-2" style={{ color: 'var(--te-text-4)' }}>
+            Earned in a competition that's no longer available.
+          </p>
+        )}
+      </div>
+    </Modal>
+  );
+}
+
+export function BadgeShelf({ badges, comps }: { badges: Badge[]; comps: CompetitionsApi }) {
+  const [openBadge, setOpenBadge] = useState<Badge | null>(null);
   if (badges.length === 0) return null;
   return (
     <div>
       <p className="text-[17px] font-bold te-t1 tracking-tight mb-3 px-0.5" style={{ letterSpacing: '-0.02em' }}>
-        Badges
+        Badge case
       </p>
       <div className="te-panel rounded-te-md px-4 py-4">
         <div className="flex flex-wrap gap-4">
           {badges.map(b => {
             const meta = TIER_META[b.tier];
             const Icon = meta.Icon;
+            const comp = b.competition_id ? comps.competitions.find(c => c.id === b.competition_id) : null;
             return (
-              <div key={b.id} className="flex flex-col items-center gap-1.5 w-16">
+              <button
+                key={b.id}
+                onClick={() => setOpenBadge(b)}
+                className="flex flex-col items-center gap-1.5 w-16 active:opacity-70 transition-opacity"
+              >
                 <div
                   className="flex items-center justify-center rounded-full"
                   style={{ width: 48, height: 48, background: 'var(--te-border)', border: `1px solid ${meta.color}55` }}
                 >
                   <Icon className="w-6 h-6" style={{ color: meta.color }} strokeWidth={1.75} />
                 </div>
-                <span className="te-label text-center leading-tight">{meta.label}</span>
-              </div>
+                <span className="te-label text-center leading-tight truncate w-full">
+                  {comp ? comp.name : meta.label}
+                </span>
+              </button>
             );
           })}
         </div>
       </div>
+      <BadgeDetailSheet badge={openBadge} comps={comps} onClose={() => setOpenBadge(null)} />
     </div>
   );
 }
@@ -256,6 +341,89 @@ function duelPair(rows: CompetitionStanding[]): { me: CompetitionStanding; them:
   return me && them ? { me, them } : null;
 }
 
+// ── Seasons ─────────────────────────────────────────────────────
+// A "season" is the running series of completed duels against the same
+// opponent on the same track. Computed entirely client-side from cached
+// standings (cards fetch them anyway), so it needs no schema change.
+export interface SeasonRecord {
+  wins: number;
+  losses: number;
+  ties: number;
+  rounds: number;
+  opponentId: string;
+  opponentName: string;
+}
+
+function seasonRecordFor(
+  comps: CompetitionsApi,
+  track: CompetitionTrack,
+  opponentId: string,
+): SeasonRecord | null {
+  let wins = 0, losses = 0, ties = 0, rounds = 0;
+  let opponentName = '';
+  for (const c of comps.competitions) {
+    if (c.status !== 'completed' || c.track !== track) continue;
+    const rows = comps.getCachedStandings(c.id);
+    if (!rows) continue;
+    const pair = duelPair(rows);
+    if (!pair || pair.them.user_id !== opponentId) continue;
+    rounds++;
+    opponentName = pair.them.display_name || pair.them.username;
+    const a = scoreValue(track, pair.me) ?? -Infinity;
+    const b = scoreValue(track, pair.them) ?? -Infinity;
+    if (a > b) wins++;
+    else if (b > a) losses++;
+    else ties++;
+  }
+  if (rounds < 2) return null; // one match isn't a season yet
+  return { wins, losses, ties, rounds, opponentId, opponentName };
+}
+
+function seasonLine(rec: SeasonRecord): string {
+  const score = `${rec.wins}–${rec.losses}${rec.ties > 0 ? ` (${rec.ties} tied)` : ''}`;
+  if (rec.wins > rec.losses) return `Season vs ${rec.opponentName}: you lead ${score}`;
+  if (rec.losses > rec.wins) return `Season vs ${rec.opponentName}: ${rec.opponentName} leads ${rec.losses}–${rec.wins}${rec.ties > 0 ? ` (${rec.ties} tied)` : ''}`;
+  return `Season vs ${rec.opponentName}: level at ${score}`;
+}
+
+// The most recent completed duel (last 7 days) with no follow-up yet — the
+// hook for the "continue the season" prompt.
+function findSeasonContinuation(comps: CompetitionsApi): {
+  comp: CompetitionSummary;
+  opponent: CompetitionStanding;
+  round: number;
+} | null {
+  const completedDuels = comps.competitions
+    .filter(c => c.status === 'completed' && c.participant_count === 2)
+    .sort((a, b) => new Date(b.end_at).getTime() - new Date(a.end_at).getTime());
+  for (const c of completedDuels) {
+    if (Date.now() - new Date(c.end_at).getTime() > 7 * 86400000) break;
+    const rows = comps.getCachedStandings(c.id);
+    const pair = rows ? duelPair(rows) : null;
+    if (!pair) continue;
+    // Skip when a rematch on this track is already running or pending.
+    const hasSuccessor = comps.competitions.some(x => {
+      if (x.id === c.id || x.track !== c.track) return false;
+      if (x.status !== 'active' && x.status !== 'pending') return false;
+      const xr = comps.getCachedStandings(x.id);
+      if (x.participant_count !== 2) return false;
+      if (!xr) return true; // unknown standings on a live comp → play safe, don't nag
+      const xp = duelPair(xr);
+      return !xp || xp.them.user_id === pair.them.user_id;
+    });
+    if (hasSuccessor) continue;
+    let round = 1;
+    for (const x of comps.competitions) {
+      if (x.status !== 'completed' || x.track !== c.track || x.id === c.id) continue;
+      const xr = comps.getCachedStandings(x.id);
+      const xp = xr ? duelPair(xr) : null;
+      if (xp && xp.them.user_id === pair.them.user_id) round++;
+    }
+    return { comp: c, opponent: pair.them, round: round + 1 };
+  }
+  return null;
+}
+
 // Vote-to-cancel — a deliberately low-key text link at the foot of the detail
 // sheet, not a headline action. Cancels the moment every accepted participant
 // has voted; a vote can be retracted beforehand. `rows` carries each
@@ -408,15 +576,26 @@ function CompetitionSheet({
           <CancelVote comp={comp} rows={rows} comps={comps} onVoted={loadRows} />
         )}
 
-        {done && (
-          <button
-            onClick={() => { feedback.log(); onRematch(comp, rows); }}
-            className="te-white-btn w-full rounded-te-md font-semibold text-[15px]"
-            style={{ height: 48 }}
-          >
-            Rematch
-          </button>
-        )}
+        {done && (() => {
+          const pair = duelPair(rows);
+          const season = pair ? seasonRecordFor(comps, comp.track, pair.them.user_id) : null;
+          return (
+            <>
+              {season && (
+                <p className="te-label text-center" style={{ color: 'var(--te-text-3)' }}>
+                  {seasonLine(season)}
+                </p>
+              )}
+              <button
+                onClick={() => { feedback.log(); onRematch(comp, rows); }}
+                className="te-white-btn w-full rounded-te-md font-semibold text-[15px]"
+                style={{ height: 48 }}
+              >
+                {season ? `Run it back · Round ${season.rounds + 1}` : 'Rematch'}
+              </button>
+            </>
+          );
+        })()}
       </div>
     </Modal>
   );
@@ -766,6 +945,23 @@ export function CompetitionsSection({ comps, friendsList }: {
   const pendingMine = comps.competitions.filter(c => c.status === 'pending' && c.my_status === 'accepted');
   const completed = comps.competitions.filter(c => c.status === 'completed').slice(0, 8);
 
+  // "Continue the season" — recomputes as card fetches fill the standings
+  // cache (standingsVersion in deps via getCachedStandings identity).
+  const continuation = useMemo(
+    () => findSeasonContinuation(comps),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [comps.competitions, comps.getCachedStandings],
+  );
+
+  const startContinuation = useCallback(() => {
+    if (!continuation) return;
+    const { comp, opponent } = continuation;
+    const days = Math.max(1, Math.round((new Date(comp.end_at).getTime() - new Date(comp.start_at).getTime()) / 86400000));
+    feedback.log();
+    setSeed({ track: comp.track, participantIds: [opponent.user_id], days, name: comp.name });
+    setCreateOpen(true);
+  }, [continuation]);
+
   return (
     <div>
       <div className="flex items-center justify-between mb-3 px-0.5">
@@ -792,6 +988,27 @@ export function CompetitionsSection({ comps, friendsList }: {
       ) : (
         <div className="space-y-2.5">
           {invites.map(c => <InviteCard key={c.id} comp={c} comps={comps} />)}
+
+          {/* Season continuation prompt — one tap seeds the next round */}
+          {continuation && (
+            <div className="te-panel-dark rounded-te-md px-4 py-3.5 flex items-center gap-3">
+              <Swords className="w-4 h-4 shrink-0" style={{ color: 'var(--te-gold)' }} strokeWidth={2} />
+              <div className="flex-1 min-w-0">
+                <p className="text-[15px] font-semibold te-t1 tracking-tight truncate">Continue the season?</p>
+                <p className="te-label mt-0.5 truncate">
+                  Round {continuation.round} vs {continuation.opponent.display_name || continuation.opponent.username}
+                </p>
+              </div>
+              <button
+                onClick={startContinuation}
+                className="shrink-0 px-3.5 py-2 rounded-full text-[13px] font-semibold active:opacity-80 transition-opacity"
+                style={{ background: '#f4f1ec', color: 'var(--te-ink)' }}
+              >
+                Start
+              </button>
+            </div>
+          )}
+
           {active.map(c => <CompetitionCard key={c.id} comp={c} comps={comps} onOpen={() => setDetailId(c.id)} />)}
           {pendingMine.map(c => <CompetitionCard key={c.id} comp={c} comps={comps} onOpen={() => setDetailId(c.id)} />)}
           {completed.map(c => <CompetitionCard key={c.id} comp={c} comps={comps} onOpen={() => setDetailId(c.id)} />)}

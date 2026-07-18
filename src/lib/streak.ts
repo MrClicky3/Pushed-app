@@ -87,6 +87,25 @@ export function dayCompletionPct(
   return Math.max(0, Math.min(1, done / target));
 }
 
+// Is a routine (with exercises) scheduled on this date's weekday?
+export function isScheduledDay(
+  date: Date,
+  schedule: ScheduleDay[],
+  routines: Routine[],
+): boolean {
+  const dow = (date.getDay() + 6) % 7;
+  const entry = schedule.find(s => s.day_of_week === dow);
+  const routine = entry?.routine_id ? routines.find(r => r.id === entry.routine_id) : null;
+  return !!routine && routine.exercise_ids.length > 0;
+}
+
+// Streak semantics: only *scheduled* days can break the streak. Rest days are
+// neutral — they neither count nor break — unless the user trained anyway
+// (>=1 working set), which credits a bonus day. A scheduled day counts when
+// the full routine was completed.
+//   credited  = scheduled+completed, or unscheduled+trained
+//   breaking  = scheduled+not completed (except today, which is still open)
+//   neutral   = unscheduled+untrained
 export function calcStreak(
   logs: WorkoutLog[],
   schedule: ScheduleDay[],
@@ -95,38 +114,73 @@ export function calcStreak(
 ) {
   const completedDays = buildCompletedDays(logs, schedule, routines, exercises);
 
-  // Current streak
-  let current = 0;
+  // Days with at least one working set — credits unscheduled training days.
+  const trainedDays = new Set<string>();
+  let earliest: Date | null = null;
+  for (const l of logs) {
+    if (l.set_type === 'warmup') continue;
+    const d = new Date(l.created_at);
+    trainedDays.add(dayKey(d));
+    if (!earliest || d < earliest) earliest = d;
+  }
+
   const now = new Date();
   const todayKey = dayKey(now);
-  const startOffset = completedDays.has(todayKey) ? 0 : 1;
-  for (let i = startOffset; i <= 365; i++) {
+  // Rest-day forgiveness only makes sense when a schedule exists to define
+  // rest days. Without any schedule, the streak falls back to the classic
+  // rule: consecutive trained days, any idle day breaks it.
+  const hasAnySchedule = schedule.some(s => {
+    const r = s.routine_id ? routines.find(x => x.id === s.routine_id) : null;
+    return !!r && r.exercise_ids.length > 0;
+  });
+  type DayState = 'credited' | 'breaking' | 'neutral';
+  const stateOf = (d: Date): DayState => {
+    const k = dayKey(d);
+    if (isScheduledDay(d, schedule, routines)) {
+      if (completedDays.has(k)) return 'credited';
+      // Today's scheduled routine may still be in progress — a trained-but-
+      // unfinished today stays neutral rather than snapping the streak.
+      return k === todayKey ? 'neutral' : 'breaking';
+    }
+    if (trainedDays.has(k)) return 'credited';
+    if (!hasAnySchedule) return k === todayKey ? 'neutral' : 'breaking';
+    return 'neutral';
+  };
+
+  // Current streak — walk back from today, skipping neutral days.
+  let current = 0;
+  for (let i = 0; i <= 365; i++) {
     const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
-    if (completedDays.has(dayKey(d))) current++;
-    else break;
+    const s = stateOf(d);
+    if (s === 'credited') current++;
+    else if (s === 'breaking') break;
+    // neutral → keep walking
   }
 
-  // Longest streak
-  const sorted = Array.from(completedDays).sort();
-  let longest = 0, run = 1;
-  for (let i = 1; i < sorted.length; i++) {
-    const [y1, m1, d1] = sorted[i - 1].split('-').map(Number);
-    const [y2, m2, d2] = sorted[i].split('-').map(Number);
-    const diff = (new Date(y2, m2, d2).getTime() - new Date(y1, m1, d1).getTime()) / 86400000;
-    if (diff === 1) { run++; longest = Math.max(longest, run); } else run = 1;
+  // Longest streak — same walk across the whole log history.
+  let longest = 0;
+  let run = 0;
+  if (earliest) {
+    const start = new Date(earliest.getFullYear(), earliest.getMonth(), earliest.getDate());
+    for (let d = new Date(start); d <= now; d.setDate(d.getDate() + 1)) {
+      const s = stateOf(d);
+      if (s === 'credited') { run++; longest = Math.max(longest, run); }
+      else if (s === 'breaking') run = 0;
+    }
   }
-  if (sorted.length === 1) longest = 1;
+  longest = Math.max(longest, current);
 
-  // This week (Mon–today)
+  // This week (Mon–today): credited days
   const dow = now.getDay();
   const daysFromMon = dow === 0 ? 6 : dow - 1;
   let thisWeek = 0;
   for (let i = 0; i <= daysFromMon; i++) {
     const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
-    if (completedDays.has(dayKey(d))) thisWeek++;
+    if (stateOf(d) === 'credited') thisWeek++;
   }
 
-  return { current, longest, thisWeek, totalDays: completedDays.size };
+  const totalDays = new Set([...completedDays, ...trainedDays]).size;
+  return { current, longest, thisWeek, totalDays };
 }
 
 // Trailing-30d consistency: completed scheduled days / scheduled days (%).

@@ -17,9 +17,11 @@ import { useSchedule } from './hooks/useSchedule';
 import { useProfile } from './hooks/useProfile';
 import { useFriends } from './hooks/useFriends';
 import { useCompetitions } from './hooks/useCompetitions';
+import { useFistBumps } from './hooks/useFistBumps';
 import ExercisesView from './views/ExercisesView';
 import LogsView from './views/LogsView';
 import AnalyticsView from './views/AnalyticsView';
+import CompeteView from './views/CompeteView';
 import AuthView from './views/AuthView';
 import ExerciseModal from './components/ExerciseModal';
 import LogModal from './components/LogModal';
@@ -46,7 +48,14 @@ if (typeof window !== 'undefined') {
   }
 }
 
-type Tab = 'exercises' | 'log' | 'analytics';
+type Tab = 'exercises' | 'log' | 'analytics' | 'compete';
+
+// First-run swipe-to-log hint: shown until the swipe-add gesture has actually
+// been used twice. Counted in localStorage so it never comes back.
+const SWIPE_USES_KEY = 'swipe_add_uses';
+function loadSwipeUses(): number {
+  try { return parseInt(localStorage.getItem(SWIPE_USES_KEY) ?? '0', 10) || 0; } catch { return 0; }
+}
 
 function fmtTimer(s: number) {
   return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
@@ -319,6 +328,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
     [schedule, routines],
   );
   const competitions = useCompetitions(scheduledDays);
+  const fistBumps = useFistBumps(userId);
 
   const [tab, setTab] = useState<Tab>('log');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -390,9 +400,6 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
   // (the Logs page's no-routine prompt), instead of the main settings list.
   const [scheduleInitialView, setScheduleInitialView] = useState<'routine' | undefined>(undefined);
   const [showProfile, setShowProfile] = useState(false);
-  // When opening the profile to a specific section (e.g. from the Progress
-  // page competition widget). Cleared once the profile closes.
-  const [profileFocus, setProfileFocus] = useState<'competitions' | null>(null);
 
   const profileName = profileRow?.display_name || profileRow?.username || userName || 'You';
 
@@ -467,7 +474,28 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
   const swipeArmedRef = useRef(true);  // false → gesture began too low to count
   const dockContentRef = useRef<HTMLDivElement>(null); // nav bar content bounds
 
-  function triggerAdd() {
+  // Swipe hint + future-date guard state
+  const [swipeUses, setSwipeUses] = useState<number>(loadSwipeUses);
+  const [logDateInFuture, setLogDateInFuture] = useState(false);
+  const [addError, setAddError] = useState<{ key: number; text: string } | null>(null);
+  const addErrorTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  function flashAddError(text: string) {
+    if (addErrorTimer.current) clearTimeout(addErrorTimer.current);
+    setAddError({ key: Date.now(), text });
+    addErrorTimer.current = setTimeout(() => setAddError(null), 1700);
+  }
+
+  function triggerAdd(viaGesture = false) {
+    if (tab === 'log' && logDateInFuture) {
+      feedback.skip();
+      flashAddError("Can't log a day that hasn't happened yet");
+      return;
+    }
+    if (viaGesture && swipeUses < 2) {
+      const next = swipeUses + 1;
+      setSwipeUses(next);
+      try { localStorage.setItem(SWIPE_USES_KEY, String(next)); } catch { /* ignore */ }
+    }
     if (tab === 'exercises') { setExercisePrefill(undefined); setExerciseModal({ open: true, exercise: null }); }
     else { setLogModal({ open: true, exercise: null, editLog: null }); }
   }
@@ -502,7 +530,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
     setSwipeDrag(0);
     swipeFullRef.current = false;
     swipeShownRef.current = false;
-    if (committed) triggerAdd();
+    if (committed) triggerAdd(true);
   }
   // If the gesture is interrupted (system overscroll / scroll takeover) the
   // browser fires touchcancel instead of touchend — reset so the affordance
@@ -627,13 +655,19 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
     { key: 'exercises', label: 'Exercises', icon: RectangleStackIcon },
     { key: 'log', label: 'Log', icon: QueueListIcon },
     { key: 'analytics', label: 'Progress', icon: ChartBarSquareIcon },
+    { key: 'compete', label: 'Compete', icon: TrophyIcon },
   ];
 
   const tabTitles: Record<Tab, string> = {
     log: 'Workout Log',
     exercises: 'Exercises',
     analytics: 'Progress',
+    compete: 'Compete',
   };
+
+  // Notification dot on the Compete tab: pending competition invites or
+  // incoming friend requests waiting on you.
+  const competeAttention = competitions.pendingInvites.length + friends.incoming.length > 0;
 
   return (
     <div className="bg-te-bg h-full overflow-hidden flex flex-col relative">
@@ -708,6 +742,9 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
         ) : tab === 'log' ? (
           <LogsView
             onWorkoutComplete={setWorkoutDoneAt}
+            onFutureSelectedChange={setLogDateInFuture}
+            competitions={competitions}
+            fistBumps={fistBumps}
             logs={logs}
             exercises={exercises}
             onAdd={() => setLogModal({ open: true, exercise: null, editLog: null })}
@@ -722,7 +759,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
             weekStartDay={weekStartDay}
             onCreateRoutine={() => { setScheduleInitialView('routine'); setScheduleOpen(true); }}
           />
-        ) : (
+        ) : tab === 'analytics' ? (
           <AnalyticsView
             logs={logs}
             exercises={exercises}
@@ -731,7 +768,17 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
             routines={routines}
             schedule={schedule}
             competitions={competitions}
-            onOpenCompetitions={() => { setProfileFocus('competitions'); setShowProfile(true); }}
+            onOpenCompetitions={() => switchTab('compete')}
+          />
+        ) : (
+          <CompeteView
+            profile={profileRow}
+            friends={friends}
+            competitions={competitions}
+            fistBumps={fistBumps}
+            unit={unit}
+            toDisplay={toDisplay}
+            inviteUrl={inviteUrl}
           />
         )}
 
@@ -818,6 +865,33 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
             );
           })()}
 
+          {/* First-run hint — a minimal "^ swipe to log" above the grabber,
+              gone for good once the gesture has been used twice. Hidden
+              mid-swipe so it never overlaps the real affordance. */}
+          {tab === 'log' && swipeUses < 2 && !focusMode && (
+            <div
+              aria-hidden
+              className="flex flex-col items-center"
+              style={{
+                position: 'absolute', left: 0, right: 0, bottom: '100%',
+                paddingBottom: 4, pointerEvents: 'none', gap: 1,
+                opacity: swipeDrag > 2 ? 0 : 1,
+                transition: 'opacity 0.2s ease',
+              }}
+            >
+              <span className="animate-bounce" style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, lineHeight: 1, fontFamily: "'Geist Mono', monospace", fontWeight: 700 }}>
+                ^
+              </span>
+              <span style={{
+                fontFamily: "'Geist Mono', monospace", fontSize: 9, fontWeight: 600,
+                letterSpacing: '0.12em', textTransform: 'uppercase',
+                color: 'rgba(255,255,255,0.35)',
+              }}>
+                swipe to log
+              </span>
+            </div>
+          )}
+
           {/* Tabs — hidden in focus mode */}
           {/* Swipe-up line — the grabber you drag up on to add. */}
           <div className="flex justify-center" style={{ paddingTop: 6, paddingBottom: 2 }}>
@@ -838,13 +912,26 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
                   {tabs.map(({ key, label, icon: Icon }) => {
                     const isActive = tab === key;
                     const color = isActive ? '#fff' : 'rgba(255,255,255,0.4)';
+                    const showDot = key === 'compete' && competeAttention && !isActive;
                     return (
                       <button
                         key={key}
                         onClick={() => switchTab(key)}
-                        className="flex flex-col items-center gap-0.5 px-5 py-1 rounded-full active:opacity-60 transition-opacity select-none"
+                        className="flex flex-col items-center gap-0.5 px-4 py-1 rounded-full active:opacity-60 transition-opacity select-none"
                       >
-                        <Icon className="w-[22px] h-[22px]" style={{ color }} />
+                        <span style={{ position: 'relative', display: 'inline-flex' }}>
+                          <Icon className="w-[22px] h-[22px]" style={{ color }} />
+                          {showDot && (
+                            <span
+                              aria-hidden
+                              style={{
+                                position: 'absolute', top: -1, right: -3,
+                                width: 6, height: 6, borderRadius: 9999,
+                                background: 'var(--te-accent)',
+                              }}
+                            />
+                          )}
+                        </span>
                         <span className="text-[10px] font-medium tracking-tight" style={{ color }}>
                           {label}
                         </span>
@@ -944,6 +1031,27 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
         </div>
       )}
 
+      {/* Fading text-only error for refused adds (e.g. logging a future day) */}
+      {addError && (
+        <div
+          key={addError.key}
+          className="fixed left-0 right-0 z-[46] flex justify-center pointer-events-none"
+          style={{ bottom: 'calc(118px + env(safe-area-inset-bottom, 0px))' }}
+        >
+          <span
+            className="animate-fade-out-late"
+            style={{
+              fontFamily: "'Geist Mono', monospace", fontSize: 11, fontWeight: 600,
+              letterSpacing: '0.06em', textTransform: 'uppercase',
+              color: 'var(--te-danger)', textShadow: '0 2px 12px rgba(0,0,0,0.8)',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {addError.text}
+          </span>
+        </div>
+      )}
+
       {prToast && (
         <PRToast
           exerciseName={prToast.exerciseName}
@@ -974,14 +1082,8 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
 
       <ProfilePage
         open={showProfile}
-        onClose={() => { setShowProfile(false); setProfileFocus(null); }}
-        focusCompetitions={profileFocus === 'competitions'}
+        onClose={() => setShowProfile(false)}
         profile={profileRow}
-        inviteUrl={inviteUrl}
-        friends={friends}
-        competitions={competitions}
-        unit={unit}
-        toDisplay={toDisplay}
         onOpenSettings={() => { setShowProfile(false); setScheduleOpen(true); }}
         setAvatar={setAvatar}
         uploadAvatarFile={uploadAvatarFile}
