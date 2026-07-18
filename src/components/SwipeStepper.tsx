@@ -75,15 +75,18 @@ export default function SwipeStepper({
 
   return (
     <div
-      className="relative flex flex-col justify-between h-[80px] rounded-[20px] touch-none"
-      style={{ background: '#0b0b0b', padding: '13px' }}
+      className="relative flex flex-col justify-between h-[80px] rounded-te-md touch-none"
+      style={{ background: 'var(--te-well)', padding: '13px' }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerLeave={handlePointerUp}
       onWheel={handleWheel}
     >
-      <p className="te-label whitespace-nowrap overflow-hidden text-ellipsis">{label}</p>
+      {/* shrink-0 is load-bearing: `overflow-hidden` clears the default
+          min-height:auto, so without it the flex column collapsed this label to
+          zero height and the Reps/Sets/Weight fields rendered unlabelled. */}
+      <p className="te-label shrink-0 whitespace-nowrap overflow-hidden text-ellipsis">{label}</p>
       <input
         type="number"
         value={value}
@@ -92,12 +95,12 @@ export default function SwipeStepper({
         min={min}
         step={step}
         inputMode="decimal"
-        className={`w-full bg-transparent text-white !text-[42px] font-bold te-mono focus:outline-none tabular-nums !leading-[32px] tracking-[-1px] text-left ${animClass}`}
+        className={`w-full bg-transparent te-t1 !text-[42px] font-bold te-mono focus:outline-none tabular-nums !leading-[32px] tracking-[-1px] text-left ${animClass}`}
         style={{ touchAction: 'none' }}
       />
       <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex flex-col gap-1.5 pointer-events-none">
-        <ChevronUpIcon className="w-[13.5px] h-[13.5px] text-white/15" />
-        <ChevronDownIcon className="w-[13.5px] h-[13.5px] text-white/15" />
+        <ChevronUpIcon className="w-[13.5px] h-[13.5px] te-t4" />
+        <ChevronDownIcon className="w-[13.5px] h-[13.5px] te-t4" />
       </div>
     </div>
   );

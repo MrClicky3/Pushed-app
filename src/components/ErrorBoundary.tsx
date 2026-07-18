@@ -34,14 +34,14 @@ export default class ErrorBoundary extends Component<Props, State> {
     return (
       <div
         className="min-h-screen flex flex-col items-center justify-center text-center px-8"
-        style={{ background: '#010101', color: '#f4f1ec', gap: 24 }}
+        style={{ background: '#010101', color: 'var(--te-text-1)', gap: 24 }}
       >
-        <img src="/apple-touch-icon.png" alt="" style={{ width: 56, height: 56, borderRadius: 16, opacity: 0.9 }} />
+        <img src="/apple-touch-icon.png" alt="" style={{ width: 56, height: 56, borderRadius: 'var(--te-radius-md)', opacity: 0.9 }} />
         <div style={{ maxWidth: 320 }}>
           <p className="text-[20px] font-bold tracking-tight" style={{ letterSpacing: '-0.03em' }}>
             Something broke
           </p>
-          <p className="text-[14px] mt-2 leading-relaxed" style={{ color: 'rgba(244,241,236,0.5)' }}>
+          <p className="text-[15px] mt-2 leading-relaxed" style={{ color: 'var(--te-text-3)' }}>
             The app hit an unexpected error. Your logged workouts are safe — reloading usually fixes it.
           </p>
         </div>
@@ -49,14 +49,14 @@ export default class ErrorBoundary extends Component<Props, State> {
         <div className="flex flex-col items-stretch gap-2 w-full" style={{ maxWidth: 280 }}>
           <button
             onClick={this.handleReload}
-            className="w-full py-3.5 rounded-2xl font-semibold text-[15px] tracking-tight active:opacity-80 transition-opacity"
-            style={{ background: '#f4f1ec', color: '#0a0908' }}
+            className="w-full py-3.5 rounded-te-md font-semibold text-[15px] tracking-tight active:opacity-80 transition-opacity"
+            style={{ background: '#f4f1ec', color: 'var(--te-ink)' }}
           >
             Reload app
           </button>
           <a
             href={buildBugReportUrl({ context: 'Crash screen', error })}
-            className="w-full py-3.5 rounded-2xl font-semibold text-[15px] tracking-tight active:opacity-80 transition-opacity"
+            className="w-full py-3.5 rounded-te-md font-semibold text-[15px] tracking-tight active:opacity-80 transition-opacity"
             style={{ background: '#2f6fed', color: '#ffffff', textDecoration: 'none' }}
           >
             Report this bug

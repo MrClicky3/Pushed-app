@@ -185,13 +185,13 @@ export default function Modal({ open, onClose, title, children, onBack, noPadTop
       />
       <div
         ref={sheetRef}
-        className={`relative w-full max-w-lg rounded-t-[28px] z-10 flex flex-col ${!dismissing && !isDragging ? 'animate-slide-up' : ''}`}
+        className={`relative w-full max-w-lg rounded-t-te-lg z-10 flex flex-col ${!dismissing && !isDragging ? 'animate-slide-up' : ''}`}
         style={{
           maxHeight: '90dvh',
           transform: sheetTransform,
           transition: isDragging ? 'none' : 'transform 0.32s cubic-bezier(0.32, 0.72, 0, 1)',
           willChange: 'transform',
-          background: '#161617',
+          background: 'var(--te-surface-3)',
           boxShadow: '0 2px 34px rgba(0,0,0,0.55)',
         }}
         onClick={e => e.stopPropagation()}
@@ -204,13 +204,13 @@ export default function Modal({ open, onClose, title, children, onBack, noPadTop
           <div className="absolute w-9 h-[4px] rounded-full bg-white/25" style={{ top: 6 }} />
         </div>
         {title && (
-          <div className="flex items-center justify-between pl-[max(19px,env(safe-area-inset-left))] pr-[max(19px,env(safe-area-inset-right))] pt-1 pb-0.5 shrink-0">
-            <h2 className="text-[16px] font-semibold text-white tracking-tight">{title}</h2>
+          <div className="flex items-center justify-between pl-[max(16px,env(safe-area-inset-left))] pr-[max(16px,env(safe-area-inset-right))] pt-1 pb-0.5 shrink-0">
+            <h2 className="text-[17px] font-semibold te-t1 tracking-tight">{title}</h2>
           </div>
         )}
         <div
           ref={contentRef}
-          className={`flex-1 min-h-0 pl-[max(19px,env(safe-area-inset-left))] pr-[max(19px,env(safe-area-inset-right))] ${noPadTop ? 'pt-0' : 'pt-2.5'} ${noPadBottom ? 'pb-[env(safe-area-inset-bottom)]' : 'pb-[max(20px,env(safe-area-inset-bottom))]'} overflow-y-auto overscroll-contain`}
+          className={`flex-1 min-h-0 pl-[max(16px,env(safe-area-inset-left))] pr-[max(16px,env(safe-area-inset-right))] ${noPadTop ? 'pt-0' : 'pt-2.5'} ${noPadBottom ? 'pb-[env(safe-area-inset-bottom)]' : 'pb-[max(20px,env(safe-area-inset-bottom))]'} overflow-y-auto overscroll-contain`}
           style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
         >
           {children}

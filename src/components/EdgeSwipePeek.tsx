@@ -113,7 +113,7 @@ export default function EdgeSwipePeek({
             }}
           >
             <Avatar name={name} avatarUrl={avatarUrl} size={52} />
-            <span className="te-label" style={{ color: armed ? '#f4f1ec' : 'rgba(244,241,236,0.7)', transition: 'color 0.15s ease' }}>
+            <span className="te-label" style={{ color: armed ? '#f4f1ec' : 'var(--te-text-2)', transition: 'color 0.15s ease' }}>
               {armed ? 'Profile' : 'Profile'}
             </span>
           </div>

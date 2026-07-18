@@ -18,10 +18,10 @@ import type {
 type CompetitionsApi = ReturnType<typeof useCompetitions>;
 
 const TIER_META: Record<BadgeTier, { label: string; color: string; Icon: typeof Medal }> = {
-  gold:     { label: 'Gold',     color: '#e8c15a', Icon: Trophy },
+  gold:     { label: 'Gold',     color: 'var(--te-gold)', Icon: Trophy },
   silver:   { label: 'Silver',   color: '#c6c8d0', Icon: Medal },
   bronze:   { label: 'Bronze',   color: '#cd8b5c', Icon: Medal },
-  finisher: { label: 'Finisher', color: '#7fd57f', Icon: Award },
+  finisher: { label: 'Finisher', color: 'var(--te-pr)', Icon: Award },
 };
 
 // ── time helpers (durations — timezone-independent) ─────────────
@@ -44,12 +44,12 @@ function fmtStarted(startAt: string): string {
 // A participant's own headline number — never a raw volume comparison.
 function scoreText(track: CompetitionTrack, s: CompetitionStanding): { text: string; color: string } {
   if (track === 'volume') {
-    if (s.delta === null || s.delta === undefined) return { text: '—', color: 'rgba(255,255,255,0.35)' };
+    if (s.delta === null || s.delta === undefined) return { text: '—', color: 'var(--te-text-4)' };
     const sign = s.delta > 0 ? '+' : '';
-    return { text: `${sign}${s.delta}%`, color: s.delta >= 0 ? '#7fd57f' : '#e8a657' };
+    return { text: `${sign}${s.delta}%`, color: s.delta >= 0 ? 'var(--te-pr)' : '#e8a657' };
   }
-  if (s.score === null || s.score === undefined) return { text: '—', color: 'rgba(255,255,255,0.35)' };
-  return { text: `${Math.round(s.score)}%`, color: '#f4f1ec' };
+  if (s.score === null || s.score === undefined) return { text: '—', color: 'var(--te-text-4)' };
+  return { text: `${Math.round(s.score)}%`, color: 'var(--te-text-1)' };
 }
 
 function trackLabel(t: CompetitionTrack): string {
@@ -68,10 +68,10 @@ export function BadgeShelf({ badges }: { badges: Badge[] }) {
   if (badges.length === 0) return null;
   return (
     <div>
-      <p className="text-[16px] font-bold text-[#f4f1ec] tracking-tight mb-3 px-0.5" style={{ letterSpacing: '-0.02em' }}>
+      <p className="text-[17px] font-bold te-t1 tracking-tight mb-3 px-0.5" style={{ letterSpacing: '-0.02em' }}>
         Badges
       </p>
-      <div className="te-panel rounded-2xl px-4 py-4">
+      <div className="te-panel rounded-te-md px-4 py-4">
         <div className="flex flex-wrap gap-4">
           {badges.map(b => {
             const meta = TIER_META[b.tier];
@@ -80,7 +80,7 @@ export function BadgeShelf({ badges }: { badges: Badge[] }) {
               <div key={b.id} className="flex flex-col items-center gap-1.5 w-16">
                 <div
                   className="flex items-center justify-center rounded-full"
-                  style={{ width: 48, height: 48, background: 'rgba(255,255,255,0.05)', border: `1px solid ${meta.color}55` }}
+                  style={{ width: 48, height: 48, background: 'var(--te-border)', border: `1px solid ${meta.color}55` }}
                 >
                   <Icon className="w-6 h-6" style={{ color: meta.color }} strokeWidth={1.75} />
                 </div>
@@ -97,7 +97,7 @@ export function BadgeShelf({ badges }: { badges: Badge[] }) {
 // ── Standings list (shared by active detail + results) ──────────
 function StandingsList({ track, rows }: { track: CompetitionTrack; rows: CompetitionStanding[] }) {
   return (
-    <div className="te-panel rounded-2xl overflow-hidden divide-y divide-white/[0.05]">
+    <div className="te-panel rounded-te-md overflow-hidden divide-y divide-white/[0.05]">
       {rows.map((r, i) => {
         const sc = scoreText(track, r);
         const rank = r.rank ?? i + 1;
@@ -108,13 +108,13 @@ function StandingsList({ track, rows }: { track: CompetitionTrack; rows: Competi
             className="flex items-center px-4 py-[16px] gap-3.5"
             style={r.is_self ? { background: 'rgba(244,241,236,0.06)' } : undefined}
           >
-            <span className="te-mono text-[14px] tabular-nums w-5 shrink-0" style={{ color: medal ? TIER_META[medal].color : 'rgba(244,241,236,0.4)' }}>
+            <span className="te-mono text-[15px] tabular-nums w-5 shrink-0" style={{ color: medal ? TIER_META[medal].color : 'var(--te-text-4)' }}>
               {rank}
             </span>
             <Avatar name={r.display_name || r.username} avatarUrl={r.avatar_url} size={32} />
             <div className="flex-1 min-w-0">
-              <p className="text-[15px] font-semibold text-[#f4f1ec] tracking-tight truncate">
-                {r.display_name || r.username}{r.is_self && <span className="text-white/30 font-normal"> · you</span>}
+              <p className="text-[15px] font-semibold te-t1 tracking-tight truncate">
+                {r.display_name || r.username}{r.is_self && <span className="te-t4 font-normal"> · you</span>}
               </p>
               <p className="te-label mt-1">
                 {track === 'volume' ? 'vs baseline' : `${r.scored_days} day${r.scored_days === 1 ? '' : 's'} done`}
@@ -180,15 +180,15 @@ function CancelVote({
         disabled={busy}
         className="w-full text-center py-1.5 active:opacity-60 transition-opacity disabled:opacity-40"
         style={{
-          fontFamily: "'Geist Mono', monospace", fontSize: 11, fontWeight: 500,
+          fontFamily: "'Geist Mono', monospace", fontSize: 10, fontWeight: 500,
           letterSpacing: '0.04em', textTransform: 'uppercase',
-          color: iVoted ? 'rgba(255,69,58,0.75)' : 'rgba(244,241,236,0.32)',
+          color: iVoted ? 'rgba(255,69,58,0.75)' : 'var(--te-text-4)',
         }}
       >
         {iVoted ? `Voted to cancel${suffix} · undo` : `Cancel competition${suffix}`}
       </button>
       {error && (
-        <p className="te-label text-center mt-1" style={{ color: '#ff453a' }}>{error}</p>
+        <p className="te-label text-center mt-1" style={{ color: 'var(--te-danger)' }}>{error}</p>
       )}
     </div>
   );
@@ -235,29 +235,29 @@ function CompetitionSheet({
           </div>
           {comp.status === 'active' && (
             <div className="flex items-center gap-1.5 shrink-0">
-              <ClockIcon className="w-3.5 h-3.5 text-white/40" />
-              <span className="te-label" style={{ color: 'rgba(244,241,236,0.7)' }}>{fmtLeft(comp.end_at, '')}</span>
+              <ClockIcon className="w-3.5 h-3.5 te-t4" />
+              <span className="te-label" style={{ color: 'var(--te-text-2)' }}>{fmtLeft(comp.end_at, '')}</span>
             </div>
           )}
         </div>
 
         {comp.status === 'cancelled' && (
-          <div className="te-panel rounded-2xl px-4 py-6 text-center">
-            <p className="text-[15px] font-semibold text-[#f4f1ec]">Cancelled</p>
-            <p className="text-[13px] text-white/45 mt-1 leading-snug">{cancelledMessage(comp.cancelled_reason)}</p>
+          <div className="te-panel rounded-te-md px-4 py-6 text-center">
+            <p className="text-[15px] font-semibold te-t1">Cancelled</p>
+            <p className="text-[13px] te-t3 mt-1 leading-snug">{cancelledMessage(comp.cancelled_reason)}</p>
           </div>
         )}
 
         {comp.status === 'pending' && (
-          <div className="te-panel rounded-2xl px-4 py-6 text-center">
-            <p className="text-[15px] font-semibold text-[#f4f1ec]">Waiting for friend</p>
-            <p className="text-[13px] text-white/45 mt-1 leading-snug">Starts the moment your friend accepts.</p>
+          <div className="te-panel rounded-te-md px-4 py-6 text-center">
+            <p className="text-[15px] font-semibold te-t1">Waiting for friend</p>
+            <p className="text-[13px] te-t3 mt-1 leading-snug">Starts the moment your friend accepts.</p>
           </div>
         )}
 
         {(comp.status === 'active' || comp.status === 'completed') && (
           loading
-            ? <div className="te-panel rounded-2xl px-4 py-8 text-center te-label">Loading…</div>
+            ? <div className="te-panel rounded-te-md px-4 py-8 text-center te-label">Loading…</div>
             : <StandingsList track={comp.track} rows={rows} />
         )}
 
@@ -268,7 +268,7 @@ function CompetitionSheet({
         {done && (
           <button
             onClick={() => { feedback.log(); onRematch(comp, rows); }}
-            className="te-white-btn w-full rounded-2xl font-semibold text-[15px]"
+            className="te-white-btn w-full rounded-te-md font-semibold text-[15px]"
             style={{ height: 48 }}
           >
             Rematch
@@ -361,8 +361,8 @@ function CreateSheet({
             value={name}
             onChange={e => setName(e.target.value.slice(0, 60))}
             placeholder={`${trackLabel(track)} challenge`}
-            className="w-full rounded-2xl px-3.5 py-3 text-[15px] text-[#f4f1ec] placeholder-white/25 tracking-tight outline-none"
-            style={{ background: '#0b0b0b', border: '1px solid var(--te-border)' }}
+            className="w-full rounded-te-md px-3.5 py-3 text-[15px] te-t1 placeholder-white/25 tracking-tight outline-none"
+            style={{ background: 'var(--te-well)', border: '1px solid var(--te-border)' }}
           />
         </div>
 
@@ -390,8 +390,8 @@ function CreateSheet({
               value={customDays}
               onChange={e => setCustomDays(e.target.value.replace(/\D/g, '').slice(0, 3))}
               placeholder="days"
-              className="w-full mt-2.5 rounded-2xl px-3.5 py-3 text-[15px] text-[#f4f1ec] placeholder-white/25 tracking-tight outline-none"
-              style={{ background: '#0b0b0b', border: '1px solid var(--te-border)' }}
+              className="w-full mt-2.5 rounded-te-md px-3.5 py-3 text-[15px] te-t1 placeholder-white/25 tracking-tight outline-none"
+              style={{ background: 'var(--te-well)', border: '1px solid var(--te-border)' }}
             />
           )}
         </div>
@@ -399,9 +399,9 @@ function CreateSheet({
         <div>
           <p className="te-label mb-2 px-0.5">Players {selected.size > 0 && `· ${selected.size}`}</p>
           {friendsList.length === 0 ? (
-            <div className="te-panel rounded-2xl px-4 py-5 text-center te-label">Add friends first to compete.</div>
+            <div className="te-panel rounded-te-md px-4 py-5 text-center text-[13px] te-t3">Add friends first to compete.</div>
           ) : (
-            <div className="te-panel rounded-2xl overflow-hidden divide-y divide-white/[0.05] max-h-[240px] overflow-y-auto">
+            <div className="te-panel rounded-te-md overflow-hidden divide-y divide-white/[0.05] max-h-[240px] overflow-y-auto">
               {friendsList.map(f => {
                 const on = selected.has(f.id);
                 return (
@@ -411,12 +411,12 @@ function CreateSheet({
                     className="w-full flex items-center px-4 py-3 gap-3 text-left active:bg-white/[0.04] transition-colors"
                   >
                     <Avatar name={f.display_name || f.username} avatarUrl={f.avatar_url} size={30} />
-                    <span className="flex-1 min-w-0 text-[15px] font-semibold text-[#f4f1ec] tracking-tight truncate">
+                    <span className="flex-1 min-w-0 text-[15px] font-semibold te-t1 tracking-tight truncate">
                       {f.display_name || f.username}
                     </span>
                     <CheckCircle2
                       className="w-5 h-5 shrink-0"
-                      style={{ color: on ? '#7fd57f' : 'rgba(255,255,255,0.15)' }}
+                      style={{ color: on ? 'var(--te-pr)' : 'rgba(255,255,255,0.15)' }}
                       strokeWidth={2}
                     />
                   </button>
@@ -426,17 +426,17 @@ function CreateSheet({
           )}
         </div>
 
-        {error && <p className="te-label px-0.5" style={{ color: '#ff453a' }}>{error}</p>}
+        {error && <p className="te-label px-0.5" style={{ color: 'var(--te-danger)' }}>{error}</p>}
 
         <button
           onClick={submit}
           disabled={saving || friendsList.length === 0}
-          className="te-white-btn w-full rounded-2xl font-semibold text-[15px] disabled:opacity-50"
+          className="te-white-btn w-full rounded-te-md font-semibold text-[15px] disabled:opacity-50"
           style={{ height: 48 }}
         >
           {saving ? 'Creating…' : 'Start competition'}
         </button>
-        <p className="te-label text-center" style={{ color: 'rgba(244,241,236,0.35)' }}>
+        <p className="te-label text-center" style={{ color: 'var(--te-text-4)' }}>
           Starts when your friend accepts
         </p>
       </div>
@@ -455,25 +455,25 @@ function InviteCard({ comp, comps }: { comp: CompetitionSummary; comps: Competit
     setBusy(false);
   }
   return (
-    <div className="te-panel rounded-2xl px-4 py-3.5">
+    <div className="te-panel rounded-te-md px-4 py-3.5">
       <div className="flex items-center gap-3">
-        <Trophy className="w-4 h-4 shrink-0" style={{ color: '#e8c15a' }} />
+        <Trophy className="w-4 h-4 shrink-0" style={{ color: 'var(--te-gold)' }} />
         <div className="flex-1 min-w-0">
-          <p className="text-[15px] font-semibold text-[#f4f1ec] tracking-tight truncate">{comp.name}</p>
+          <p className="text-[15px] font-semibold te-t1 tracking-tight truncate">{comp.name}</p>
           <p className="te-label mt-0.5">{trackLabel(comp.track)} · invited you</p>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2.5 mt-3">
         <button
           onClick={() => act(false)} disabled={busy}
-          className="rounded-2xl font-semibold text-[13px] te-toggle-off disabled:opacity-50"
-          style={{ height: 42, color: 'rgba(255,255,255,0.5)' }}
+          className="rounded-te-md font-semibold text-[13px] te-toggle-off disabled:opacity-50"
+          style={{ height: 42, color: 'var(--te-text-3)' }}
         >
           Decline
         </button>
         <button
           onClick={() => act(true)} disabled={busy}
-          className="te-white-btn rounded-2xl font-semibold text-[13px] disabled:opacity-50"
+          className="te-white-btn rounded-te-md font-semibold text-[13px] disabled:opacity-50"
           style={{ height: 42 }}
         >
           Accept
@@ -491,9 +491,9 @@ function StatusPill({ text, live }: { text: string; live?: boolean }) {
       style={{
         fontFamily: "'Geist Mono', monospace", fontSize: 10, fontWeight: 600,
         letterSpacing: '0.04em', textTransform: 'uppercase', lineHeight: 1,
-        padding: '4px 8px', borderRadius: 100,
-        color: live ? '#7fd57f' : 'rgba(244,241,236,0.5)',
-        background: live ? 'rgba(127,213,127,0.12)' : 'rgba(255,255,255,0.05)',
+        padding: '4px 8px', borderRadius: 9999,
+        color: live ? 'var(--te-pr)' : 'var(--te-text-3)',
+        background: live ? 'rgba(127,213,127,0.12)' : 'var(--te-border)',
       }}
     >
       {text}
@@ -527,12 +527,12 @@ function CompetitionCard({ comp, comps, onOpen }: {
   return (
     <button
       onClick={onOpen}
-      className="te-panel w-full rounded-2xl px-4 py-3.5 text-left active:bg-white/[0.04] transition-colors"
+      className="te-panel w-full rounded-te-md px-4 py-3.5 text-left active:bg-white/[0.04] transition-colors"
     >
       {/* Header — name + status chip */}
       <div className="flex items-center gap-2.5">
         <div className="flex-1 min-w-0">
-          <p className="text-[15px] font-semibold text-[#f4f1ec] tracking-tight truncate">{comp.name}</p>
+          <p className="text-[15px] font-semibold te-t1 tracking-tight truncate">{comp.name}</p>
           <p className="te-label mt-1">{trackLabel(comp.track)}</p>
         </div>
         <StatusPill text={pill} live={active} />
@@ -540,21 +540,21 @@ function CompetitionCard({ comp, comps, onOpen }: {
 
       {/* Ranked mini-leaderboard */}
       {(active || done) && preview.length > 0 && (
-        <div className="mt-3 pt-3 border-t border-white/[0.05] space-y-2">
+        <div className="mt-3 pt-3 border-t border-[color:var(--te-border)] space-y-2">
           {preview.map((r, i) => {
             const rank = r.rank ?? i + 1;
             const s = scoreText(comp.track, r);
             return (
               <div key={r.user_id} className="flex items-center gap-2.5">
-                <span className="te-mono text-[12px] tabular-nums w-3.5 shrink-0" style={{ color: rank === 1 ? '#e8c15a' : 'rgba(244,241,236,0.4)' }}>
+                <span className="te-mono text-[13px] tabular-nums w-3.5 shrink-0" style={{ color: rank === 1 ? 'var(--te-gold)' : 'var(--te-text-4)' }}>
                   {rank}
                 </span>
                 <Avatar name={r.display_name || r.username} avatarUrl={r.avatar_url} size={22} />
                 <span
                   className="flex-1 min-w-0 text-[13px] font-medium tracking-tight truncate"
-                  style={{ color: r.is_self ? '#f4f1ec' : 'rgba(244,241,236,0.65)' }}
+                  style={{ color: r.is_self ? '#f4f1ec' : 'var(--te-text-2)' }}
                 >
-                  {r.display_name || r.username}{r.is_self && <span className="text-white/30"> · you</span>}
+                  {r.display_name || r.username}{r.is_self && <span className="te-t4"> · you</span>}
                 </span>
                 <span className="te-digit text-[13px] font-bold tabular-nums shrink-0" style={{ color: s.color }}>
                   {s.text}
@@ -567,7 +567,7 @@ function CompetitionCard({ comp, comps, onOpen }: {
 
       {/* Pending — a single quiet line */}
       {comp.status === 'pending' && (
-        <p className="te-label mt-2">Waiting for friend to accept</p>
+        <p className="text-[13px] te-t3 mt-2">Waiting for friend to accept</p>
       )}
     </button>
   );
@@ -608,23 +608,23 @@ export function CompetitionsSection({ comps, friendsList }: {
   return (
     <div>
       <div className="flex items-center justify-between mb-3 px-0.5">
-        <p className="text-[16px] font-bold text-[#f4f1ec] tracking-tight" style={{ letterSpacing: '-0.02em' }}>
+        <p className="text-[17px] font-bold te-t1 tracking-tight" style={{ letterSpacing: '-0.02em' }}>
           Competitions
         </p>
         <button
           onClick={openCreate}
           className="flex items-center gap-1 te-label active:opacity-60 transition-opacity"
-          style={{ color: 'rgba(244,241,236,0.7)' }}
+          style={{ color: 'var(--te-text-2)' }}
         >
           <PlusIcon className="w-3.5 h-3.5" /> New
         </button>
       </div>
 
       {invites.length === 0 && active.length === 0 && pendingMine.length === 0 && completed.length === 0 ? (
-        <button onClick={openCreate} className="te-panel w-full rounded-2xl px-5 py-8 text-center active:bg-white/[0.04] transition-colors">
-          <Trophy className="w-8 h-8 mx-auto mb-2.5" style={{ color: '#e8c15a' }} />
-          <p className="text-[16px] font-semibold text-[#f4f1ec] tracking-tight">Start a competition</p>
-          <p className="text-[13px] text-white/45 mt-1 leading-snug">
+        <button onClick={openCreate} className="te-panel w-full rounded-te-md px-5 py-8 text-center active:bg-white/[0.04] transition-colors">
+          <Trophy className="w-8 h-8 mx-auto mb-2.5" style={{ color: 'var(--te-gold)' }} />
+          <p className="text-[17px] font-semibold te-t1 tracking-tight">Start a competition</p>
+          <p className="text-[13px] te-t3 mt-1 leading-snug">
             Challenge a friend to a consistency or volume duel.
           </p>
         </button>
@@ -674,12 +674,12 @@ export function CompetitionMiniWidget({ comps, onOpen }: {
   return (
     <button
       onClick={onOpen}
-      className="te-panel-dark w-full rounded-2xl px-4 py-3 flex items-center gap-2.5 text-left active:bg-white/[0.04] transition-colors mb-[18px]"
+      className="te-panel-dark w-full rounded-te-md px-4 py-3 flex items-center gap-2.5 text-left active:bg-white/[0.04] transition-colors mb-[18px]"
     >
-      <Trophy className="w-3.5 h-3.5 shrink-0" style={{ color: '#e8c15a' }} />
-      <span className="flex-1 min-w-0 text-[13px] font-semibold text-[#f4f1ec] tracking-tight truncate">{soonest.name}</span>
+      <Trophy className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--te-gold)' }} />
+      <span className="flex-1 min-w-0 text-[13px] font-semibold te-t1 tracking-tight truncate">{soonest.name}</span>
       <span className="te-label shrink-0 whitespace-nowrap">ends {fmtLeft(soonest.end_at, '')}</span>
-      <ChevronRightIcon className="w-3.5 h-3.5 text-white/25 shrink-0" />
+      <ChevronRightIcon className="w-3.5 h-3.5 te-t4 shrink-0" />
     </button>
   );
 }

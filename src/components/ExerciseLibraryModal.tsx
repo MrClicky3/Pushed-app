@@ -22,14 +22,14 @@ interface Props {
 
 // ── Tokens ────────────────────────────────────────────────────
 const ACCENT     = '#f4f1ec';
-const ACCENT_DIM = 'rgba(244,241,236,0.28)';
+const ACCENT_DIM = 'var(--te-text-4)';
 
 // Surfaces
-const CARD_BG    = '#141414';
-const FIELD_BG   = '#1b1b1b';
+const CARD_BG    = 'var(--te-surface-3)';
+const FIELD_BG   = 'var(--te-surface-3)';
 const HAIRLINE   = 'var(--te-border-strong)';   // matches the app's border tokens
-const PLACEHOLDER = '#5c5a58';
-const MINI_BG    = '#0d0d0d';   // muscle-filter previews sit darker than the fields
+const PLACEHOLDER = 'var(--te-text-3)';
+const MINI_BG    = 'var(--te-surface-1)';   // muscle-filter previews sit darker than the fields
 const SAVED = '__saved__';   // sentinel filter for user-saved exercises
 
 const POSTERIOR = new Set<string>([
@@ -68,7 +68,7 @@ const MUSCLE_FILTERS: { cat: string; view: 'anterior' | 'posterior'; isUpper: bo
 ];
 
 // ── Equipment icons ───────────────────────────────────────────
-function EquipIcon({ type, size = 13, color = 'rgba(255,255,255,0.38)' }: { type: EquipmentType; size?: number; color?: string }) {
+function EquipIcon({ type, size = 13, color = 'var(--te-text-4)' }: { type: EquipmentType; size?: number; color?: string }) {
   const p: React.SVGProps<SVGSVGElement> = { width: size, height: size, viewBox: '0 0 24 24', fill: color };
   switch (type) {
     case 'barbell': return <svg {...p}><rect x="1.5" y="9.5" width="2.5" height="5" rx="1"/><rect x="4.8" y="7.5" width="2.6" height="9" rx="1.1"/><rect x="16.6" y="7.5" width="2.6" height="9" rx="1.1"/><rect x="20" y="9.5" width="2.5" height="5" rx="1"/><rect x="7" y="10.9" width="10" height="2.2" rx="1.1"/></svg>;
@@ -94,8 +94,8 @@ function ExerciseAnimation({ gifUrl, inline }: { gifUrl: string; inline?: boolea
   const animUrl   = `${ANIM_BASE}/${gifUrl}`;
 
   const wrapper: React.CSSProperties = inline
-    ? { position: 'relative', height: 180, background: '#f5f2ee', borderBottom: '1px solid rgba(255,255,255,0.07)' }
-    : { margin: '0 16px 10px', borderRadius: 16, overflow: 'hidden', border: `1px solid ${HAIRLINE}`, background: '#f5f2ee', position: 'relative', height: 180 };
+    ? { position: 'relative', height: 180, background: '#f5f2ee', borderBottom: '1px solid var(--te-border)' }
+    : { margin: '0 16px 10px', borderRadius: 'var(--te-radius-md)', overflow: 'hidden', border: `1px solid ${HAIRLINE}`, background: '#f5f2ee', position: 'relative', height: 180 };
 
   return (
     <div style={wrapper}>
@@ -118,9 +118,9 @@ const MiniMuscleCard = React.memo(function MiniMuscleCard({ filter, active, onTo
       title={filter.cat}
       className="active:opacity-70 transition-all"
       style={{
-        flexShrink: 0, width: 56, height: 65, borderRadius: 15,
+        flexShrink: 0, width: 56, height: 65, borderRadius: 'var(--te-radius-md)',
         position: 'relative', overflow: 'hidden', cursor: 'pointer',
-        background: active ? 'rgba(255,255,255,0.05)' : MINI_BG,
+        background: active ? 'var(--te-border)' : MINI_BG,
         border: `1px solid ${active ? '#ffffff' : HAIRLINE}`,
         boxShadow: active ? '0 0 0 1px #ffffff' : 'none',
       }}
@@ -162,7 +162,7 @@ const CarouselCard = React.memo(function CarouselCard({ exercise, onTap, onToggl
         width: '100%', height: 240,
         display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
         position: 'relative', background: CARD_BG, border: `1px solid ${HAIRLINE}`,
-        borderRadius: 20, overflow: 'hidden', cursor: 'pointer', textAlign: 'left',
+        borderRadius: 'var(--te-radius-md)', overflow: 'hidden', cursor: 'pointer', textAlign: 'left',
       }}
     >
       {/* Muscle model fills the card (solid card background, single scrim below) */}
@@ -175,15 +175,15 @@ const CarouselCard = React.memo(function CarouselCard({ exercise, onTap, onToggl
         <Model type={view} data={mapData} bodyColor="#343434" highlightedColors={[accentHex()]} style={{ width: '100%' }} />
       </div>
       {/* Single gradient — solid card fading up from behind the title */}
-      <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 118, background: 'linear-gradient(to top, #141414 30%, rgba(20,20,20,0) 100%)' }} />
+      <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 118, background: 'linear-gradient(to top, var(--te-surface-3) 30%, rgba(20,20,20,0) 100%)' }} />
 
       {/* Tag */}
       <div style={{ position: 'relative', padding: '11px 46px 0 11px' }}>
         <span className="te-label" style={{
           display: 'inline-block', maxWidth: '100%',
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-          color: 'rgba(244,241,236,0.42)', fontSize: 9.5,
-          padding: '3px 8px', borderRadius: 50, border: `1px solid ${HAIRLINE}`,
+          color: 'var(--te-text-3)', fontSize: 10,
+          padding: '3px 8px', borderRadius: 9999, border: `1px solid ${HAIRLINE}`,
           background: 'rgba(8,8,10,0.5)',
         }}>
           {exercise.primaryMuscles[0]?.replace(/-/g, ' ')}
@@ -196,19 +196,19 @@ const CarouselCard = React.memo(function CarouselCard({ exercise, onTap, onToggl
         width: 30, height: 30, borderRadius: '50%',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         background: added ? ACCENT : 'rgba(10,10,14,0.72)',
-        border: `1px solid ${added ? ACCENT : 'rgba(255,255,255,0.09)'}`,
+        border: `1px solid ${added ? ACCENT : 'var(--te-border-strong)'}`,
       }}>
-        {added ? <SvgCheck c="#0a0a0e" /> : <SvgPlus c="rgba(255,255,255,0.8)" />}
+        {added ? <SvgCheck c="var(--te-surface-1)" /> : <SvgPlus c="rgba(255,255,255,0.8)" />}
       </button>
 
       {/* Title */}
       <div style={{ position: 'relative', padding: '0 12px 13px' }}>
-        <p className="text-[15px] font-semibold text-[#f4f1ec]" style={{ letterSpacing: '-0.01em', lineHeight: 1.2 }}>
+        <p className="text-[15px] font-semibold te-t1" style={{ letterSpacing: '-0.01em', lineHeight: 1.2 }}>
           {exercise.name}
         </p>
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 4 }}>
           <EquipIcon type={exercise.equipment} size={13} />
-          <span className="te-label" style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11.5 }}>
+          <span className="te-label" style={{ color: 'var(--te-text-4)' }}>
             {EQUIPMENT_LABELS[exercise.equipment]}
           </span>
         </div>
@@ -246,9 +246,9 @@ function ExerciseGrid({ exercises, onTap, isAdded, onToggleAdd }: {
 function MuscleChip({ label, primary }: { label: string; primary?: boolean }) {
   return (
     <span className="te-label" style={{
-      padding: '4px 9px', borderRadius: 50, whiteSpace: 'nowrap',
-      color: primary ? accentHex() : 'rgba(244,241,236,0.6)',
-      background: primary ? accentAlpha(0.14) : 'rgba(255,255,255,0.05)',
+      padding: '4px 9px', borderRadius: 9999, whiteSpace: 'nowrap',
+      color: primary ? accentHex() : 'var(--te-text-2)',
+      background: primary ? accentAlpha(0.14) : 'var(--te-border)',
       border: `1px solid ${primary ? accentAlpha(0.32) : HAIRLINE}`,
     }}>
       {label.replace(/-/g, ' ')}
@@ -264,7 +264,7 @@ function CueLine({ text, good }: { text: string; good?: boolean }) {
       <span style={{ width: 22, height: 22, borderRadius: 7, flexShrink: 0, marginTop: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: col + '1f', border: `1px solid ${col}44` }}>
         {good ? <SvgCheck c={col} /> : <SvgX c={col} />}
       </span>
-      <p className="text-[13px] leading-relaxed" style={{ color: 'rgba(244,241,236,0.78)' }}>{text}</p>
+      <p className="text-[13px] leading-relaxed" style={{ color: 'var(--te-text-2)' }}>{text}</p>
     </div>
   );
 }
@@ -285,7 +285,7 @@ function SwipeableHeroCard({ selected }: { selected: LibraryExercise }) {
   ], [selected.primaryMuscles, selected.secondaryMuscles]);
 
   return (
-    <div style={{ borderRadius: 20, overflow: 'hidden', border: `1px solid ${HAIRLINE}` }}>
+    <div style={{ borderRadius: 'var(--te-radius-md)', overflow: 'hidden', border: `1px solid ${HAIRLINE}` }}>
       <div
         style={{ overflow: 'hidden' }}
         onTouchStart={e => { touchStartX.current = e.touches[0].clientX; }}
@@ -309,12 +309,12 @@ function SwipeableHeroCard({ selected }: { selected: LibraryExercise }) {
           {/* Slide 1 (or 0) — muscle model */}
           <div style={{
             flexShrink: 0, width: '100%',
-            background: 'radial-gradient(130% 90% at 50% 0%, rgba(255,255,255,0.04), transparent 65%), #0f0f14',
+            background: 'radial-gradient(130% 90% at 50% 0%, var(--te-fill-subtle), transparent 65%), var(--te-surface-1)',
             display: 'flex', height: 180, padding: '10px 12px',
           }}>
             {(['anterior', 'posterior'] as const).map(v => (
               <div key={v} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                <span className="te-label" style={{ color: 'rgba(255,255,255,0.25)', fontSize: 8 }}>
+                <span className="te-label" style={{ color: 'var(--te-text-4)' }}>
                   {v === 'anterior' ? 'FRONT' : 'BACK'}
                 </span>
                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -329,12 +329,12 @@ function SwipeableHeroCard({ selected }: { selected: LibraryExercise }) {
 
       {/* Bottom bar: video ↔ model toggle dots only */}
       {totalSlides > 1 && (
-        <div style={{ background: '#0f0f14', padding: '9px 14px 11px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+        <div style={{ background: 'var(--te-surface-1)', padding: '9px 14px 11px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, borderTop: '1px solid var(--te-border)' }}>
           {(['Video', 'Muscles'] as const).map((label, i) => (
             <button key={label} onClick={() => setSlide(i)} className="te-label" style={{
-              padding: '3px 9px', borderRadius: 50, border: 'none', cursor: 'pointer',
-              color: i === slide ? '#0a0a0e' : 'rgba(255,255,255,0.4)',
-              background: i === slide ? ACCENT : 'rgba(255,255,255,0.05)',
+              padding: '3px 9px', borderRadius: 9999, border: 'none', cursor: 'pointer',
+              color: i === slide ? 'var(--te-surface-1)' : 'rgba(255,255,255,0.4)',
+              background: i === slide ? ACCENT : 'var(--te-border)',
               transition: 'all 0.2s ease',
             }}>
               {label}
@@ -409,26 +409,26 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, existing
 
           {/* Title + summary */}
           <div style={{ paddingTop: 16 }}>
-            <h1 className="text-[22px] font-bold text-[#f4f1ec]" style={{ letterSpacing: '-0.02em', lineHeight: 1.12 }}>{selected.name}</h1>
+            <h1 className="text-[20px] font-bold te-t1" style={{ letterSpacing: '-0.02em', lineHeight: 1.12 }}>{selected.name}</h1>
             {selected.summary && (
-              <p className="text-[13.5px] leading-relaxed mt-2" style={{ color: 'rgba(244,241,236,0.55)' }}>{selected.summary}</p>
+              <p className="text-[13px] leading-relaxed mt-2" style={{ color: 'var(--te-text-2)' }}>{selected.summary}</p>
             )}
           </div>
 
           {/* Overview — equipment · region · muscles worked in one panel */}
-          <div className="te-panel rounded-2xl" style={{ marginTop: 16, overflow: 'hidden' }}>
+          <div className="te-panel rounded-te-md" style={{ marginTop: 16, overflow: 'hidden' }}>
             <div style={{ display: 'flex' }}>
               <div style={{ flex: 1, padding: '12px 14px' }}>
                 <p className="te-label mb-1.5">Equipment</p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                  <EquipIcon type={selected.equipment} size={14} color="rgba(244,241,236,0.85)" />
-                  <span className="text-[14px] font-semibold text-[#f4f1ec]">{EQUIPMENT_LABELS[selected.equipment]}</span>
+                  <EquipIcon type={selected.equipment} size={14} color="var(--te-text-1)" />
+                  <span className="text-[15px] font-semibold te-t1">{EQUIPMENT_LABELS[selected.equipment]}</span>
                 </div>
               </div>
               <div style={{ width: 1, background: HAIRLINE }} />
               <div style={{ flex: 1, padding: '12px 14px' }}>
                 <p className="te-label mb-1.5">Region</p>
-                <span className="text-[14px] font-semibold text-[#f4f1ec]">{selected.muscleGroup === 'upper' ? 'Upper body' : 'Lower body'}</span>
+                <span className="text-[15px] font-semibold te-t1">{selected.muscleGroup === 'upper' ? 'Upper body' : 'Lower body'}</span>
               </div>
             </div>
             <div style={{ height: 1, background: HAIRLINE }} />
@@ -457,10 +457,10 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, existing
               {selected.instructions.map((step, i) => (
                 <div key={i} style={{ display: 'flex', gap: 13, padding: '3px 0' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <span style={{ width: 26, height: 26, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Geist Mono', monospace", fontSize: 11, fontWeight: 600, color: ACCENT, background: ACCENT + '1c', border: `1px solid ${ACCENT}44` }}>{i + 1}</span>
-                    {i < selected.instructions.length - 1 && <span style={{ flex: 1, width: 1.5, background: 'rgba(255,255,255,0.07)', margin: '4px 0' }} />}
+                    <span style={{ width: 26, height: 26, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Geist Mono', monospace", fontSize: 10, fontWeight: 600, color: ACCENT, background: ACCENT + '1c', border: `1px solid ${ACCENT}44` }}>{i + 1}</span>
+                    {i < selected.instructions.length - 1 && <span style={{ flex: 1, width: 1.5, background: 'var(--te-border)', margin: '4px 0' }} />}
                   </div>
-                  <p className="text-[13px] leading-relaxed" style={{ color: 'rgba(244,241,236,0.78)', paddingBottom: 11 }}>{step}</p>
+                  <p className="text-[13px] leading-relaxed" style={{ color: 'var(--te-text-2)', paddingBottom: 11 }}>{step}</p>
                 </div>
               ))}
             </div>
@@ -487,15 +487,15 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, existing
           <div style={{ height: 88 }} />
 
           {/* Sticky CTA — same button as "Complete workout" / "Log set" */}
-          <div style={{ position: 'sticky', bottom: 0, margin: '0 -19px', padding: '12px 19px calc(14px + env(safe-area-inset-bottom, 0px))', background: '#161617' }}>
+          <div style={{ position: 'sticky', bottom: 0, margin: '0 -19px', padding: '12px 19px calc(14px + env(safe-area-inset-bottom, 0px))', background: 'var(--te-surface-3)' }}>
             <button
               onClick={() => { if (!added) { onSelect(selected); toggleAdd(selected.id); closeDetail(); } }}
               disabled={added}
-              className="te-white-btn w-full h-[55px] rounded-[20px] flex items-center justify-center gap-1.5 disabled:opacity-60"
+              className="te-white-btn w-full h-[55px] rounded-te-md flex items-center justify-center gap-1.5 disabled:opacity-60"
             >
               {added
                 ? <><CheckIcon className="w-[15px] h-[15px] text-black stroke-[2.5]" /><span className="text-[15px] font-semibold text-black tracking-[-0.17px]">Added to your exercises</span></>
-                : <><SvgPlus c="#0a0908" /><span className="text-[15px] font-semibold text-black tracking-[-0.17px]">Add to my exercises</span></>}
+                : <><SvgPlus c="var(--te-ink)" /><span className="text-[15px] font-semibold text-black tracking-[-0.17px]">Add to my exercises</span></>}
             </button>
           </div>
 
@@ -512,18 +512,18 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, existing
 
         {/* Search — pill */}
         <div style={{ padding: '0 20px 16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0 18px', height: 45, background: FIELD_BG, borderRadius: 50, border: `1px solid ${focused ? accentHex() : HAIRLINE}`, boxShadow: '0 0 7.5px rgba(0,0,0,0.25)', transition: 'border-color .15s' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0 18px', height: 45, background: FIELD_BG, borderRadius: 9999, border: `1px solid ${focused ? accentHex() : HAIRLINE}`, boxShadow: '0 0 7.5px rgba(0,0,0,0.25)', transition: 'border-color .15s' }}>
             <MagnifyingGlassIcon style={{ width: 16, height: 16, flexShrink: 0, color: focused ? accentHex() : PLACEHOLDER }} />
             <input
               value={search} onChange={e => setSearch(e.target.value)}
               onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
               placeholder="Search exercises"
-              className="text-[15px] text-white placeholder:text-white/25"
+              className="text-[15px] te-t1 placeholder:text-white/25"
               style={{ flex: 1, background: 'none', border: 'none', outline: 'none', letterSpacing: '-0.01em' }}
             />
             {search && (
-              <button onClick={() => setSearch('')} style={{ background: 'rgba(255,255,255,0.08)', border: 'none', cursor: 'pointer', width: 19, height: 19, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <XMarkIcon style={{ width: 11, height: 11, color: 'rgba(255,255,255,0.6)' }} />
+              <button onClick={() => setSearch('')} style={{ background: 'var(--te-border-strong)', border: 'none', cursor: 'pointer', width: 19, height: 19, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <XMarkIcon style={{ width: 11, height: 11, color: 'var(--te-text-2)' }} />
               </button>
             )}
           </div>
@@ -558,7 +558,7 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, existing
         {/* One flat A–Z list of every matching exercise */}
         {filtered.length === 0 ? (
           <div style={{ padding: '40px 20px', textAlign: 'center' }}>
-            <p className="text-[16px] font-semibold text-[#f4f1ec] mb-2">No exercises found</p>
+            <p className="text-[17px] font-semibold te-t1 mb-2">No exercises found</p>
             <p className="te-label">{muscleCat === SAVED ? 'Save exercises with the + button.' : 'Try a different search or muscle.'}</p>
           </div>
         ) : (
