@@ -308,7 +308,7 @@ function Leaderboard({
           <p className="text-[17px] font-bold te-t1 tracking-tight leading-none" style={{ letterSpacing: '-0.03em' }}>
             Leaderboard
           </p>
-          <p className="te-label mt-1">Who's on top this week</p>
+          <p className="te-label mt-1">Streaks & 30-day volume</p>
         </div>
       </div>
 

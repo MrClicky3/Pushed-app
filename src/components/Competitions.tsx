@@ -36,6 +36,11 @@ function fmtLeft(target: string, prefix: string): string {
   return `${prefix} ${m}m`;
 }
 
+function endsWithin24h(endAt: string): boolean {
+  const ms = new Date(endAt).getTime() - Date.now();
+  return ms > 0 && ms <= 86400000;
+}
+
 function fmtStarted(startAt: string): string {
   const d = new Date(startAt);
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -50,6 +55,11 @@ function scoreText(track: CompetitionTrack, s: CompetitionStanding): { text: str
   }
   if (s.score === null || s.score === undefined) return { text: '—', color: 'var(--te-text-4)' };
   return { text: `${Math.round(s.score)}%`, color: 'var(--te-text-1)' };
+}
+
+// The ranking value used for head-to-head comparison; null = no data yet.
+function scoreValue(track: CompetitionTrack, s: CompetitionStanding): number | null {
+  return track === 'volume' ? (s.delta ?? null) : (s.score ?? null);
 }
 
 function trackLabel(t: CompetitionTrack): string {
@@ -128,6 +138,122 @@ function StandingsList({ track, rows }: { track: CompetitionTrack; rows: Competi
       })}
     </div>
   );
+}
+
+// ── Head-to-head duel layout ────────────────────────────────────
+// Most competitions are 1v1. A ranked list renders a duel as two rows that can
+// both say "1", which reads broken — instead a duel gets a face-off: both
+// players side by side, big scores, and a tug-of-war bar showing who leads.
+
+// My share of the tug bar, 0..1. Consistency scores are 0–100; volume deltas
+// can be negative, so those are mapped as a bounded lead around the center.
+function duelShare(track: CompetitionTrack, me: number | null, them: number | null): number {
+  if (me === null && them === null) return 0.5;
+  // Any score beats no score — show a modest lead rather than comparing
+  // against an implied 0 (a negative volume delta would then read as losing
+  // to someone who hasn't even logged).
+  if (them === null) return 0.62;
+  if (me === null) return 0.38;
+  if (track === 'volume') return 0.5 + Math.max(-0.42, Math.min(0.42, (me - them) / 80));
+  if (me === 0 && them === 0) return 0.5;
+  return Math.max(0.08, Math.min(0.92, me / (me + them)));
+}
+
+function duelStatusLine(track: CompetitionTrack, me: CompetitionStanding, them: CompetitionStanding, done: boolean): string {
+  const a = scoreValue(track, me);
+  const b = scoreValue(track, them);
+  if (a === null && b === null) {
+    return done ? 'No workouts were logged.' : 'No scores yet — first workouts count soon.';
+  }
+  const theirName = them.display_name || them.username;
+  if (!done && b === null && a !== null) return `${theirName} hasn't scored yet — you're ahead.`;
+  if (!done && a === null && b !== null) return `${theirName} is on the board — you're not yet.`;
+  if ((a ?? -Infinity) > (b ?? -Infinity)) return done ? 'You won this one.' : "You're in the lead — keep it.";
+  if ((b ?? -Infinity) > (a ?? -Infinity)) return done ? `${theirName} took this one.` : `${theirName} leads — your next workout closes the gap.`;
+  return done ? 'Dead even — it ends in a tie.' : 'Dead even right now.';
+}
+
+function DuelFaceOff({ track, me, them, done }: {
+  track: CompetitionTrack;
+  me: CompetitionStanding;
+  them: CompetitionStanding;
+  done: boolean;
+}) {
+  const myScore = scoreText(track, me);
+  const theirScore = scoreText(track, them);
+  const a = scoreValue(track, me);
+  const b = scoreValue(track, them);
+  const iLead = (a ?? -Infinity) > (b ?? -Infinity);
+  const theyLead = (b ?? -Infinity) > (a ?? -Infinity);
+  const share = duelShare(track, a, b);
+
+  const Side = ({ s, score, leads, alignRight }: {
+    s: CompetitionStanding; score: { text: string; color: string }; leads: boolean; alignRight?: boolean;
+  }) => (
+    <div className={`flex-1 min-w-0 flex flex-col gap-1.5 ${alignRight ? 'items-end text-right' : 'items-start'}`}>
+      <div className="relative">
+        <Avatar name={s.display_name || s.username} avatarUrl={s.avatar_url} size={44} />
+        {leads && (
+          <span
+            className="absolute flex items-center justify-center rounded-full"
+            style={{ width: 18, height: 18, top: -5, [alignRight ? 'left' : 'right']: -5, background: 'var(--te-ink)', border: '1px solid color-mix(in srgb, var(--te-gold) 45%, transparent)' } as React.CSSProperties}
+          >
+            <Trophy className="w-2.5 h-2.5" style={{ color: 'var(--te-gold)' }} strokeWidth={2.25} />
+          </span>
+        )}
+      </div>
+      <p className="text-[13px] font-semibold te-t1 tracking-tight truncate max-w-full">
+        {s.is_self ? 'You' : (s.display_name || s.username)}
+      </p>
+      <span className="te-digit text-[24px] font-bold tabular-nums leading-none" style={{ color: score.color }}>
+        {score.text}
+      </span>
+    </div>
+  );
+
+  return (
+    <div>
+      <div className="flex items-start gap-3">
+        <Side s={me} score={myScore} leads={iLead} />
+        <span
+          className="shrink-0 self-center"
+          style={{
+            fontFamily: "'Geist Mono', monospace", fontSize: 11, fontWeight: 700,
+            letterSpacing: '0.12em', color: 'var(--te-text-4)',
+          }}
+        >
+          VS
+        </span>
+        <Side s={them} score={theirScore} leads={theyLead} alignRight />
+      </div>
+
+      {/* Tug-of-war bar — your side fills from the left. */}
+      <div className="mt-3 rounded-full overflow-hidden flex" style={{ height: 5, background: 'var(--te-border)' }}>
+        <div
+          style={{
+            width: `${share * 100}%`,
+            background: iLead ? 'var(--te-pr)' : 'rgba(244,241,236,0.55)',
+            borderRadius: 9999,
+            transition: 'width 0.5s cubic-bezier(0.22,1,0.36,1)',
+          }}
+        />
+      </div>
+
+      <p className="te-label mt-2.5" style={{ color: 'var(--te-text-3)' }}>
+        {duelStatusLine(track, me, them, done)}
+      </p>
+    </div>
+  );
+}
+
+// Picks the duel pair out of standings rows: exactly two accepted players,
+// one of whom is you. Returns null when the H2H layout doesn't apply.
+function duelPair(rows: CompetitionStanding[]): { me: CompetitionStanding; them: CompetitionStanding } | null {
+  const accepted = rows.filter(r => r.status === 'accepted');
+  if (accepted.length !== 2) return null;
+  const me = accepted.find(r => r.is_self);
+  const them = accepted.find(r => !r.is_self);
+  return me && them ? { me, them } : null;
 }
 
 // Vote-to-cancel — a deliberately low-key text link at the foot of the detail
@@ -230,7 +356,7 @@ function CompetitionSheet({
         <div className="flex items-center justify-between px-0.5">
           <div>
             <p className="te-label">
-              {trackLabel(comp.track)} · {comp.participant_count} {comp.participant_count === 2 ? 'duel' : 'players'} · started {fmtStarted(comp.start_at)}
+              {trackLabel(comp.track)} · {comp.participant_count === 2 ? 'duel' : `${comp.participant_count} players`} · started {fmtStarted(comp.start_at)}
             </p>
           </div>
           {comp.status === 'active' && (
@@ -258,7 +384,24 @@ function CompetitionSheet({
         {(comp.status === 'active' || comp.status === 'completed') && (
           loading
             ? <div className="te-panel rounded-te-md px-4 py-8 text-center te-label">Loading…</div>
-            : <StandingsList track={comp.track} rows={rows} />
+            : (() => {
+                const pair = duelPair(rows);
+                return pair
+                  ? (
+                    <div className="te-panel rounded-te-md px-4 py-4">
+                      <DuelFaceOff track={comp.track} me={pair.me} them={pair.them} done={done} />
+                    </div>
+                  )
+                  : <StandingsList track={comp.track} rows={rows} />;
+              })()
+        )}
+
+        {(comp.status === 'active' || comp.status === 'completed') && !loading && (
+          <p className="te-label px-0.5 leading-relaxed" style={{ color: 'var(--te-text-4)' }}>
+            {comp.track === 'volume'
+              ? 'Scored as % change vs your own 30-day baseline — you race your own numbers, not raw weight.'
+              : 'Scored as % of your own scheduled training days completed — fair at any level.'}
+          </p>
         )}
 
         {(comp.status === 'pending' || comp.status === 'active') && !loading && (
@@ -373,6 +516,14 @@ function CreateSheet({
               <ToggleButton key={t} active={track === t} onClick={() => setTrack(t)} label={t} heightPx={44} />
             ))}
           </div>
+          {/* Fairness is the whole point of both tracks — say it up front so
+              a weaker/newer lifter isn't scared off challenging a stronger
+              friend. */}
+          <p className="te-label mt-2 px-0.5 leading-relaxed" style={{ color: 'var(--te-text-4)' }}>
+            {track === 'consistency'
+              ? 'Who shows up more — % of your own scheduled days completed. Fair at any strength level.'
+              : 'Who improves more — % change vs your own last 30 days. You race your own baseline, not their numbers.'}
+          </p>
         </div>
 
         <div>
@@ -483,8 +634,9 @@ function InviteCard({ comp, comps }: { comp: CompetitionSummary; comps: Competit
   );
 }
 
-// Small status chip: time-left (green, live) for active, or a muted label.
-function StatusPill({ text, live }: { text: string; live?: boolean }) {
+// Small status chip: time-left (green, live) for active — flipping to a
+// caution tint inside the final 24h — or a muted label otherwise.
+function StatusPill({ text, live, urgent }: { text: string; live?: boolean; urgent?: boolean }) {
   return (
     <span
       className="shrink-0 whitespace-nowrap"
@@ -492,8 +644,8 @@ function StatusPill({ text, live }: { text: string; live?: boolean }) {
         fontFamily: "'Geist Mono', monospace", fontSize: 10, fontWeight: 600,
         letterSpacing: '0.04em', textTransform: 'uppercase', lineHeight: 1,
         padding: '4px 8px', borderRadius: 9999,
-        color: live ? 'var(--te-pr)' : 'var(--te-text-3)',
-        background: live ? 'rgba(127,213,127,0.12)' : 'var(--te-border)',
+        color: urgent ? '#e8a657' : live ? 'var(--te-pr)' : 'var(--te-text-3)',
+        background: urgent ? 'rgba(232,166,87,0.12)' : live ? 'rgba(127,213,127,0.12)' : 'var(--te-border)',
       }}
     >
       {text}
@@ -521,8 +673,10 @@ function CompetitionCard({ comp, comps, onOpen }: {
 
   const active = comp.status === 'active';
   const done = comp.status === 'completed';
-  const pill = active ? fmtLeft(comp.end_at, '') : done ? 'Final' : 'Pending';
+  const urgent = active && endsWithin24h(comp.end_at);
+  const pill = active ? fmtLeft(comp.end_at, 'ends') : done ? 'Final' : 'Pending';
   const preview = rows.filter(r => r.status === 'accepted').slice(0, 3);
+  const pair = duelPair(rows);
 
   return (
     <button
@@ -533,13 +687,20 @@ function CompetitionCard({ comp, comps, onOpen }: {
       <div className="flex items-center gap-2.5">
         <div className="flex-1 min-w-0">
           <p className="text-[15px] font-semibold te-t1 tracking-tight truncate">{comp.name}</p>
-          <p className="te-label mt-1">{trackLabel(comp.track)}</p>
+          <p className="te-label mt-1">{trackLabel(comp.track)} · {comp.participant_count === 2 ? 'duel' : `${comp.participant_count} players`}</p>
         </div>
-        <StatusPill text={pill} live={active} />
+        <StatusPill text={pill} live={active} urgent={urgent} />
       </div>
 
-      {/* Ranked mini-leaderboard */}
-      {(active || done) && preview.length > 0 && (
+      {/* Duel → head-to-head face-off */}
+      {(active || done) && pair && (
+        <div className="mt-3 pt-3 border-t border-[color:var(--te-border)]">
+          <DuelFaceOff track={comp.track} me={pair.me} them={pair.them} done={done} />
+        </div>
+      )}
+
+      {/* 3+ players → ranked mini-leaderboard */}
+      {(active || done) && !pair && preview.length > 0 && (
         <div className="mt-3 pt-3 border-t border-[color:var(--te-border)] space-y-2">
           {preview.map((r, i) => {
             const rank = r.rank ?? i + 1;
@@ -669,7 +830,31 @@ export function CompetitionMiniWidget({ comps, onOpen }: {
     .filter(c => c.status === 'active')
     .sort((a, b) => new Date(a.end_at).getTime() - new Date(b.end_at).getTime())[0] ?? null;
 
+  // One line of standing context ("You lead · +8%" / "Jānis leads") so the
+  // banner answers am-I-winning without a trip into the profile.
+  const [status, setStatus] = useState<string | null>(null);
+  useEffect(() => {
+    if (!soonest) { setStatus(null); return; }
+    let alive = true;
+    comps.getStandings(soonest.id).then(rows => {
+      if (!alive) return;
+      const accepted = rows.filter(r => r.status === 'accepted');
+      const me = accepted.find(r => r.is_self);
+      if (!me || accepted.length < 2) { setStatus(null); return; }
+      const mine = scoreValue(soonest.track, me);
+      const best = Math.max(...accepted.filter(r => !r.is_self).map(r => scoreValue(soonest.track, r) ?? -Infinity));
+      if (mine === null && best === -Infinity) { setStatus('No scores yet'); return; }
+      if ((mine ?? -Infinity) > best) { setStatus(`You lead · ${scoreText(soonest.track, me).text}`); return; }
+      if ((mine ?? -Infinity) === best) { setStatus('Tied for the lead'); return; }
+      const leader = accepted.filter(r => !r.is_self).sort((a, b) => (scoreValue(soonest.track, b) ?? -Infinity) - (scoreValue(soonest.track, a) ?? -Infinity))[0];
+      setStatus(`${leader.display_name || leader.username} leads`);
+    });
+    return () => { alive = false; };
+    // Re-check when the competition or its standings could have changed.
+  }, [soonest?.id, soonest?.track, comps]); // eslint-disable-line react-hooks/exhaustive-deps
+
   if (!soonest) return null;
+  const urgent = endsWithin24h(soonest.end_at);
 
   return (
     <button
@@ -677,8 +862,13 @@ export function CompetitionMiniWidget({ comps, onOpen }: {
       className="te-panel-dark w-full rounded-te-md px-4 py-3 flex items-center gap-2.5 text-left active:bg-white/[0.04] transition-colors mb-[18px]"
     >
       <Trophy className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--te-gold)' }} />
-      <span className="flex-1 min-w-0 text-[13px] font-semibold te-t1 tracking-tight truncate">{soonest.name}</span>
-      <span className="te-label shrink-0 whitespace-nowrap">ends {fmtLeft(soonest.end_at, '')}</span>
+      <div className="flex-1 min-w-0">
+        <p className="text-[13px] font-semibold te-t1 tracking-tight truncate">{soonest.name}</p>
+        {status && <p className="te-label mt-0.5 truncate">{status}</p>}
+      </div>
+      <span className="te-label shrink-0 whitespace-nowrap" style={urgent ? { color: '#e8a657' } : undefined}>
+        ends {fmtLeft(soonest.end_at, '')}
+      </span>
       <ChevronRightIcon className="w-3.5 h-3.5 te-t4 shrink-0" />
     </button>
   );
