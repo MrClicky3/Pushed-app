@@ -39,6 +39,7 @@
   --te-well:      #0b0b0b;
   --te-surface-1: #0c0c0c;
   --te-surface-2: #101010;
+  --te-card:      #141414;   /* raised content-list cards (exercise rows) */
   --te-surface-3: #161616;
 
   /* Text/iconography sitting on a light surface (white buttons, active pills) */
