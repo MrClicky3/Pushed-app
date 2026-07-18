@@ -74,18 +74,18 @@ function BioEditSheet({
           onChange={e => setValue(e.target.value.slice(0, BIO_MAX))}
           placeholder="Tell friends a bit about yourself…"
           rows={4}
-          className="w-full rounded-2xl px-3.5 py-3 text-[15px] text-[#f4f1ec] placeholder-white/25 tracking-tight outline-none resize-none"
-          style={{ background: '#0b0b0b', border: '1px solid var(--te-border)' }}
+          className="w-full rounded-te-md px-3.5 py-3 text-[15px] te-t1 placeholder-white/25 tracking-tight outline-none resize-none"
+          style={{ background: 'var(--te-well)', border: '1px solid var(--te-border)' }}
         />
         <div className="flex items-center justify-between px-0.5">
-          <p className="te-label" style={{ color: error ? '#ff453a' : 'rgba(244,241,236,0.35)' }}>
+          <p className="te-label" style={{ color: error ? 'var(--te-danger)' : 'var(--te-text-4)' }}>
             {error ?? `${value.length}/${BIO_MAX}`}
           </p>
         </div>
         <button
           onClick={save}
           disabled={saving}
-          className="te-white-btn w-full rounded-2xl font-semibold text-[15px] disabled:opacity-50"
+          className="te-white-btn w-full rounded-te-md font-semibold text-[15px] disabled:opacity-50"
           style={{ height: 48 }}
         >
           {saving ? 'Saving…' : 'Save'}
@@ -162,10 +162,10 @@ function AvatarPickerSheet({
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={saving}
-          className="te-panel w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl active:bg-white/[0.04] transition-colors text-left disabled:opacity-50"
+          className="te-panel w-full flex items-center gap-3 px-4 py-3.5 rounded-te-md active:bg-white/[0.04] transition-colors text-left disabled:opacity-50"
         >
-          <PhotoIcon className="w-4 h-4 text-white/40 shrink-0" />
-          <span className="flex-1 text-[14px] font-medium text-[#f4f1ec] tracking-tight">
+          <PhotoIcon className="w-4 h-4 te-t4 shrink-0" />
+          <span className="flex-1 text-[15px] font-medium te-t1 tracking-tight">
             {saving ? 'Uploading…' : 'Upload photo'}
           </span>
         </button>
@@ -177,7 +177,7 @@ function AvatarPickerSheet({
           onChange={handleFile}
         />
 
-        {error && <p className="text-[13px] px-0.5" style={{ color: '#ff453a' }}>{error}</p>}
+        {error && <p className="text-[13px] px-0.5" style={{ color: 'var(--te-danger)' }}>{error}</p>}
       </div>
     </Modal>
   );
@@ -188,7 +188,7 @@ function StreakRows({ rows, onSelect }: { rows: LeaderboardRow[]; onSelect: (r: 
   // Rendered flush inside the Leaderboard bento — no nested card, and pulled
   // to the bento's edges so the rows read as one full-width list.
   return (
-    <div className="-mx-4 border-t border-white/[0.06] divide-y divide-white/[0.05]">
+    <div className="-mx-4 border-t border-[color:var(--te-border)] divide-y divide-white/[0.05]">
       {rows.map((r, i) => (
         <button
           type="button"
@@ -198,13 +198,13 @@ function StreakRows({ rows, onSelect }: { rows: LeaderboardRow[]; onSelect: (r: 
           className="w-full text-left flex items-center px-4 py-[18px] gap-3.5 enabled:active:bg-white/[0.03] transition-colors"
           style={r.is_self ? { background: 'rgba(244,241,236,0.06)' } : undefined}
         >
-          <span className="te-mono text-[14px] tabular-nums w-5 shrink-0" style={{ color: 'rgba(244,241,236,0.4)' }}>
+          <span className="te-mono text-[15px] tabular-nums w-5 shrink-0" style={{ color: 'var(--te-text-4)' }}>
             {i + 1}
           </span>
           <Avatar name={r.display_name || r.username} avatarUrl={r.avatar_url} size={32} />
           <div className="flex-1 min-w-0">
-            <p className="text-[15px] font-semibold text-[#f4f1ec] tracking-tight truncate">
-              {r.display_name || r.username}{r.is_self && <span className="text-white/30 font-normal"> · you</span>}
+            <p className="text-[15px] font-semibold te-t1 tracking-tight truncate">
+              {r.display_name || r.username}{r.is_self && <span className="te-t4 font-normal"> · you</span>}
             </p>
             <p className="te-label mt-1">
               {r.consistency_score === null ? '— consistency' : `${r.consistency_score}% consistent`}
@@ -212,7 +212,7 @@ function StreakRows({ rows, onSelect }: { rows: LeaderboardRow[]; onSelect: (r: 
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             <FireIcon className="w-4 h-4" style={{ color: r.current_streak > 0 ? '#f4f1ec' : 'rgba(255,255,255,0.2)' }} />
-            <span className="te-digit text-[22px] font-bold tabular-nums" style={{ color: r.current_streak > 0 ? '#f4f1ec' : 'rgba(255,255,255,0.3)' }}>
+            <span className="te-digit text-[20px] font-bold tabular-nums" style={{ color: r.current_streak > 0 ? '#f4f1ec' : 'rgba(255,255,255,0.3)' }}>
               {r.current_streak}
             </span>
           </div>
@@ -227,7 +227,7 @@ function VolumeRows({ rows, unit, toDisplay, onSelect }: { rows: VolumeRow[]; un
   // medal coloring (motivational framing, not competitive). Rendered flush
   // inside the Leaderboard bento as a full-width list.
   return (
-    <div className="-mx-4 border-t border-white/[0.06] divide-y divide-white/[0.05]">
+    <div className="-mx-4 border-t border-[color:var(--te-border)] divide-y divide-white/[0.05]">
       {rows.map((r, i) => (
         <button
           type="button"
@@ -237,18 +237,18 @@ function VolumeRows({ rows, unit, toDisplay, onSelect }: { rows: VolumeRow[]; un
           className="w-full text-left flex items-center px-4 py-[18px] gap-3.5 enabled:active:bg-white/[0.03] transition-colors"
           style={r.is_self ? { background: 'rgba(244,241,236,0.06)' } : undefined}
         >
-          <span className="te-mono text-[14px] tabular-nums w-5 shrink-0" style={{ color: 'rgba(244,241,236,0.4)' }}>
+          <span className="te-mono text-[15px] tabular-nums w-5 shrink-0" style={{ color: 'var(--te-text-4)' }}>
             {i + 1}
           </span>
           <Avatar name={r.display_name || r.username} avatarUrl={r.avatar_url} size={32} />
           <div className="flex-1 min-w-0">
-            <p className="text-[15px] font-semibold text-[#f4f1ec] tracking-tight truncate">
-              {r.display_name || r.username}{r.is_self && <span className="text-white/30 font-normal"> · you</span>}
+            <p className="text-[15px] font-semibold te-t1 tracking-tight truncate">
+              {r.display_name || r.username}{r.is_self && <span className="te-t4 font-normal"> · you</span>}
             </p>
             <p className="te-label mt-1">last 30 days</p>
           </div>
           <div className="flex items-baseline gap-1 shrink-0">
-            <span className="te-digit text-[20px] font-bold tabular-nums text-[#f4f1ec]">
+            <span className="te-digit text-[20px] font-bold tabular-nums te-t1">
               {Math.round(toDisplay(r.volume)).toLocaleString()}
             </span>
             <span className="te-label">{unit}</span>
@@ -290,9 +290,9 @@ function Leaderboard({
     // accent-bordered container so it reads as the main event, distinct from
     // the flat section headings around it.
     <div
-      className="rounded-[24px] p-4 overflow-hidden"
+      className="rounded-te-lg p-4 overflow-hidden"
       style={{
-        background: 'linear-gradient(180deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.012) 100%), #0c0c0c',
+        background: 'linear-gradient(180deg, var(--te-fill-subtle) 0%, var(--te-fill-subtle) 100%), var(--te-surface-1)',
         border: '1px solid var(--te-border)',
         boxShadow: '0 8px 28px rgba(0,0,0,0.4)',
       }}
@@ -300,12 +300,12 @@ function Leaderboard({
       <div className="flex items-center gap-2.5 mb-3.5 px-0.5">
         <div
           className="flex items-center justify-center rounded-full shrink-0"
-          style={{ width: 30, height: 30, background: 'rgba(232,193,90,0.14)', border: '1px solid rgba(232,193,90,0.28)' }}
+          style={{ width: 30, height: 30, background: 'color-mix(in srgb, var(--te-gold) 14%, transparent)', border: '1px solid color-mix(in srgb, var(--te-gold) 28%, transparent)' }}
         >
-          <Trophy className="w-4 h-4" style={{ color: '#e8c15a' }} strokeWidth={2} />
+          <Trophy className="w-4 h-4" style={{ color: 'var(--te-gold)' }} strokeWidth={2} />
         </div>
         <div className="min-w-0">
-          <p className="text-[19px] font-bold text-[#f4f1ec] tracking-tight leading-none" style={{ letterSpacing: '-0.03em' }}>
+          <p className="text-[17px] font-bold te-t1 tracking-tight leading-none" style={{ letterSpacing: '-0.03em' }}>
             Leaderboard
           </p>
           <p className="te-label mt-1">Who's on top this week</p>
@@ -321,15 +321,15 @@ function Leaderboard({
       )}
 
       {friendCount === 0 ? (
-        <div className="te-panel rounded-2xl px-5 py-8 text-center">
-          <FireIcon className="w-8 h-8 mx-auto mb-2.5" style={{ color: '#f4f1ec' }} />
-          <p className="text-[16px] font-semibold text-[#f4f1ec] tracking-tight">Compete with friends</p>
-          <p className="text-[13px] text-white/45 mt-1 leading-snug">
+        <div className="te-panel rounded-te-md px-5 py-8 text-center">
+          <FireIcon className="w-8 h-8 mx-auto mb-2.5" style={{ color: 'var(--te-text-1)' }} />
+          <p className="text-[17px] font-semibold te-t1 tracking-tight">Compete with friends</p>
+          <p className="text-[13px] te-t3 mt-1 leading-snug">
             Add a friend below to see who keeps the longest streak.
           </p>
         </div>
       ) : loading ? (
-        <div className="te-panel rounded-2xl px-4 py-8 text-center te-label">Loading…</div>
+        <div className="te-panel rounded-te-md px-4 py-8 text-center te-label">Loading…</div>
       ) : tab === 'streak' ? (
         <StreakRows rows={streak} onSelect={onSelect} />
       ) : (
@@ -379,18 +379,18 @@ function FriendsSection({ friends, inviteUrl }: { friends: FriendsApi; inviteUrl
   function ActionButton({ id }: { id: string }) {
     const rel = relationFor(id);
     if (rel === 'friends') {
-      return <span className="te-label shrink-0" style={{ color: 'rgba(255,255,255,0.35)' }}>Friends</span>;
+      return <span className="te-label shrink-0" style={{ color: 'var(--te-text-4)' }}>Friends</span>;
     }
     if (rel === 'requested') {
-      return <span className="te-label shrink-0" style={{ color: 'rgba(255,255,255,0.35)' }}>Requested</span>;
+      return <span className="te-label shrink-0" style={{ color: 'var(--te-text-4)' }}>Requested</span>;
     }
     if (rel === 'incoming') {
       const fid = incomingFor(id);
       return (
         <button
           onClick={() => fid && acceptRequest(fid)}
-          className="shrink-0 px-3 py-1.5 rounded-full text-[12px] font-semibold"
-          style={{ background: '#f4f1ec', color: '#0a0908' }}
+          className="shrink-0 px-3 py-1.5 rounded-full text-[13px] font-semibold"
+          style={{ background: '#f4f1ec', color: 'var(--te-ink)' }}
         >
           Accept
         </button>
@@ -399,8 +399,8 @@ function FriendsSection({ friends, inviteUrl }: { friends: FriendsApi; inviteUrl
     return (
       <button
         onClick={() => sendRequest(id)}
-        className="shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full text-[12px] font-semibold"
-        style={{ background: 'rgba(255,255,255,0.08)', color: '#f4f1ec' }}
+        className="shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full text-[13px] font-semibold"
+        style={{ background: 'var(--te-border-strong)', color: 'var(--te-text-1)' }}
       >
         <UserPlusIcon className="w-3.5 h-3.5" /> Add
       </button>
@@ -414,13 +414,13 @@ function FriendsSection({ friends, inviteUrl }: { friends: FriendsApi; inviteUrl
       {/* Find friends + invite — one merged card */}
       <div>
         <p className="te-label mb-2 px-0.5">Find friends</p>
-        <div className="te-panel rounded-2xl overflow-hidden">
+        <div className="te-panel rounded-te-md overflow-hidden">
           <div className="px-4 pt-4 pb-3.5">
             <div
-              className="flex items-center rounded-2xl px-3.5 gap-2"
-              style={{ background: '#0b0b0b', border: '1px solid var(--te-border)', height: 46 }}
+              className="flex items-center rounded-te-md px-3.5 gap-2"
+              style={{ background: 'var(--te-well)', border: '1px solid var(--te-border)', height: 46 }}
             >
-              <MagnifyingGlassIcon className="w-4 h-4 text-white/30 shrink-0" />
+              <MagnifyingGlassIcon className="w-4 h-4 te-t4 shrink-0" />
               <input
                 data-no-drag
                 value={query}
@@ -429,12 +429,12 @@ function FriendsSection({ friends, inviteUrl }: { friends: FriendsApi; inviteUrl
                 autoCapitalize="none"
                 autoCorrect="off"
                 spellCheck={false}
-                className="flex-1 bg-transparent outline-none text-[15px] text-[#f4f1ec] placeholder-white/25 tracking-tight"
+                className="flex-1 bg-transparent outline-none text-[15px] te-t1 placeholder-white/25 tracking-tight"
               />
             </div>
           </div>
 
-          <div className="border-t border-white/[0.05]">
+          <div className="border-t border-[color:var(--te-border)]">
             {showResults ? (
               searching ? (
                 <p className="te-label px-4 py-3.5">Searching…</p>
@@ -446,7 +446,7 @@ function FriendsSection({ friends, inviteUrl }: { friends: FriendsApi; inviteUrl
                     <div key={u.id} className="flex items-center px-4 py-3 gap-3">
                       <Avatar name={u.display_name || u.username} avatarUrl={u.avatar_url} size={28} />
                       <div className="flex-1 min-w-0">
-                        <p className="text-[14px] font-medium text-[#f4f1ec] tracking-tight truncate">
+                        <p className="text-[15px] font-medium te-t1 tracking-tight truncate">
                           {u.display_name || u.username}
                         </p>
                         <p className="te-label mt-0.5 truncate">@{u.username}</p>
@@ -461,12 +461,12 @@ function FriendsSection({ friends, inviteUrl }: { friends: FriendsApi; inviteUrl
                 onClick={share}
                 className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-white/[0.04] transition-colors text-left"
               >
-                <LinkIcon className="w-4 h-4 text-white/40 shrink-0" />
+                <LinkIcon className="w-4 h-4 te-t4 shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-[14px] font-medium text-[#f4f1ec] tracking-tight">Invite link</p>
+                  <p className="text-[15px] font-medium te-t1 tracking-tight">Invite link</p>
                   <p className="te-label mt-0.5 truncate">{inviteUrl.replace(/^https?:\/\//, '')}</p>
                 </div>
-                <span className="te-label shrink-0" style={{ color: copied ? '#30d158' : '#f4f1ec' }}>
+                <span className="te-label shrink-0" style={{ color: copied ? 'var(--te-success)' : '#f4f1ec' }}>
                   {copied ? 'Copied' : 'Share'}
                 </span>
               </button>
@@ -479,12 +479,12 @@ function FriendsSection({ friends, inviteUrl }: { friends: FriendsApi; inviteUrl
       {(incoming.length > 0 || outgoing.length > 0) && (
         <div>
           <p className="te-label mb-2 px-0.5">Requests</p>
-          <div className="te-panel rounded-2xl overflow-hidden divide-y divide-white/[0.05]">
+          <div className="te-panel rounded-te-md overflow-hidden divide-y divide-white/[0.05]">
             {incoming.map(p => (
               <div key={p.friendshipId} className="flex items-center px-4 py-3 gap-3">
                 <Avatar name={p.display_name || p.username} avatarUrl={p.avatar_url} size={28} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-[14px] font-medium text-[#f4f1ec] tracking-tight truncate">
+                  <p className="text-[15px] font-medium te-t1 tracking-tight truncate">
                     {p.display_name || p.username}
                   </p>
                   <p className="te-label mt-0.5 truncate">@{p.username}</p>
@@ -495,12 +495,12 @@ function FriendsSection({ friends, inviteUrl }: { friends: FriendsApi; inviteUrl
                     className="p-1.5 rounded-full"
                     style={{ background: '#f4f1ec' }}
                   >
-                    <CheckIcon className="w-3.5 h-3.5" style={{ color: '#0a0908' }} strokeWidth={2.5} />
+                    <CheckIcon className="w-3.5 h-3.5" style={{ color: 'var(--te-ink)' }} strokeWidth={2.5} />
                   </button>
                   <button
                     onClick={() => declineRequest(p.friendshipId)}
                     className="te-label px-2 py-1.5"
-                    style={{ color: 'rgba(255,255,255,0.35)' }}
+                    style={{ color: 'var(--te-text-4)' }}
                   >
                     Decline
                   </button>
@@ -511,12 +511,12 @@ function FriendsSection({ friends, inviteUrl }: { friends: FriendsApi; inviteUrl
               <div key={p.friendshipId} className="flex items-center px-4 py-3 gap-3">
                 <Avatar name={p.display_name || p.username} avatarUrl={p.avatar_url} size={28} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-[14px] font-medium text-[#f4f1ec] tracking-tight truncate">
+                  <p className="text-[15px] font-medium te-t1 tracking-tight truncate">
                     {p.display_name || p.username}
                   </p>
                   <p className="te-label mt-0.5 truncate">@{p.username}</p>
                 </div>
-                <span className="te-label shrink-0 flex items-center gap-1" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                <span className="te-label shrink-0 flex items-center gap-1" style={{ color: 'var(--te-text-4)' }}>
                   <ClockIcon className="w-3.5 h-3.5" /> Waiting
                 </span>
               </div>
@@ -645,32 +645,42 @@ export default function ProfilePage({
             className="flex items-center justify-between"
             style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 14px)' }}
           >
-            <button
-              onClick={onClose}
-              className="flex items-center justify-center active:opacity-60 transition-opacity -ml-2"
-              style={{ width: 40, height: 40 }}
-              aria-label="Back"
-            >
-              <ChevronLeftIcon className="w-6 h-6 text-white/70" />
-            </button>
+            {/* Back button + title, matching FullPageSheet/Modal headers. The
+                title was missing here, which made Profile the one pushed page
+                whose header didn't say where you were. */}
+            <div className="flex items-center gap-1 min-w-0">
+              <button
+                onClick={onClose}
+                className="flex items-center justify-center shrink-0 active:opacity-60 transition-opacity -ml-2"
+                style={{ width: 40, height: 40 }}
+                aria-label="Back"
+              >
+                <ChevronLeftIcon className="w-6 h-6 te-t2" />
+              </button>
+              <h2 className="text-[17px] font-semibold te-t1 tracking-tight truncate">Profile</h2>
+            </div>
 
+            {/* Reporting a bug is a rare, low-priority utility action, so it
+                reads as quiet chrome — a neutral bordered pill at the same
+                visual weight as the back button. It used to be a saturated
+                blue gradient, which was both off-palette (nothing else in the
+                app is blue) and the loudest thing on the page. */}
             <button
               onClick={() => setReportOpen(true)}
-              className="flex items-center gap-1.5 rounded-full active:opacity-80 transition-opacity"
+              className="flex items-center gap-1.5 rounded-full active:opacity-60 transition-opacity"
               style={{
                 height: 32, padding: '0 12px 0 10px',
-                background: 'linear-gradient(180deg, #3b82f6 0%, #2563eb 100%)',
-                boxShadow: '0 3px 12px rgba(37,99,235,0.35), inset 0 1px 0 rgba(255,255,255,0.18)',
-                border: '1px solid rgba(255,255,255,0.14)',
+                background: 'var(--te-surface-3)',
+                border: '1px solid var(--te-border-strong)',
               }}
               aria-label="Report a bug"
             >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--te-text-3)" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M8 2l1.5 2.5M16 2l-1.5 2.5" />
                 <rect x="7" y="6" width="10" height="12" rx="5" />
                 <path d="M12 6v12M3 10h4M17 10h4M3 15h4M17 15h4M4 6l3 2M20 6l-3 2M4 19l3-2M20 19l-3-2" />
               </svg>
-              <span className="text-[11px] font-bold text-white tracking-tight">Bug</span>
+              <span className="te-label">Bug</span>
             </button>
           </div>
 
@@ -684,14 +694,14 @@ export default function ProfilePage({
               <Avatar name={name} avatarUrl={profile?.avatar_url} size={88} />
               <span
                 className="absolute flex items-center justify-center rounded-full"
-                style={{ width: 24, height: 24, right: -2, bottom: -2, background: '#f4f1ec', border: '2.5px solid #0a0908' }}
+                style={{ width: 24, height: 24, right: -2, bottom: -2, background: '#f4f1ec', border: '2.5px solid var(--te-ink)' }}
               >
-                <CameraIcon className="w-3.5 h-3.5" style={{ color: '#0a0908' }} strokeWidth={1.5} />
+                <CameraIcon className="w-3.5 h-3.5" style={{ color: 'var(--te-ink)' }} strokeWidth={1.5} />
               </span>
             </button>
 
             <div className="text-center">
-              <p className="text-[20px] font-bold text-[#f4f1ec] tracking-tight" style={{ letterSpacing: '-0.02em' }}>
+              <p className="text-[20px] font-bold te-t1 tracking-tight" style={{ letterSpacing: '-0.02em' }}>
                 {name}
               </p>
               {profile?.username && <p className="te-label mt-1">@{profile.username}</p>}
@@ -703,9 +713,9 @@ export default function ProfilePage({
             className="w-full text-left active:opacity-60 transition-opacity"
           >
             {profile?.bio ? (
-              <p className="text-[14px] text-white/60 leading-snug">{profile.bio}</p>
+              <p className="text-[15px] te-t2 leading-snug">{profile.bio}</p>
             ) : (
-              <p className="te-label" style={{ color: 'rgba(244,241,236,0.7)' }}>+ Add bio</p>
+              <p className="te-label" style={{ color: 'var(--te-text-2)' }}>+ Add bio</p>
             )}
           </button>
 
@@ -737,20 +747,20 @@ export default function ProfilePage({
           {/* Settings entry — opens the existing schedule/settings sheet */}
           <button
             onClick={onOpenSettings}
-            className="te-panel w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl active:bg-white/[0.04] transition-colors text-left"
+            className="te-panel w-full flex items-center gap-3 px-4 py-3.5 rounded-te-md active:bg-white/[0.04] transition-colors text-left"
           >
-            <Cog6ToothIcon className="w-4 h-4 text-white/40 shrink-0" />
-            <span className="flex-1 text-[14px] font-medium text-[#f4f1ec] tracking-tight">Settings & schedule</span>
-            <ChevronRightIcon className="w-3.5 h-3.5 text-white/20 shrink-0" />
+            <Cog6ToothIcon className="w-4 h-4 te-t4 shrink-0" />
+            <span className="flex-1 text-[15px] font-medium te-t1 tracking-tight">Settings & schedule</span>
+            <ChevronRightIcon className="w-3.5 h-3.5 te-t4 shrink-0" />
           </button>
 
           {/* Legal */}
           <div className="flex items-center justify-center gap-4 pt-1">
-            <a href="/privacy.html" target="_blank" rel="noopener" className="te-label active:opacity-60 transition-opacity" style={{ color: 'rgba(244,241,236,0.4)' }}>
+            <a href="/privacy.html" target="_blank" rel="noopener" className="te-label active:opacity-60 transition-opacity" style={{ color: 'var(--te-text-4)' }}>
               Privacy Policy
             </a>
-            <span className="te-label" style={{ color: 'rgba(244,241,236,0.2)' }}>·</span>
-            <a href="/terms.html" target="_blank" rel="noopener" className="te-label active:opacity-60 transition-opacity" style={{ color: 'rgba(244,241,236,0.4)' }}>
+            <span className="te-label" style={{ color: 'var(--te-text-4)' }}>·</span>
+            <a href="/terms.html" target="_blank" rel="noopener" className="te-label active:opacity-60 transition-opacity" style={{ color: 'var(--te-text-4)' }}>
               Terms of Service
             </a>
           </div>

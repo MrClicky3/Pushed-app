@@ -60,7 +60,7 @@ export default function FullPageSheet({ open, onClose, children, title, onBack, 
     >
       {showHeader && (
         <div
-          className="shrink-0 flex items-center gap-1 pl-[max(10px,env(safe-area-inset-left))] pr-[max(19px,env(safe-area-inset-right))]"
+          className="shrink-0 flex items-center gap-1 pl-[max(8px,env(safe-area-inset-left))] pr-[max(16px,env(safe-area-inset-right))]"
           style={{ paddingTop: 'calc(max(12px, env(safe-area-inset-top, 0px)) + 6px)', paddingBottom: 10 }}
         >
           <button
@@ -69,14 +69,14 @@ export default function FullPageSheet({ open, onClose, children, title, onBack, 
             style={{ width: 40, height: 40 }}
             aria-label={onBack ? 'Back' : 'Close'}
           >
-            <ChevronLeftIcon className="w-6 h-6 text-white/70" />
+            <ChevronLeftIcon className="w-6 h-6 te-t2" />
           </button>
-          {title && <h2 className="text-[17px] font-semibold text-[#f4f1ec] tracking-tight">{title}</h2>}
+          {title && <h2 className="text-[17px] font-semibold te-t1 tracking-tight">{title}</h2>}
         </div>
       )}
 
       <div
-        className={`flex-1 min-h-0 overflow-y-auto overscroll-contain ${padded ? 'pl-[max(19px,env(safe-area-inset-left))] pr-[max(19px,env(safe-area-inset-right))] pt-1 pb-8' : ''}`}
+        className={`flex-1 min-h-0 overflow-y-auto overscroll-contain ${padded ? 'pl-[max(16px,env(safe-area-inset-left))] pr-[max(16px,env(safe-area-inset-right))] pt-1 pb-8' : ''}`}
         style={{
           paddingTop: showHeader ? undefined : 'max(12px, env(safe-area-inset-top, 0px))',
           paddingBottom: padded ? undefined : 'env(safe-area-inset-bottom, 0px)',

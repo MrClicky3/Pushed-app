@@ -83,31 +83,40 @@ export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, 
   const libraryCard = (
     <button
       onClick={onOpenLibrary}
-      className="w-full rounded-[20px] overflow-hidden active:opacity-80 transition-opacity"
+      className="w-full rounded-te-md overflow-hidden active:opacity-80 transition-opacity"
       style={{ display: 'block', textAlign: 'left', position: 'relative', border: '1px solid var(--te-border)', boxShadow: '0 0 15px rgba(0,0,0,0.25)' }}
     >
+      {/* The card's wash is mixed from --te-accent rather than a baked-in red,
+          so it follows the user's accent along with the muscle figures. */}
       <div style={{
         height: 164,
-        background: 'linear-gradient(124.9deg, rgb(22,13,12) 8%, rgb(52,20,17) 52%, rgb(96,32,26) 92%, rgb(64,22,18) 120%)',
+        background: `linear-gradient(124.9deg,
+          color-mix(in srgb, var(--te-accent) 6%, var(--te-surface-1)) 8%,
+          color-mix(in srgb, var(--te-accent) 16%, var(--te-surface-1)) 52%,
+          color-mix(in srgb, var(--te-accent) 32%, var(--te-surface-1)) 92%,
+          color-mix(in srgb, var(--te-accent) 20%, var(--te-surface-1)) 120%)`,
         position: 'relative', overflow: 'hidden',
       }}>
         <div style={{
           position: 'absolute', inset: 0, pointerEvents: 'none',
-          background: 'radial-gradient(ellipse 62% 88% at 78% 60%, rgba(150,46,38,0.40) 0%, rgba(120,36,30,0.14) 45%, transparent 72%)',
+          background: `radial-gradient(ellipse 62% 88% at 78% 60%,
+            color-mix(in srgb, var(--te-accent) 26%, transparent) 0%,
+            color-mix(in srgb, var(--te-accent) 9%, transparent) 45%,
+            transparent 72%)`,
         }} />
 
         <div style={{ position: 'absolute', top: 20, left: 20 }}>
-          <p style={{ fontFamily: "'Geist Mono', monospace", fontSize: 18, fontWeight: 600, letterSpacing: '-0.17px', textTransform: 'uppercase', color: '#ff453a', lineHeight: 1 }}>
+          <p style={{ fontFamily: "'Geist Mono', monospace", fontSize: 17, fontWeight: 600, letterSpacing: '-0.17px', textTransform: 'uppercase', color: 'var(--te-accent)', lineHeight: 1 }}>
             Exercise Library
           </p>
-          <p style={{ fontFamily: "'Geist', sans-serif", fontSize: 12, fontWeight: 400, letterSpacing: '-0.1px', color: 'rgba(244,241,236,0.35)', marginTop: 9, lineHeight: 1 }}>
+          <p style={{ fontFamily: "'Geist', sans-serif", fontSize: 13, fontWeight: 400, letterSpacing: '-0.1px', color: 'var(--te-text-4)', marginTop: 9, lineHeight: 1 }}>
             Form guides, muscle maps
           </p>
         </div>
 
         <div style={{ position: 'absolute', bottom: 20, left: 20 }}>
-          <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: 40, fontWeight: 600, color: 'rgba(244,241,236,0.92)', lineHeight: 1, letterSpacing: '-1.76px', display: 'block' }}>{EXERCISE_LIBRARY.length}</span>
-          <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: 13, fontWeight: 600, letterSpacing: '-0.52px', textTransform: 'uppercase', color: 'rgba(244,241,236,0.92)', marginTop: 8, display: 'block', lineHeight: 1 }}>exercises</span>
+          <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: 32, fontWeight: 600, color: 'var(--te-text-1)', lineHeight: 1, letterSpacing: '-1.76px', display: 'block' }}>{EXERCISE_LIBRARY.length}</span>
+          <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: 13, fontWeight: 600, letterSpacing: '-0.52px', textTransform: 'uppercase', color: 'var(--te-text-1)', marginTop: 8, display: 'block', lineHeight: 1 }}>exercises</span>
         </div>
 
         <div style={{ position: 'absolute', bottom: 0, right: 6, display: 'flex', alignItems: 'flex-end', gap: 0 }}>
@@ -140,10 +149,10 @@ export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, 
         {libraryCard}
         <div className="flex flex-col items-center py-6 text-center">
           <div className="w-14 h-14 rounded-full te-panel flex items-center justify-center mb-4">
-            <FireIcon className="w-7 h-7 text-apple-label-tertiary" />
+            <FireIcon className="w-7 h-7 te-t4" />
           </div>
-          <p className="text-white font-semibold text-[16px] mb-1.5 tracking-tight">Your exercises will appear here</p>
-          <p className="text-apple-label-tertiary text-[13px] leading-relaxed" style={{ maxWidth: 220 }}>
+          <p className="te-t1 font-semibold text-[17px] mb-1.5 tracking-tight">Your exercises will appear here</p>
+          <p className="te-t4 text-[13px] leading-relaxed" style={{ maxWidth: 220 }}>
             Browse the library to find exercises, or add your own.
           </p>
         </div>
@@ -160,8 +169,8 @@ export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, 
         const groupExercises = groups[group];
         return (
           <div key={group}>
-            <div className="flex items-center gap-2 mb-3 pb-2.5" style={{ borderBottom: '1px solid #1a1a1a' }}>
-              <span className="te-label" style={{ color: 'rgba(244,241,236,0.35)' }}>{group}</span>
+            <div className="flex items-center gap-2 mb-3 pb-2.5" style={{ borderBottom: '1px solid var(--te-surface-3)' }}>
+              <span className="te-label" style={{ color: 'var(--te-text-4)' }}>{group}</span>
               <span className="ml-auto te-label">{groupExercises.length}</span>
             </div>
             <div className="space-y-1.5">
@@ -169,8 +178,8 @@ export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, 
                 <div
                   key={ex.id}
                   data-card
-                  className="rounded-[20px] overflow-hidden"
-                  style={{ background: '#141414', border: '1px solid var(--te-border)', boxShadow: '0 0 7.5px rgba(0,0,0,0.25)', transformOrigin: 'center center', willChange: 'transform, opacity' }}
+                  className="rounded-te-md overflow-hidden"
+                  style={{ background: 'var(--te-surface-3)', border: '1px solid var(--te-border)', boxShadow: '0 0 7.5px rgba(0,0,0,0.25)', transformOrigin: 'center center', willChange: 'transform, opacity' }}
                 >
                   <ExerciseCard
                     exercise={ex}

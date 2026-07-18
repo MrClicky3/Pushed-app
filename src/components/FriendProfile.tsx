@@ -26,13 +26,13 @@ type WindowKey = typeof WINDOWS[number]['key'];
 function StatCard({ label, value, sub }: { label: string; value: string; sub: string }) {
   return (
     <div
-      className="rounded-[20px] px-[18px] py-[12px] flex items-center justify-between gap-3"
-      style={{ background: '#141414', border: '1px solid var(--te-border)' }}
+      className="rounded-te-md px-[18px] py-[12px] flex items-center justify-between gap-3"
+      style={{ background: 'var(--te-surface-3)', border: '1px solid var(--te-border)' }}
     >
-      <p className="text-[15px] font-semibold text-white tracking-tight">{label}</p>
+      <p className="text-[15px] font-semibold te-t1 tracking-tight">{label}</p>
       <div className="text-right shrink-0">
-        <p className="text-[22px] font-bold text-white tabular-nums leading-none tracking-tight te-digit">{value}</p>
-        <p className="text-[12px] mt-[4px]" style={{ color: 'rgba(244,241,236,0.35)' }}>{sub}</p>
+        <p className="text-[20px] font-bold te-t1 tabular-nums leading-none tracking-tight te-digit">{value}</p>
+        <p className="text-[13px] mt-[4px]" style={{ color: 'var(--te-text-4)' }}>{sub}</p>
       </div>
     </div>
   );
@@ -82,10 +82,10 @@ export default function FriendProfile({
         <div className="flex flex-col items-center gap-3 pt-1">
           <Avatar name={name} avatarUrl={target.avatar_url} size={72} />
           <div className="text-center">
-            <p className="text-[20px] font-bold text-[#f4f1ec] tracking-tight" style={{ letterSpacing: '-0.02em' }}>{name}</p>
+            <p className="text-[20px] font-bold te-t1 tracking-tight" style={{ letterSpacing: '-0.02em' }}>{name}</p>
             <p className="te-label mt-1">@{target.username}</p>
           </div>
-          {bio && <p className="text-[14px] text-white/60 leading-snug text-center max-w-[280px]">{bio}</p>}
+          {bio && <p className="text-[15px] te-t2 leading-snug text-center max-w-[280px]">{bio}</p>}
         </div>
 
         <div>
@@ -96,8 +96,8 @@ export default function FriendProfile({
                 <button
                   key={key}
                   onClick={() => setWin(key)}
-                  className={`${active ? 'te-toggle-on te-toggle-mono' : 'te-toggle-off'} flex-1 py-[7px] rounded-[10px] text-[12px] font-semibold select-none`}
-                  style={{ color: active ? '#0a0908' : 'rgba(255,255,255,0.4)' }}
+                  className={`${active ? 'te-toggle-on te-toggle-mono' : 'te-toggle-off'} flex-1 py-[7px] rounded-te-sm text-[13px] font-semibold select-none`}
+                  style={{ color: active ? 'var(--te-ink)' : 'rgba(255,255,255,0.4)' }}
                 >
                   {label}
                 </button>
@@ -106,7 +106,7 @@ export default function FriendProfile({
           </div>
 
           {loading ? (
-            <div className="te-panel rounded-2xl px-4 py-8 text-center te-label">Loading…</div>
+            <div className="te-panel rounded-te-md px-4 py-8 text-center te-label">Loading…</div>
           ) : w ? (
             <div className="space-y-1.5">
               <StatCard label="Volume" value={`${Math.round(toDisplay(w.volume)).toLocaleString()} ${unit}`} sub={winLabel} />
@@ -114,7 +114,7 @@ export default function FriendProfile({
               <StatCard label="Active days" value={String(w.active_days)} sub={winLabel} />
             </div>
           ) : (
-            <div className="te-panel rounded-2xl px-4 py-8 text-center te-label">No activity yet</div>
+            <div className="te-panel rounded-te-md px-4 py-8 text-center te-label">No activity yet</div>
           )}
         </div>
       </div>

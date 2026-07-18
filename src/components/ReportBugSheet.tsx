@@ -41,20 +41,20 @@ export default function ReportBugSheet({
         <div className="flex flex-col items-center text-center py-8 gap-3">
           <div
             className="flex items-center justify-center rounded-full"
-            style={{ width: 52, height: 52, background: 'rgba(59,130,246,0.15)' }}
+            style={{ width: 52, height: 52, background: 'color-mix(in srgb, var(--te-success) 15%, transparent)' }}
           >
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--te-success)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20 6L9 17l-5-5" />
             </svg>
           </div>
-          <p className="text-[16px] font-semibold text-[#f4f1ec] tracking-tight">Thanks — sent!</p>
-          <p className="text-[13px]" style={{ color: 'rgba(244,241,236,0.45)' }}>
+          <p className="text-[17px] font-semibold te-t1 tracking-tight">Thanks — sent!</p>
+          <p className="text-[13px]" style={{ color: 'var(--te-text-3)' }}>
             Every report genuinely helps make this better.
           </p>
         </div>
       ) : (
         <div className="space-y-3 pb-1">
-          <p className="text-[13px] leading-relaxed" style={{ color: 'rgba(244,241,236,0.5)' }}>
+          <p className="text-[13px] leading-relaxed" style={{ color: 'var(--te-text-3)' }}>
             Found something off? Tell me what happened — the more detail, the better.
           </p>
 
@@ -72,13 +72,13 @@ export default function ReportBugSheet({
             rows={5}
             autoFocus
             maxLength={5000}
-            className="te-field w-full rounded-xl px-3.5 py-3 text-white text-[15px] placeholder:text-white/25 focus:outline-none resize-none leading-relaxed"
+            className="te-field w-full rounded-te-sm px-3.5 py-3 te-t1 text-[15px] placeholder:text-white/25 focus:outline-none resize-none leading-relaxed"
           />
 
           {status === 'error' && (
-            <div className="text-[13px] leading-relaxed" style={{ color: '#ff6b6b' }}>
+            <div className="text-[13px] leading-relaxed" style={{ color: 'var(--te-danger)' }}>
               {error}{' '}
-              <a href={buildBugReportUrl({ context })} className="underline" style={{ color: '#ff8f8f' }}>
+              <a href={buildBugReportUrl({ context })} className="underline" style={{ color: 'var(--te-danger)' }}>
                 Email it instead
               </a>
             </div>
@@ -88,16 +88,11 @@ export default function ReportBugSheet({
             type="button"
             onClick={handleSend}
             disabled={!canSend}
-            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-semibold text-[15px] tracking-tight transition-all disabled:opacity-40 active:opacity-85"
-            style={{
-              background: 'linear-gradient(180deg, #3b82f6 0%, #2563eb 100%)',
-              color: '#fff',
-              boxShadow: '0 4px 16px rgba(37,99,235,0.35), inset 0 1px 0 rgba(255,255,255,0.18)',
-            }}
+            className="te-white-btn w-full flex items-center justify-center gap-2 py-3.5 rounded-te-md font-semibold text-[15px] tracking-tight disabled:opacity-40"
           >
             {status === 'sending' ? (
               <>
-                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span className="w-4 h-4 border-2 border-black/20 border-t-black/70 rounded-full animate-spin" />
                 Sending…
               </>
             ) : 'Send report'}

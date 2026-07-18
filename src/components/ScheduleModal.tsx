@@ -91,10 +91,10 @@ function StepperControl({
 }) {
   const [draft, setDraft] = useState<string | null>(null);
   const editing = draft !== null;
-  const btn = 'flex items-center justify-center text-white/45 active:bg-white/[0.06] transition-colors select-none';
+  const btn = 'flex items-center justify-center te-t3 active:bg-white/[0.06] transition-colors select-none';
   return (
-    <div className="flex items-center shrink-0 rounded-xl overflow-hidden" style={{ border: '1px solid var(--te-border)', background: '#0b0b0b' }}>
-      <button type="button" onClick={onDec} className={btn} style={{ width: 38, height: 38, fontSize: 19 }}>−</button>
+    <div className="flex items-center shrink-0 rounded-te-sm overflow-hidden" style={{ border: '1px solid var(--te-border)', background: 'var(--te-well)' }}>
+      <button type="button" onClick={onDec} className={btn} style={{ width: 38, height: 38, fontSize: 17 }}>−</button>
       <div className="w-px self-stretch" style={{ background: 'var(--te-border)' }} />
       <div className="flex items-center justify-center gap-0.5 px-1.5" style={{ minWidth: 56, height: 38 }}>
         <input
@@ -104,13 +104,13 @@ function StepperControl({
           onBlur={() => { if (draft !== null) onCommit(draft); setDraft(null); }}
           onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
           inputMode={inputMode}
-          className="te-digit text-[14px] font-semibold text-white/85 tracking-tight tabular-nums bg-transparent focus:outline-none text-center"
+          className="te-digit text-[15px] font-semibold te-t1 tracking-tight tabular-nums bg-transparent focus:outline-none text-center"
           style={{ width: `${Math.max(text.length, 2)}ch` }}
         />
-        {suffix && <span className="te-digit text-[14px] font-semibold text-white/85">{suffix}</span>}
+        {suffix && <span className="te-digit text-[15px] font-semibold te-t1">{suffix}</span>}
       </div>
       <div className="w-px self-stretch" style={{ background: 'var(--te-border)' }} />
-      <button type="button" onClick={onInc} className={btn} style={{ width: 38, height: 38, fontSize: 19 }}>+</button>
+      <button type="button" onClick={onInc} className={btn} style={{ width: 38, height: 38, fontSize: 17 }}>+</button>
     </div>
   );
 }
@@ -313,33 +313,31 @@ export default function ScheduleModal({
       <FullPageSheet open={open} onClose={onClose} title="Settings" padded>
         <div className="space-y-6">
 
-          {/* Report a bug — prominent CTA for beta feedback */}
+          {/* Report a bug — still the first thing in Settings during the beta,
+              but carried by position and the accent-tinted icon rather than by
+              a saturated blue slab. It matches every other settings row now,
+              so the page reads as one list instead of a banner plus a list. */}
           <button
             onClick={() => setReportOpen(true)}
-            className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl active:opacity-90 transition-opacity text-left"
-            style={{
-              background: 'linear-gradient(180deg, #3b82f6 0%, #2563eb 100%)',
-              boxShadow: '0 6px 20px rgba(37,99,235,0.35), inset 0 1px 0 rgba(255,255,255,0.18)',
-              border: '1px solid rgba(255,255,255,0.14)',
-            }}
+            className="te-panel w-full flex items-center gap-3 px-4 py-4 rounded-te-md active:bg-white/[0.04] transition-colors text-left"
           >
             <div
               className="shrink-0 flex items-center justify-center rounded-full"
-              style={{ width: 36, height: 36, background: 'rgba(255,255,255,0.18)' }}
+              style={{ width: 36, height: 36, background: 'color-mix(in srgb, var(--te-accent) 15%, transparent)' }}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--te-accent)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M8 2l1.5 2.5M16 2l-1.5 2.5" />
                 <rect x="7" y="6" width="10" height="12" rx="5" />
                 <path d="M12 6v12M3 10h4M17 10h4M3 15h4M17 15h4M4 6l3 2M20 6l-3 2M4 19l3-2M20 19l-3-2" />
               </svg>
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[15px] font-bold text-white tracking-tight">Report a bug</p>
-              <p className="text-[12px] mt-0.5" style={{ color: 'rgba(255,255,255,0.75)' }}>
-                Found something off? Tell me — it really helps.
+              <p className="text-[15px] font-semibold te-t1 tracking-tight">Report a bug</p>
+              <p className="text-[13px] mt-0.5 te-t3 leading-snug">
+                Tell me what went wrong — it helps.
               </p>
             </div>
-            <ChevronRightIcon className="w-4 h-4 text-white/70 shrink-0" />
+            <ChevronRightIcon className="w-4 h-4 te-t4 shrink-0" />
           </button>
 
           {/* Weekly plan & routines — lives on its own page */}
@@ -347,13 +345,13 @@ export default function ScheduleModal({
             <p className="te-label mb-2 px-0.5">Training</p>
             <button
               onClick={() => setView({ type: 'plan' })}
-              className="te-panel w-full flex items-center px-4 py-4 gap-3 rounded-2xl active:bg-white/[0.04] transition-colors text-left"
+              className="te-panel w-full flex items-center px-4 py-4 gap-3 rounded-te-md active:bg-white/[0.04] transition-colors text-left"
             >
               <div className="flex-1 min-w-0">
-                <p className="text-[14px] font-semibold text-[#f4f1ec] tracking-tight">Weekly plan &amp; routines</p>
-                <p className="te-label mt-0.5">Schedule days and build routines</p>
+                <p className="text-[15px] font-semibold te-t1 tracking-tight">Weekly plan &amp; routines</p>
+                <p className="text-[13px] te-t3 mt-0.5 leading-snug">Schedule days and build routines</p>
               </div>
-              <ChevronRightIcon className="w-3.5 h-3.5 text-white/20 shrink-0" />
+              <ChevronRightIcon className="w-3.5 h-3.5 te-t4 shrink-0" />
             </button>
           </div>
 
@@ -364,13 +362,13 @@ export default function ScheduleModal({
             {/* Time settings — rest timer, barbell weight, and the calendar's
                 start-of-week day. Just spaced apart from the toggles below,
                 no separate heading. */}
-            <div className="te-panel rounded-2xl overflow-hidden divide-y divide-white/[0.05]">
+            <div className="te-panel rounded-te-md overflow-hidden divide-y divide-white/[0.05]">
 
               {/* Rest timer duration */}
               <div className="flex items-center justify-between px-4 py-3.5 gap-3">
                 <div className="min-w-0">
-                  <p className="text-[14px] font-medium text-[#f4f1ec] tracking-tight">Rest timer</p>
-                  <p className="te-label mt-0.5">Auto-starts after each set</p>
+                  <p className="text-[15px] font-medium te-t1 tracking-tight">Rest timer</p>
+                  <p className="text-[13px] te-t3 mt-0.5 leading-snug">Auto-starts after each set</p>
                 </div>
                 <StepperControl
                   text={fmtTimer(timerDuration)}
@@ -394,8 +392,8 @@ export default function ScheduleModal({
               {/* Barbell weight (for plate calculator) */}
               <div className="flex items-center justify-between px-4 py-3.5 gap-3">
                 <div className="min-w-0">
-                  <p className="text-[14px] font-medium text-[#f4f1ec] tracking-tight">Barbell weight</p>
-                  <p className="te-label mt-0.5">Used by the plate calculator</p>
+                  <p className="text-[15px] font-medium te-t1 tracking-tight">Barbell weight</p>
+                  <p className="text-[13px] te-t3 mt-0.5 leading-snug">Used by the plate calculator</p>
                 </div>
                 <StepperControl
                   text={String(toDisplay(barbellWeight))}
@@ -413,8 +411,8 @@ export default function ScheduleModal({
               {/* Start week on — compact 3-way selector */}
               <div className="flex items-center justify-between px-4 py-3.5 gap-3">
                 <div className="min-w-0">
-                  <p className="text-[14px] font-medium text-[#f4f1ec] tracking-tight">Start week on</p>
-                  <p className="te-label mt-0.5">Log page calendar</p>
+                  <p className="text-[15px] font-medium te-t1 tracking-tight">Start week on</p>
+                  <p className="text-[13px] te-t3 mt-0.5 leading-snug">Log page calendar</p>
                 </div>
                 <div className="flex gap-1 shrink-0">
                   {([['saturday', 'Sat'], ['sunday', 'Sun'], ['monday', 'Mon']] as const).map(([d, label]) => {
@@ -423,8 +421,8 @@ export default function ScheduleModal({
                       <button
                         key={d}
                         onClick={() => onSetWeekStartDay(d)}
-                        className={`${active ? 'te-toggle-on te-toggle-mono' : 'te-toggle-off'} rounded-lg select-none te-mono text-[12px] font-semibold`}
-                        style={{ width: 42, height: 34, color: active ? '#0a0908' : 'rgba(255,255,255,0.4)' }}
+                        className={`${active ? 'te-toggle-on te-toggle-mono' : 'te-toggle-off'} rounded-te-sm select-none te-mono text-[13px] font-semibold`}
+                        style={{ width: 42, height: 34, color: active ? 'var(--te-ink)' : 'rgba(255,255,255,0.4)' }}
                       >
                         {label}
                       </button>
@@ -436,7 +434,7 @@ export default function ScheduleModal({
             </div>
 
             {/* Toggles — weight unit alongside the other on/off preferences */}
-            <div className="te-panel rounded-2xl overflow-hidden divide-y divide-white/[0.05] mt-3">
+            <div className="te-panel rounded-te-md overflow-hidden divide-y divide-white/[0.05] mt-3">
 
               {/* Weight unit — red toggle switch, same pattern as the other on/off rows */}
               <button
@@ -444,11 +442,11 @@ export default function ScheduleModal({
                 className="w-full flex items-center justify-between px-4 py-3.5 gap-3 active:bg-white/[0.03] transition-colors text-left"
               >
                 <div className="min-w-0">
-                  <p className="text-[14px] font-medium text-[#f4f1ec] tracking-tight">Weight unit</p>
-                  <p className="te-label mt-0.5">Used across the app</p>
+                  <p className="text-[15px] font-medium te-t1 tracking-tight">Weight unit</p>
+                  <p className="text-[13px] te-t3 mt-0.5 leading-snug">Used across the app</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className="te-mono text-[12px] font-semibold uppercase" style={{ color: 'rgba(244,241,236,0.4)' }}>{unit}</span>
+                  <span className="te-mono text-[13px] font-semibold uppercase" style={{ color: 'var(--te-text-4)' }}>{unit}</span>
                   <div className="te-unit-track">
                     <div className={`te-unit-lever ${unit === 'lbs' ? 'te-unit-lever-right' : ''}`} />
                   </div>
@@ -461,8 +459,8 @@ export default function ScheduleModal({
                 className="w-full flex items-center justify-between px-4 py-3.5 gap-3 active:bg-white/[0.03] transition-colors text-left"
               >
                 <div className="min-w-0">
-                  <p className="text-[14px] font-medium text-[#f4f1ec] tracking-tight">Workout duration</p>
-                  <p className="te-label mt-0.5">Show session time on the log page</p>
+                  <p className="text-[15px] font-medium te-t1 tracking-tight">Workout duration</p>
+                  <p className="text-[13px] te-t3 mt-0.5 leading-snug">Show session time on the log page</p>
                 </div>
                 <div className="te-unit-track shrink-0">
                   <div className={`te-unit-lever ${showDuration ? 'te-unit-lever-right' : ''}`} />
@@ -475,8 +473,8 @@ export default function ScheduleModal({
                 className="w-full flex items-center justify-between px-4 py-3.5 gap-3 active:bg-white/[0.03] transition-colors text-left"
               >
                 <div className="min-w-0">
-                  <p className="text-[14px] font-medium text-[#f4f1ec] tracking-tight">Sounds</p>
-                  <p className="te-label mt-0.5">Muted tones on logging and completion</p>
+                  <p className="text-[15px] font-medium te-t1 tracking-tight">Sounds</p>
+                  <p className="text-[13px] te-t3 mt-0.5 leading-snug">Muted tones on logging and completion</p>
                 </div>
                 <div className="te-unit-track shrink-0">
                   <div className={`te-unit-lever ${soundEnabled ? 'te-unit-lever-right' : ''}`} />
@@ -489,8 +487,8 @@ export default function ScheduleModal({
                 className="w-full flex items-center justify-between px-4 py-3.5 gap-3 active:bg-white/[0.03] transition-colors text-left"
               >
                 <div className="min-w-0">
-                  <p className="text-[14px] font-medium text-[#f4f1ec] tracking-tight">Haptics</p>
-                  <p className="te-label mt-0.5">Vibrations on logging and completion</p>
+                  <p className="text-[15px] font-medium te-t1 tracking-tight">Haptics</p>
+                  <p className="text-[13px] te-t3 mt-0.5 leading-snug">Vibrations on logging and completion</p>
                 </div>
                 <div className="te-unit-track shrink-0">
                   <div className={`te-unit-lever ${hapticsEnabled ? 'te-unit-lever-right' : ''}`} />
@@ -500,9 +498,9 @@ export default function ScheduleModal({
             </div>
 
             {/* Accent color — its own panel, spaced apart from the toggles */}
-            <div className="te-panel rounded-2xl px-4 py-3.5 mt-3">
-              <p className="text-[14px] font-medium text-[#f4f1ec] tracking-tight">Accent color</p>
-              <p className="te-label mt-0.5">Toggles and body models</p>
+            <div className="te-panel rounded-te-md px-4 py-3.5 mt-3">
+              <p className="text-[15px] font-medium te-t1 tracking-tight">Accent color</p>
+              <p className="text-[13px] te-t3 mt-0.5 leading-snug">Toggles and body models</p>
               <div className="flex items-center gap-3 mt-3">
                 {ACCENT_ORDER.map(key => {
                   const a = ACCENTS[key];
@@ -518,7 +516,7 @@ export default function ScheduleModal({
                         width: 30, height: 30, borderRadius: '50%',
                         background: a.color,
                         boxShadow: selected
-                          ? `0 0 0 2px #0a0908, 0 0 0 4px ${a.color}`
+                          ? `0 0 0 2px var(--te-ink), 0 0 0 4px ${a.color}`
                           : 'inset 0 1px 2px rgba(255,255,255,0.35), inset 0 -1px 2px rgba(0,0,0,0.3)',
                       }}
                     />
@@ -528,9 +526,9 @@ export default function ScheduleModal({
             </div>
 
             {/* Category colors — one swatch row per exercise category */}
-            <div className="te-panel rounded-2xl px-4 py-3.5 mt-3">
-              <p className="text-[14px] font-medium text-[#f4f1ec] tracking-tight">Category colors</p>
-              <p className="te-label mt-0.5">Exercise dots and progress charts</p>
+            <div className="te-panel rounded-te-md px-4 py-3.5 mt-3">
+              <p className="text-[15px] font-medium te-t1 tracking-tight">Category colors</p>
+              <p className="text-[13px] te-t3 mt-0.5 leading-snug">Exercise dots and progress charts</p>
               <div className="mt-3 space-y-3">
                 {CATEGORY_KEYS.map(cat => (
                   <div key={cat} className="flex items-center gap-3">
@@ -553,7 +551,7 @@ export default function ScheduleModal({
                               width: 20, height: 20, borderRadius: '50%',
                               background: sw.color,
                               boxShadow: selected
-                                ? `0 0 0 2px #0a0908, 0 0 0 3px ${sw.color}`
+                                ? `0 0 0 2px var(--te-ink), 0 0 0 3px ${sw.color}`
                                 : 'inset 0 1px 2px rgba(255,255,255,0.3), inset 0 -1px 2px rgba(0,0,0,0.3)',
                             }}
                           />
@@ -569,7 +567,7 @@ export default function ScheduleModal({
           {/* Profile section */}
           <div>
             <p className="te-label mb-2 px-0.5">Profile</p>
-            <div className="te-panel rounded-2xl overflow-hidden">
+            <div className="te-panel rounded-te-md overflow-hidden">
               {editingName ? (
                 <div className="px-4 py-3 flex gap-2">
                   <input
@@ -582,11 +580,11 @@ export default function ScheduleModal({
                     }}
                     placeholder="Your name"
                     autoFocus
-                    className="te-field flex-1 rounded-xl px-4 py-2.5 text-white text-[14px] placeholder:text-white/20 focus:outline-none"
+                    className="te-field flex-1 rounded-te-sm px-4 py-2.5 te-t1 text-[15px] placeholder:text-white/25 focus:outline-none"
                   />
                   <button
                     onClick={() => { onUpdateName(nameInput); setEditingName(false); }}
-                    className="te-toggle-off px-4 rounded-xl te-label active:opacity-75 transition-opacity"
+                    className="te-toggle-off px-4 rounded-te-sm te-label active:opacity-75 transition-opacity"
                   >
                     Save
                   </button>
@@ -598,8 +596,8 @@ export default function ScheduleModal({
                 >
                   <div>
                     <p className="te-label mb-0.5">Name</p>
-                    <p className="text-[14px] font-medium text-[#f4f1ec] tracking-tight">
-                      {userName || <span className="text-white/30">Not set</span>}
+                    <p className="text-[15px] font-medium te-t1 tracking-tight">
+                      {userName || <span className="te-t4">Not set</span>}
                     </p>
                   </div>
                   <span className="te-label">Edit</span>
@@ -613,13 +611,13 @@ export default function ScheduleModal({
             <p className="te-label mb-2 px-0.5">Data</p>
             <button
               onClick={() => setDataMenuOpen(true)}
-              className="te-panel w-full flex items-center justify-between px-4 py-3.5 rounded-2xl active:bg-white/[0.04] transition-colors text-left"
+              className="te-panel w-full flex items-center justify-between px-4 py-3.5 rounded-te-md active:bg-white/[0.04] transition-colors text-left"
             >
               <div>
-                <p className="text-[14px] font-medium text-[#f4f1ec] tracking-tight">Export</p>
-                <p className="te-label mt-0.5">CSV or JSON</p>
+                <p className="text-[15px] font-medium te-t1 tracking-tight">Export</p>
+                <p className="text-[13px] te-t3 mt-0.5 leading-snug">CSV or JSON</p>
               </div>
-              <ChevronRightIcon className="w-3.5 h-3.5 text-white/20 shrink-0" />
+              <ChevronRightIcon className="w-3.5 h-3.5 te-t4 shrink-0" />
             </button>
           </div>
 
@@ -632,10 +630,10 @@ export default function ScheduleModal({
                 onSignOut();
               }}
               onBlur={() => setSignOutConfirm(false)}
-              className={`te-panel w-full py-4 rounded-2xl text-[14px] font-semibold tracking-tight transition-all active:opacity-75 ${
+              className={`te-panel w-full py-4 rounded-te-md text-[15px] font-semibold tracking-tight transition-all active:opacity-75 ${
                 signOutConfirm
-                  ? 'text-apple-red'
-                  : 'text-white/30'
+                  ? 'text-[color:var(--te-danger)]'
+                  : 'te-t4'
               }`}
               style={signOutConfirm ? { borderColor: 'rgba(255,69,58,0.25)', background: 'rgba(255,69,58,0.06)' } : undefined}
             >
@@ -648,16 +646,16 @@ export default function ScheduleModal({
 
         {/* Data export — small popup with both formats */}
         <Modal open={dataMenuOpen} onClose={() => setDataMenuOpen(false)} title="Export data">
-          <div className="te-panel rounded-2xl overflow-hidden divide-y divide-white/[0.05]">
+          <div className="te-panel rounded-te-md overflow-hidden divide-y divide-white/[0.05]">
             <button
               onClick={() => downloadFile(buildCsv(logs, exercises), 'overload-export.csv', 'text/csv')}
               className="w-full flex items-center justify-between px-4 py-3.5 active:bg-white/[0.04] transition-colors text-left"
             >
               <div>
-                <p className="text-[14px] font-medium text-[#f4f1ec] tracking-tight">Export as CSV</p>
-                <p className="te-label mt-0.5">{logs.length} log{logs.length !== 1 ? 's' : ''} · spreadsheet-friendly</p>
+                <p className="text-[15px] font-medium te-t1 tracking-tight">Export as CSV</p>
+                <p className="text-[13px] te-t3 mt-0.5 leading-snug">{logs.length} log{logs.length !== 1 ? 's' : ''} · spreadsheet-friendly</p>
               </div>
-              <ArrowDownTrayIcon className="w-4 h-4 shrink-0" style={{ color: 'rgba(244,241,236,0.3)' }} />
+              <ArrowDownTrayIcon className="w-4 h-4 shrink-0" style={{ color: 'var(--te-text-4)' }} />
             </button>
             <button
               onClick={() => downloadFile(
@@ -667,10 +665,10 @@ export default function ScheduleModal({
               className="w-full flex items-center justify-between px-4 py-3.5 active:bg-white/[0.04] transition-colors text-left"
             >
               <div>
-                <p className="text-[14px] font-medium text-[#f4f1ec] tracking-tight">Export as JSON</p>
-                <p className="te-label mt-0.5">Full backup of exercises &amp; logs</p>
+                <p className="text-[15px] font-medium te-t1 tracking-tight">Export as JSON</p>
+                <p className="text-[13px] te-t3 mt-0.5 leading-snug">Full backup of exercises &amp; logs</p>
               </div>
-              <ArrowDownTrayIcon className="w-4 h-4 shrink-0" style={{ color: 'rgba(244,241,236,0.3)' }} />
+              <ArrowDownTrayIcon className="w-4 h-4 shrink-0" style={{ color: 'var(--te-text-4)' }} />
             </button>
           </div>
         </Modal>
@@ -687,7 +685,7 @@ export default function ScheduleModal({
           {/* Weekly plan section */}
           <div>
             <p className="te-label mb-2 px-0.5">Weekly Plan</p>
-            <div className="te-panel rounded-2xl overflow-hidden divide-y divide-white/[0.05]">
+            <div className="te-panel rounded-te-md overflow-hidden divide-y divide-white/[0.05]">
               {DAY_NAMES.map((dayName, i) => {
                 const routine = getRoutineForDay(i);
                 const isToday = i === todayDow;
@@ -697,18 +695,22 @@ export default function ScheduleModal({
                     onClick={() => setDayPicker(i)}
                     className="w-full flex items-center px-4 py-4 gap-3 active:bg-white/[0.04] transition-colors text-left"
                   >
-                    <div className="flex items-center gap-2 w-10 shrink-0">
-                      {isToday && (
-                        <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#f4f1ec' }} />
-                      )}
-                      <span className="te-label" style={isToday ? { color: '#f4f1ec' } : undefined}>
+                    {/* The today-dot lives in a slot that is always present, so
+                        every day name starts on the same x. Rendering it only
+                        for today used to shove that one row's label right and
+                        break the column. Accent-coloured to match the Log
+                        page's today marker. */}
+                    <div className="flex items-center gap-1.5 w-12 shrink-0">
+                      <span className="w-1.5 h-1.5 rounded-full shrink-0"
+                        style={{ background: isToday ? 'var(--te-accent)' : 'transparent' }} />
+                      <span className="te-label" style={isToday ? { color: 'var(--te-text-1)' } : undefined}>
                         {dayName}
                       </span>
                     </div>
-                    <span className={`flex-1 text-[14px] font-medium tracking-tight ${routine ? 'text-[#f4f1ec]' : 'text-white/25'}`}>
+                    <span className={`flex-1 text-[15px] font-medium tracking-tight ${routine ? 'te-t1' : 'te-t4'}`}>
                       {routine ? routine.name : 'Rest'}
                     </span>
-                    <ChevronRightIcon className="w-3.5 h-3.5 text-white/20 shrink-0" />
+                    <ChevronRightIcon className="w-3.5 h-3.5 te-t4 shrink-0" />
                   </button>
                 );
               })}
@@ -723,22 +725,22 @@ export default function ScheduleModal({
                 <button
                   key={r.id}
                   onClick={() => setPreviewRoutine(r)}
-                  className="te-panel-dark rounded-[20px] aspect-[7/6] p-3.5 flex flex-col justify-between text-left active:opacity-80 transition-opacity"
+                  className="te-panel-dark rounded-te-md aspect-[7/6] p-3.5 flex flex-col justify-between text-left active:opacity-80 transition-opacity"
                 >
                   <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: 'rgba(244,241,236,0.08)' }}>
-                    <QueueListIcon className="w-4 h-4 text-white/50" />
+                    <QueueListIcon className="w-4 h-4 te-t3" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[14px] font-semibold text-[#f4f1ec] tracking-tight truncate">{r.name}</p>
-                    <p className="te-label mt-0.5">{r.exercise_ids.length} exercise{r.exercise_ids.length !== 1 ? 's' : ''}</p>
+                    <p className="text-[15px] font-semibold te-t1 tracking-tight truncate">{r.name}</p>
+                    <p className="text-[13px] te-t3 mt-0.5 leading-snug">{r.exercise_ids.length} exercise{r.exercise_ids.length !== 1 ? 's' : ''}</p>
                   </div>
                 </button>
               ))}
               <button
                 onClick={() => setRoutineEditor({ routine: null })}
-                className="te-panel rounded-[20px] aspect-[7/6] flex flex-col items-center justify-center gap-1.5 active:bg-white/[0.04] transition-colors"
+                className="te-panel rounded-te-md aspect-[7/6] flex flex-col items-center justify-center gap-1.5 active:bg-white/[0.04] transition-colors"
               >
-                <PlusIcon className="w-5 h-5 text-white/40" />
+                <PlusIcon className="w-5 h-5 te-t4" />
                 <span className="te-label">New routine</span>
               </button>
             </div>
@@ -751,21 +753,21 @@ export default function ScheduleModal({
           {previewRoutine && (
             <div className="space-y-3">
               {previewRoutine.exercise_ids.length > 0 ? (
-                <div className="te-panel rounded-2xl overflow-hidden divide-y divide-white/[0.05]">
+                <div className="te-panel rounded-te-md overflow-hidden divide-y divide-white/[0.05]">
                   {previewRoutine.exercise_ids.map(id => {
                     const ex = exercises.find(e => e.id === id);
                     if (!ex) return null;
                     return (
                       <div key={id} className="w-full h-[58px] flex items-center gap-3 px-4 min-w-0">
                         <div className="flex-1 min-w-0">
-                          <p className="text-[14px] font-semibold text-white truncate" style={{ letterSpacing: '-0.17px' }}>
+                          <p className="text-[15px] font-semibold te-t1 truncate" style={{ letterSpacing: '-0.17px' }}>
                             {ex.name}
                           </p>
-                          <p className="te-mono text-[11px] mt-[1px]" style={{ color: 'rgba(244,241,236,0.35)' }}>
+                          <p className="te-mono text-[10px] mt-[1px]" style={{ color: 'var(--te-text-4)' }}>
                             {ex.target_reps} x {ex.sets}
                           </p>
                         </div>
-                        <span className="te-mono text-[16px] font-semibold text-white/80 tabular-nums uppercase shrink-0 leading-none">
+                        <span className="te-mono text-[17px] font-semibold te-t2 tabular-nums uppercase shrink-0 leading-none">
                           {loadLabel(ex, unit, toDisplay)}
                         </span>
                       </div>
@@ -773,13 +775,13 @@ export default function ScheduleModal({
                   })}
                 </div>
               ) : (
-                <p className="te-label text-center py-4">No exercises in this routine yet.</p>
+                <p className="text-[13px] te-t3 text-center py-4">No exercises in this routine yet.</p>
               )}
               <button
                 onClick={() => { const r = previewRoutine; setPreviewRoutine(null); setRoutineEditor({ routine: r }); }}
-                className="te-panel w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl active:bg-white/[0.04] transition-colors"
+                className="te-panel w-full flex items-center justify-center gap-2 px-4 py-3 rounded-te-md active:bg-white/[0.04] transition-colors"
               >
-                <PencilSquareIcon className="w-4 h-4 text-white/40" />
+                <PencilSquareIcon className="w-4 h-4 te-t4" />
                 <span className="te-label">Edit routine</span>
               </button>
             </div>
@@ -799,9 +801,9 @@ export default function ScheduleModal({
                 {/* Rest option */}
                 <button
                   onClick={() => { onAssignDay(dayPicker, null); setDayPicker(null); }}
-                  className="te-panel w-full flex items-center px-4 py-3.5 rounded-2xl gap-3 active:bg-white/[0.04] transition-colors text-left"
+                  className="te-panel w-full flex items-center px-4 py-3.5 rounded-te-md gap-3 active:bg-white/[0.04] transition-colors text-left"
                 >
-                  <span className="flex-1 text-[14px] font-semibold text-[#f4f1ec] tracking-tight">Rest / Off</span>
+                  <span className="flex-1 text-[15px] font-semibold te-t1 tracking-tight">Rest / Off</span>
                   {currentRoutineId === null && (
                     <span className="w-2 h-2 rounded-full bg-white/60 shrink-0" />
                   )}
@@ -814,21 +816,21 @@ export default function ScheduleModal({
                     <button
                       key={r.id}
                       onClick={() => { onAssignDay(dayPicker, r.id); setDayPicker(null); }}
-                      className="te-panel w-full flex items-center px-4 py-3.5 rounded-2xl gap-3 active:bg-white/[0.04] transition-colors text-left"
+                      className="te-panel w-full flex items-center px-4 py-3.5 rounded-te-md gap-3 active:bg-white/[0.04] transition-colors text-left"
                     >
                       <div className="flex-1 min-w-0">
-                        <p className="text-[14px] font-semibold text-[#f4f1ec] tracking-tight truncate">{r.name}</p>
-                        <p className="te-label mt-0.5">{r.exercise_ids.length} exercise{r.exercise_ids.length !== 1 ? 's' : ''}</p>
+                        <p className="text-[15px] font-semibold te-t1 tracking-tight truncate">{r.name}</p>
+                        <p className="text-[13px] te-t3 mt-0.5 leading-snug">{r.exercise_ids.length} exercise{r.exercise_ids.length !== 1 ? 's' : ''}</p>
                       </div>
                       {isActive && (
-                        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: '#34c759' }} />
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: 'var(--te-success)' }} />
                       )}
                     </button>
                   );
                 })}
 
                 {routines.length === 0 && (
-                  <p className="te-label text-center py-4">No routines yet. Create one first.</p>
+                  <p className="text-[13px] te-t3 text-center py-4">No routines yet. Create one first.</p>
                 )}
               </div>
             );
@@ -849,7 +851,7 @@ export default function ScheduleModal({
               onChange={e => setRoutineName(e.target.value)}
               placeholder="Routine name"
               data-no-drag
-              className="te-field w-full rounded-xl px-4 py-3 text-white text-[15px] placeholder:text-white/25 focus:outline-none"
+              className="te-field w-full rounded-te-sm px-4 py-3 te-t1 text-[15px] placeholder:text-white/25 focus:outline-none"
             />
 
             {/* Exercises */}
@@ -879,8 +881,8 @@ export default function ScheduleModal({
                               key={ex.id}
                               type="button"
                               onClick={() => toggleExercise(ex.id)}
-                              className={`${on ? 'te-toggle-on te-toggle-mono' : 'te-toggle-off'} px-3 py-1.5 rounded-xl text-[13px] font-semibold select-none`}
-                              style={{ color: on ? '#0a0908' : 'rgba(255,255,255,0.45)' }}
+                              className={`${on ? 'te-toggle-on te-toggle-mono' : 'te-toggle-off'} px-3 py-1.5 rounded-te-sm text-[13px] font-semibold select-none`}
+                              style={{ color: on ? 'var(--te-ink)' : 'rgba(255,255,255,0.45)' }}
                             >
                               {ex.name}
                             </button>
@@ -892,7 +894,7 @@ export default function ScheduleModal({
                 </div>
               </div>
             ) : (
-              <p className="te-label text-center py-2">Add exercises first to build a routine.</p>
+              <p className="text-[13px] te-t3 text-center py-2">Add exercises first to build a routine.</p>
             )}
 
             {/* Save button — needs a name and at least one exercise */}
@@ -900,7 +902,7 @@ export default function ScheduleModal({
               type="button"
               onClick={handleSaveRoutine}
               disabled={!routineName.trim() || selectedExerciseIds.length === 0}
-              className="te-fab w-full py-3.5 rounded-xl te-mono text-[12px] tracking-[0.08em] uppercase text-white/90 disabled:opacity-30 active:opacity-80 transition-opacity"
+              className="te-fab w-full py-3.5 rounded-te-sm te-mono text-[13px] tracking-[0.08em] uppercase te-t1 disabled:opacity-30 active:opacity-80 transition-opacity"
             >
               {routineEditor?.routine ? 'Save changes' : 'Create routine'}
             </button>
@@ -910,10 +912,10 @@ export default function ScheduleModal({
               <button
                 type="button"
                 onClick={handleDeleteRoutine}
-                className={`w-full py-3 rounded-xl text-[13px] font-semibold transition-all active:opacity-75 ${
+                className={`w-full py-3 rounded-te-sm text-[13px] font-semibold transition-all active:opacity-75 ${
                   confirmDelete
-                    ? 'bg-apple-red/15 text-apple-red border border-apple-red/25'
-                    : 'text-apple-red/50'
+                    ? 'bg-[color-mix(in_srgb,var(--te-danger)_15%,transparent)] text-[color:var(--te-danger)] border border-[color-mix(in_srgb,var(--te-danger)_25%,transparent)]'
+                    : 'text-[color:var(--te-danger)]/50'
                 }`}
               >
                 {confirmDelete ? 'Tap again to confirm' : 'Delete routine'}

@@ -65,7 +65,7 @@ export default function Avatar({ name, avatarUrl, size = 30, ring = true }: Prop
       style={{
         width: size, height: size,
         background: 'rgba(244,241,236,0.14)',
-        color: '#f4f1ec',
+        color: 'var(--te-text-1)',
         fontSize: size * 0.38, fontWeight: 700, letterSpacing: '-0.02em',
         boxShadow: ring ? RING : undefined,
       }}

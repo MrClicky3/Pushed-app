@@ -14,8 +14,8 @@ export default function HardwareSlider<T extends string>({ options, value, onCha
             key={o.key}
             type="button"
             onClick={() => onChange(o.key)}
-            className={`${active ? 'te-toggle-on te-toggle-mono' : 'te-toggle-off'} flex-1 py-[10px] px-2 rounded-xl text-[12px] font-semibold select-none`}
-            style={{ color: active ? '#0a0908' : 'rgba(255,255,255,0.4)' }}
+            className={`${active ? 'te-toggle-on te-toggle-mono' : 'te-toggle-off'} flex-1 py-[10px] px-2 rounded-te-sm text-[13px] font-semibold select-none`}
+            style={{ color: active ? 'var(--te-ink)' : 'rgba(255,255,255,0.4)' }}
           >
             {o.label}
           </button>

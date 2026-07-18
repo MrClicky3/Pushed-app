@@ -5,11 +5,11 @@ import type { CSSProperties } from 'react';
 // Section heading — Geist Mono, uppercase, dim white.
 export const SECTION_LABEL: CSSProperties = {
   fontFamily: "'Geist Mono', 'SF Mono', ui-monospace, monospace",
-  fontSize: 12,
+  fontSize: 13,
   lineHeight: '12px',
   fontWeight: 500,
   textTransform: 'uppercase',
-  color: 'rgba(255,255,255,0.22)',
+  color: 'var(--te-text-4)',
   letterSpacing: '-0.17px',
 };
 
@@ -27,8 +27,8 @@ export function ToggleButton({
     <button
       type="button"
       onClick={onClick}
-      className={`${active ? 'te-toggle-on te-toggle-mono' : 'te-toggle-off'} rounded-[15px] flex items-center justify-center text-[12px] font-semibold capitalize select-none ${className}`}
-      style={{ color: active ? '#0a0908' : 'rgba(255,255,255,0.4)', height: heightPx }}
+      className={`${active ? 'te-toggle-on te-toggle-mono' : 'te-toggle-off'} rounded-te-md flex items-center justify-center text-[13px] font-semibold capitalize select-none ${className}`}
+      style={{ color: active ? 'var(--te-ink)' : 'rgba(255,255,255,0.4)', height: heightPx }}
     >
       {label}
     </button>

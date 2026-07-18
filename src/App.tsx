@@ -100,7 +100,7 @@ function SessionIndicator({ sessionStart, doneAt }: { sessionStart: string | nul
           'max-height 0.36s cubic-bezier(0.22,1,0.36,1), opacity 0.3s ease, transform 0.36s cubic-bezier(0.22,1,0.36,1)',
       }}
     >
-      <span className="te-label" style={{ color: 'rgba(244,241,236,0.5)', whiteSpace: 'nowrap' }}>
+      <span className="te-label" style={{ color: 'var(--te-text-3)', whiteSpace: 'nowrap' }}>
         {lastText.current}
       </span>
     </div>
@@ -112,7 +112,7 @@ function WideScreenNote() {
   const text = 'LEAVE YOUR COMPUTER AT HOME';
   const style: React.CSSProperties = {
     color: 'rgba(244,241,236,0.035)',
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: "'Geist Mono', monospace",
     fontWeight: 700,
     letterSpacing: '0.18em',
@@ -148,35 +148,35 @@ function IncreaseWeightOverlay({
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 animate-fade-in">
       <div className="w-full max-w-lg mx-auto pl-[max(16px,env(safe-area-inset-left))] pr-[max(16px,env(safe-area-inset-right))] pb-8 animate-slide-up">
-        <div className="te-panel rounded-[26px] overflow-hidden">
+        <div className="te-panel rounded-te-lg overflow-hidden">
           <div className="flex flex-col items-center pt-10 pb-8 px-8 text-center gap-5">
-            <div className="w-14 h-14 rounded-full bg-apple-red/[0.15] flex items-center justify-center ring-1 ring-apple-red/20">
-              <ChartBarIcon className="w-6 h-6 text-apple-red" />
+            <div className="w-14 h-14 rounded-full bg-[color-mix(in_srgb,var(--te-accent)_15%,transparent)] flex items-center justify-center ring-1 ring-[color-mix(in_srgb,var(--te-accent)_20%,transparent)]">
+              <ChartBarIcon className="w-6 h-6 text-[color:var(--te-accent)]" />
             </div>
             <div>
-              <p className="text-[20px] font-bold text-white leading-tight tracking-tight mb-2">
+              <p className="text-[20px] font-bold te-t1 leading-tight tracking-tight mb-2">
                 Time to go heavier!
               </p>
-              <p className="text-[15px] text-apple-label-secondary leading-relaxed max-w-[260px] mx-auto">
+              <p className="text-[15px] te-t2 leading-relaxed max-w-[260px] mx-auto">
                 You've hit your target for{' '}
-                <span className="text-white font-medium">{exerciseName}</span>
+                <span className="te-t1 font-medium">{exerciseName}</span>
                 {' '}at{' '}
-                <span className="text-white font-medium">{currentWeight}</span>.
+                <span className="te-t1 font-medium">{currentWeight}</span>.
               </p>
             </div>
           </div>
 
-          <div className="h-px bg-white/[0.05]" />
+          <div className="h-px" style={{ background: 'var(--te-border)' }} />
           <button
             onClick={onBump}
-            className="w-full py-[18px] text-[17px] font-semibold text-apple-green active:bg-white/[0.06] transition-colors tracking-tight"
+            className="w-full py-[18px] text-[17px] font-semibold text-[color:var(--te-success)] active:bg-white/[0.06] transition-colors tracking-tight"
           >
             Update weight
           </button>
-          <div className="h-px bg-white/[0.05]" />
+          <div className="h-px" style={{ background: 'var(--te-border)' }} />
           <button
             onClick={onDismiss}
-            className="w-full py-[18px] text-[17px] text-apple-label-tertiary active:bg-white/[0.06] transition-colors"
+            className="w-full py-[18px] text-[17px] te-t4 active:bg-white/[0.06] transition-colors"
           >
             Not yet
           </button>
@@ -201,16 +201,16 @@ function PRToast({ exerciseName, detail, onDone }: { exerciseName: string; detai
     >
       <div className="pointer-events-auto animate-slide-down">
         <div
-          className="te-panel flex items-center gap-3 pl-4 pr-5 py-3.5 rounded-2xl"
+          className="te-panel flex items-center gap-3 pl-4 pr-5 py-3.5 rounded-te-md"
           style={{ borderColor: 'rgba(48,209,88,0.2)', boxShadow: '0 4px 24px rgba(48,209,88,0.1), 0 4px 16px rgba(0,0,0,0.5)' }}
         >
           <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0" style={{ background: 'rgba(48,209,88,0.14)' }}>
-            <TrophyIcon className="w-4 h-4" style={{ color: '#30d158' }} />
+            <TrophyIcon className="w-4 h-4" style={{ color: 'var(--te-success)' }} />
           </div>
           <div className="leading-tight">
-            <span className="text-[14px] font-semibold tracking-tight" style={{ color: '#30d158' }}>New PR!</span>
-            <span className="text-[14px] text-white ml-1.5 tracking-tight font-medium">{detail}</span>
-            <span className="text-[14px] text-apple-label-tertiary ml-1.5 tracking-tight">{exerciseName}</span>
+            <span className="text-[15px] font-semibold tracking-tight" style={{ color: 'var(--te-success)' }}>New PR!</span>
+            <span className="text-[15px] te-t1 ml-1.5 tracking-tight font-medium">{detail}</span>
+            <span className="text-[15px] te-t4 ml-1.5 tracking-tight">{exerciseName}</span>
           </div>
         </div>
       </div>
@@ -232,13 +232,13 @@ function ExtraRepsToast({ exerciseName, extra, onDone }: { exerciseName: string;
       style={{ paddingTop: 'max(56px, env(safe-area-inset-top, 0px) + 16px)' }}
     >
       <div className="pointer-events-auto animate-slide-down">
-        <div className="te-panel flex items-center gap-3 pl-4 pr-5 py-3.5 rounded-2xl">
-          <div className="w-7 h-7 rounded-full bg-apple-red/[0.15] flex items-center justify-center shrink-0">
-            <BoltIcon className="w-4 h-4 text-apple-red" />
+        <div className="te-panel flex items-center gap-3 pl-4 pr-5 py-3.5 rounded-te-md">
+          <div className="w-7 h-7 rounded-full bg-[color-mix(in_srgb,var(--te-accent)_15%,transparent)] flex items-center justify-center shrink-0">
+            <BoltIcon className="w-4 h-4 text-[color:var(--te-accent)]" />
           </div>
           <div className="leading-tight">
-            <span className="text-[14px] font-semibold text-white tracking-tight">+{extra} extra rep{extra > 1 ? 's' : ''}</span>
-            <span className="text-[14px] text-apple-label-tertiary ml-1.5 tracking-tight">{exerciseName}</span>
+            <span className="text-[15px] font-semibold te-t1 tracking-tight">+{extra} extra rep{extra > 1 ? 's' : ''}</span>
+            <span className="text-[15px] te-t4 ml-1.5 tracking-tight">{exerciseName}</span>
           </div>
         </div>
       </div>
@@ -258,7 +258,7 @@ function FocusModeSwitch({ active, onToggle }: { active: boolean; onToggle: () =
       <div className="te-unit-track">
         <div className={`te-unit-lever ${active ? 'te-unit-lever-right' : ''}`} />
       </div>
-      <ViewfinderCircleIcon className="w-3.5 h-3.5 transition-opacity" style={{ color: '#f4f1ec', opacity: active ? 1 : 0.25 }} />
+      <ViewfinderCircleIcon className="w-3.5 h-3.5 transition-opacity" style={{ color: 'var(--te-text-1)', opacity: active ? 1 : 0.25 }} />
     </button>
   );
 }
@@ -608,8 +608,8 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
   if (loading) {
     return (
       <div className="min-h-screen bg-te-bg flex flex-col items-center justify-center gap-5">
-        <img src="/apple-touch-icon.png" alt="" className="w-16 h-16 animate-logo-load" style={{ borderRadius: 18 }} />
-        <p className="text-[18px] font-semibold text-[#f4f1ec] tracking-tight" style={{ letterSpacing: '-0.02em' }}>
+        <img src="/apple-touch-icon.png" alt="" className="w-16 h-16 animate-logo-load" style={{ borderRadius: 'var(--te-radius-md)' }} />
+        <p className="text-[17px] font-semibold te-t1 tracking-tight" style={{ letterSpacing: '-0.02em' }}>
           {greeting}{userName ? `, ${userName}` : ''}!
         </p>
       </div>
@@ -678,7 +678,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
           className="flex items-end justify-between"
           style={{ marginBottom: tab === 'log' ? 12 : 24 }}
         >
-          <h1 className="text-[37.5px] font-bold text-[#f4f1ec] leading-none" style={{ letterSpacing: '-0.04em' }}>
+          <h1 className="text-[32px] font-bold te-t1 leading-none" style={{ letterSpacing: '-0.04em' }}>
             {tabTitles[tab]}
           </h1>
           {/* Nudge down so the switch track sits on the title's baseline,
@@ -787,7 +787,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
               >
                 <div style={{ position: 'relative', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <svg width="32" height="32" viewBox="0 0 32 32" style={{ position: 'absolute', inset: 0, transform: 'rotate(-90deg)' }}>
-                    <circle cx="16" cy="16" r={R} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="2" />
+                    <circle cx="16" cy="16" r={R} fill="none" stroke="var(--te-border-strong)" strokeWidth="2" />
                     <circle
                       cx="16" cy="16" r={R} fill="none"
                       stroke={gray} strokeWidth="2" strokeLinecap="round"
@@ -801,7 +801,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
                   />
                 </div>
                 <span style={{
-                  fontFamily: "'Geist Mono', monospace", fontSize: 9, fontWeight: 700,
+                  fontFamily: "'Geist Mono', monospace", fontSize: 10, fontWeight: 700,
                   letterSpacing: '0.14em', textTransform: 'uppercase', whiteSpace: 'nowrap',
                   color: gray, transition: 'color 0.15s ease',
                 }}>
@@ -814,7 +814,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
           {/* Tabs — hidden in focus mode */}
           {/* Swipe-up line — the grabber you drag up on to add. */}
           <div className="flex justify-center" style={{ paddingTop: 6, paddingBottom: 2 }}>
-            <div style={{ width: 68, height: 4, borderRadius: 99, background: 'rgba(255,255,255,0.16)' }} />
+            <div style={{ width: 68, height: 4, borderRadius: 9999, background: 'rgba(255,255,255,0.16)' }} />
           </div>
 
           {/* Tabs — plain flat bar (no skeuomorphic panel), hidden in focus mode. */}
@@ -826,7 +826,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
               <div className="flex justify-center pt-1 pb-0.5">
                 <div
                   className="flex items-center rounded-full"
-                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)', padding: '4px 10px' }}
+                  style={{ background: 'var(--te-border)', border: '1px solid var(--te-border)', padding: '4px 10px' }}
                 >
                   {tabs.map(({ key, label, icon: Icon }) => {
                     const isActive = tab === key;
@@ -904,8 +904,8 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
               alignItems: 'center',
               gap: 10,
               background: timerDone ? '#163320' : '#1e1e20',
-              border: `1.5px solid ${timerDone ? 'rgba(48,209,88,0.3)' : 'rgba(255,255,255,0.1)'}`,
-              borderRadius: 100,
+              border: `1.5px solid ${timerDone ? 'rgba(48,209,88,0.3)' : 'var(--te-border-strong)'}`,
+              borderRadius: 9999,
               padding: '10px 20px',
               boxShadow: timerDone
                 ? '0 4px 24px rgba(48,209,88,0.18), 0 2px 8px rgba(0,0,0,0.5)'
@@ -920,9 +920,9 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
               'te-led-on'
             }`} />
             <span className={`te-digit text-[20px] font-semibold tracking-tight ${
-              timerDone ? 'text-[#30d158]' :
-              (timerRunning && timerRemaining !== null && timerRemaining <= 10) ? 'text-apple-orange' :
-              'text-white/85'
+              timerDone ? 'text-[color:var(--te-success)]' :
+              (timerRunning && timerRemaining !== null && timerRemaining <= 10) ? 'text-[color:var(--te-caution)]' :
+              'te-t1'
             }`}>
               {fmtTimer(timerRemaining ?? timerDuration)}
             </span>
@@ -986,8 +986,8 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
           className="fixed top-0 left-0 right-0 z-[55] flex justify-center pointer-events-none"
           style={{ paddingTop: 'max(56px, env(safe-area-inset-top, 0px) + 16px)' }}
         >
-          <div className="pointer-events-auto animate-slide-down te-panel px-5 py-3.5 rounded-2xl">
-            <span className="text-[14px] font-semibold tracking-tight text-[#f4f1ec]">{inviteToast}</span>
+          <div className="pointer-events-auto animate-slide-down te-panel px-5 py-3.5 rounded-te-md">
+            <span className="text-[15px] font-semibold tracking-tight te-t1">{inviteToast}</span>
           </div>
         </div>
       )}
@@ -1054,29 +1054,29 @@ function PasswordResetScreen({ onUpdate }: { onUpdate: (pw: string) => Promise<s
       style={{ background: 'radial-gradient(ellipse 100% 50% at 50% -10%, rgba(244,241,236,0.09) 0%, #010101 55%)' }}>
       <div className="w-full max-w-sm flex flex-col gap-6">
         <div className="flex flex-col items-center gap-3">
-          <img src="/apple-touch-icon.png" alt="" className="w-[72px] h-[72px] rounded-[22px]"
+          <img src="/apple-touch-icon.png" alt="" className="w-[72px] h-[72px] rounded-te-md"
             style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.55)' }} />
-          <p className="text-[28px] font-bold text-[#f4f1ec]" style={{ letterSpacing: '-0.035em' }}>Overload</p>
+          <p className="text-[32px] font-bold te-t1" style={{ letterSpacing: '-0.035em' }}>Overload</p>
         </div>
-        <div className="rounded-3xl p-6 space-y-4"
-          style={{ background: '#141414', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 24px 64px rgba(0,0,0,0.5)' }}>
+        <div className="rounded-te-lg p-6 space-y-4"
+          style={{ background: 'var(--te-surface-3)', border: '1px solid var(--te-border)', boxShadow: '0 24px 64px rgba(0,0,0,0.5)' }}>
           <div className="text-center space-y-1">
-            <p className="text-[18px] font-semibold text-[#f4f1ec] tracking-tight">Set new password</p>
-            <p className="text-[13px]" style={{ color: 'rgba(244,241,236,0.4)' }}>Choose a strong password</p>
+            <p className="text-[17px] font-semibold te-t1 tracking-tight">Set new password</p>
+            <p className="text-[13px]" style={{ color: 'var(--te-text-4)' }}>Choose a strong password</p>
           </div>
           <form onSubmit={handle} className="space-y-3">
             <input type="password" value={password} onChange={e => setPassword(e.target.value)}
               placeholder="New password" autoComplete="new-password"
-              className="w-full rounded-2xl px-4 py-[15px] text-[16px] text-white placeholder:text-white/20 focus:outline-none transition-colors"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }} />
+              className="w-full rounded-te-md px-4 py-[15px] text-[17px] te-t1 placeholder:text-white/25 focus:outline-none transition-colors"
+              style={{ background: 'var(--te-fill-subtle)', border: '1px solid var(--te-border)' }} />
             <input type="password" value={confirm} onChange={e => setConfirm(e.target.value)}
               placeholder="Confirm password" autoComplete="new-password"
-              className="w-full rounded-2xl px-4 py-[15px] text-[16px] text-white placeholder:text-white/20 focus:outline-none transition-colors"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }} />
-            {error && <p className="text-[13px]" style={{ color: '#ff453a' }}>{error}</p>}
+              className="w-full rounded-te-md px-4 py-[15px] text-[17px] te-t1 placeholder:text-white/25 focus:outline-none transition-colors"
+              style={{ background: 'var(--te-fill-subtle)', border: '1px solid var(--te-border)' }} />
+            {error && <p className="text-[13px]" style={{ color: 'var(--te-danger)' }}>{error}</p>}
             <button type="submit" disabled={loading || !password || !confirm}
-              className="w-full py-[15px] rounded-2xl font-semibold text-[15px] tracking-tight disabled:opacity-30 active:opacity-80 transition-all"
-              style={{ background: '#f4f1ec', color: '#0a0908', boxShadow: '0 4px 20px rgba(0,0,0,0.4)' }}>
+              className="w-full py-[15px] rounded-te-md font-semibold text-[15px] tracking-tight disabled:opacity-30 active:opacity-80 transition-all"
+              style={{ background: '#f4f1ec', color: 'var(--te-ink)', boxShadow: '0 4px 20px rgba(0,0,0,0.4)' }}>
               {loading ? 'Updating…' : 'Update password'}
             </button>
           </form>
@@ -1092,7 +1092,7 @@ export default function App() {
   if (state === 'loading') {
     return (
       <div className="min-h-screen bg-te-bg flex items-center justify-center">
-        <img src="/apple-touch-icon.png" alt="" className="w-16 h-16 animate-logo-load" style={{ borderRadius: 18 }} />
+        <img src="/apple-touch-icon.png" alt="" className="w-16 h-16 animate-logo-load" style={{ borderRadius: 'var(--te-radius-md)' }} />
       </div>
     );
   }

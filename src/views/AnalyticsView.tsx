@@ -39,7 +39,7 @@ const MONO = "'Geist Mono', 'SF Mono', ui-monospace, monospace";
 // same border colour and thickness, same corner radius.
 const BENTO_RADIUS = 20;
 const BENTO: React.CSSProperties = {
-  background: '#0f0f0f',
+  background: 'var(--te-surface-1)',
   border: '1px solid var(--te-border)',
   borderRadius: BENTO_RADIUS,
 };
@@ -238,7 +238,7 @@ function ScrubChart({
       {hi !== null && hx !== null && hy !== null && (
         <>
           <line x1={hx} x2={hx} y1={C_PT - 2} y2={C_PT + C_CH} stroke="rgba(255,255,255,0.22)" strokeWidth="1.25" />
-          <circle cx={hx} cy={hy} r="8" fill="#0a0908" />
+          <circle cx={hx} cy={hy} r="8" fill="var(--te-ink)" />
           <circle cx={hx} cy={hy} r="6" fill="#ffffff" />
         </>
       )}
@@ -301,7 +301,7 @@ function YAxisLabels({ domain, yTicks, unit }: {
             x={8} y={ly}
             textAnchor="start"
             fontSize="12.5"
-            fill="rgba(255,255,255,0.4)"
+            fill="var(--te-text-4)"
             fontFamily={MONO}
             fontWeight="500"
             style={{ fontVariantNumeric: 'tabular-nums' }}
@@ -331,14 +331,14 @@ function PageHeader({ def, scrubIndex }: { def: PageDef; scrubIndex: number | nu
   return (
     <div className="flex items-end justify-between gap-3 px-1 min-h-[46px]">
       <div>
-        <p className="text-[26px] font-bold text-white tracking-tight leading-none">{def.title}</p>
-        <p className="text-[12px] mt-[7px]" style={{ color: 'rgba(255,255,255,0.35)' }}>
+        <p className="text-[20px] font-bold te-t1 tracking-tight leading-none">{def.title}</p>
+        <p className="text-[13px] mt-[7px] te-t4">
           {pt ? (pt.tooltipLabel ?? pt.label) : def.rangeLabel}
         </p>
       </div>
       <div className="text-right shrink-0 self-start">
         {pt ? (
-          <p className="text-[32px] font-bold text-white tabular-nums leading-none tracking-tight te-digit">
+          <p className="text-[26px] font-bold te-t1 tabular-nums leading-none tracking-tight te-digit">
             {def.formatValue(pt.value)}
           </p>
         ) : def.idleCounter}
@@ -523,10 +523,10 @@ function StatCard({ label, value, sub }: { label: string; value: string; sub: st
       style={BENTO}
     >
       <div className="min-w-0">
-        <p className="text-[13.5px] font-semibold text-white tracking-tight">{label}</p>
-        <p className="text-[11px] mt-[2px] truncate" style={{ color: 'rgba(244,241,236,0.35)' }}>{sub}</p>
+        <p className="text-[13px] font-semibold te-t1 tracking-tight">{label}</p>
+        <p className="text-[10px] mt-[2px] truncate" style={{ color: 'var(--te-text-4)' }}>{sub}</p>
       </div>
-      <p className="text-[18px] font-bold text-white tabular-nums leading-none tracking-tight te-digit shrink-0">{value}</p>
+      <p className="text-[17px] font-bold te-t1 tabular-nums leading-none tracking-tight te-digit shrink-0">{value}</p>
     </div>
   );
 }
@@ -551,7 +551,7 @@ function CollapsibleSection({
       >
         {header}
         <ChevronDownIcon
-          className="w-[14px] h-[14px] text-white/25 ml-auto shrink-0 transition-transform duration-200"
+          className="w-[14px] h-[14px] te-t4 ml-auto shrink-0 transition-transform duration-200"
           style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
         />
       </button>
@@ -590,8 +590,8 @@ function RangePicker({
           <button
             key={key}
             onClick={() => onChange(key)}
-            className={`${active ? 'te-toggle-on te-toggle-mono' : 'te-toggle-off'} flex-1 py-[6px] rounded-[10px] text-[11.5px] font-semibold select-none`}
-            style={{ color: active ? '#0a0908' : 'rgba(255,255,255,0.4)' }}
+            className={`${active ? 'te-toggle-on te-toggle-mono' : 'te-toggle-off'} flex-1 py-[6px] rounded-te-sm text-[10px] font-semibold select-none`}
+            style={{ color: active ? 'var(--te-ink)' : 'rgba(255,255,255,0.4)' }}
           >
             {label}
           </button>
@@ -617,8 +617,8 @@ function PageViewToggle({ view, onChange }: { view: ProgressPageView; onChange: 
           <button
             key={key}
             onClick={() => onChange(key)}
-            className={`${active ? 'te-toggle-on te-toggle-mono' : 'te-toggle-off'} flex-1 py-[10px] rounded-[14px] text-[13.5px] font-semibold select-none`}
-            style={{ color: active ? '#0a0908' : 'rgba(255,255,255,0.4)' }}
+            className={`${active ? 'te-toggle-on te-toggle-mono' : 'te-toggle-off'} flex-1 py-[10px] rounded-te-md text-[13px] font-semibold select-none`}
+            style={{ color: active ? 'var(--te-ink)' : 'rgba(255,255,255,0.4)' }}
           >
             {label}
           </button>
@@ -895,7 +895,7 @@ function GroupedExercisePicker({
     <div className="overflow-hidden" style={BENTO}>
       {allGroups.map((group, gi) => (
         <div key={group}>
-          {gi > 0 && <div className="h-px bg-white/[0.06] mx-3" />}
+          {gi > 0 && <div className="h-px mx-3" style={{ background: 'var(--te-border)' }} />}
           <div className="px-4 pt-4 pb-1">
             <div className="flex items-center gap-2">
               <span className="w-[5px] h-[5px] rounded-full shrink-0 inline-block" style={{
@@ -913,8 +913,8 @@ function GroupedExercisePicker({
                 <button
                   key={ex.id}
                   onClick={() => onSelect(ex.id)}
-                  className={`${active ? 'te-toggle-on te-toggle-mono' : 'te-toggle-off'} px-2.5 py-[5px] rounded-xl text-[12px] font-semibold select-none`}
-                  style={{ color: active ? '#0a0908' : 'rgba(255,255,255,0.4)' }}
+                  className={`${active ? 'te-toggle-on te-toggle-mono' : 'te-toggle-off'} px-2.5 py-[5px] rounded-te-sm text-[13px] font-semibold select-none`}
+                  style={{ color: active ? 'var(--te-ink)' : 'rgba(255,255,255,0.4)' }}
                 >
                   {ex.name}
                 </button>
@@ -950,12 +950,12 @@ function StreakCard({ logs, schedule, routines, exercises }: {
           className="flex-1 flex flex-col items-center justify-center gap-1.5 h-[60px]"
           style={BENTO}
         >
-          <span className="text-[17px] font-bold tabular-nums leading-none te-digit text-white tracking-[-0.17px]">
+          <span className="text-[17px] font-bold tabular-nums leading-none te-digit te-t1 tracking-[-0.17px]">
             {value}
           </span>
           <span
             className="text-[10px] font-medium uppercase leading-none"
-            style={{ color: 'rgba(244,241,236,0.35)', letterSpacing: '1.2px', fontFamily: MONO }}
+            style={{ color: 'var(--te-text-4)', letterSpacing: '1.2px', fontFamily: MONO }}
           >
             {label}
           </span>
@@ -1054,7 +1054,7 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
   const activeId = (selectedId && withLogs.find(e => e.id === selectedId)) ? selectedId : defaultId;
   const selected = activeId ? withLogs.find(e => e.id === activeId) ?? null : null;
 
-  const catColor = selected ? categoryColor(selected.muscle_group) : 'rgba(244,241,236,0.3)';
+  const catColor = selected ? categoryColor(selected.muscle_group) : 'var(--te-text-4)';
 
   // Weight progress's y-domain is fixed from the exercise's whole history
   // (not the visible window) so paging through time never rescales the
@@ -1108,7 +1108,7 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
   if (!logs.length) {
     return (
       <EmptyState
-        icon={<ChartBarSquareIcon className="w-8 h-8 text-apple-label-tertiary" />}
+        icon={<ChartBarSquareIcon className="w-8 h-8 te-t4" />}
         title="Your progress will appear here"
         subtitle="Log some workouts to see your progress."
       />
@@ -1118,7 +1118,7 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
   if (!withLogs.length || !selected) {
     return (
       <EmptyState
-        icon={<ChartBarSquareIcon className="w-8 h-8 text-apple-label-tertiary" />}
+        icon={<ChartBarSquareIcon className="w-8 h-8 te-t4" />}
         title="Your progress will appear here"
         subtitle="Log some workouts to see per-exercise analytics."
       />
@@ -1129,7 +1129,7 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
     ? 'var(--te-upper)'
     : selected.muscle_group === 'lower'
     ? 'var(--te-lower)'
-    : 'rgba(244,241,236,0.3)';
+    : 'var(--te-text-4)';
 
   if (!weightAnalytics || !dailyAnalytics) return null;
 
@@ -1155,8 +1155,8 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
     fillColor: catColor,
     formatValue: v => `${v}%`,
     idleCounter: (
-      <p className="text-[32px] font-bold text-white tabular-nums leading-none tracking-tight te-digit">
-        <span className="text-[17px] font-semibold align-middle mr-1" style={{ color: 'rgba(255,255,255,0.45)' }}>avg</span>
+      <p className="text-[26px] font-bold te-t1 tabular-nums leading-none tracking-tight te-digit">
+        <span className="text-[17px] font-semibold align-middle mr-1" style={{ color: 'var(--te-text-3)' }}>avg</span>
         {dailyAnalytics.current.avg}%
       </p>
     ),
@@ -1175,8 +1175,8 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
     fillColor: overallColor,
     formatValue: v => `${v}%`,
     idleCounter: (
-      <p className="text-[32px] font-bold text-white tabular-nums leading-none tracking-tight te-digit">
-        <span className="text-[17px] font-semibold align-middle mr-1" style={{ color: 'rgba(255,255,255,0.45)' }}>avg</span>
+      <p className="text-[26px] font-bold te-t1 tabular-nums leading-none tracking-tight te-digit">
+        <span className="text-[17px] font-semibold align-middle mr-1" style={{ color: 'var(--te-text-3)' }}>avg</span>
         {overallAnalytics.current.avg}%
       </p>
     ),
@@ -1193,16 +1193,16 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
         className="w-full px-4 py-3.5 mt-3 flex items-center gap-3 active:bg-white/[0.04] transition-colors text-left"
         style={BENTO}
       >
-        <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: 'rgba(255,255,255,0.08)' }}>
+        <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: 'var(--te-border-strong)' }}>
           <TrophyIcon className="w-4 h-4" style={{ color: '#ffffff' }} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[15px] font-semibold text-[#f4f1ec] tracking-tight">Personal records</p>
-          <p className="te-label mt-0.5">
+          <p className="text-[15px] font-semibold te-t1 tracking-tight">Personal records</p>
+          <p className="text-[13px] te-t3 mt-0.5 leading-snug">
             {prs.length > 0 ? `${prs.length} exercise${prs.length === 1 ? '' : 's'} · your heaviest lifts` : 'Log sets to set records'}
           </p>
         </div>
-        <ChevronRightIcon className="w-3.5 h-3.5 text-white/20 shrink-0" />
+        <ChevronRightIcon className="w-3.5 h-3.5 te-t4 shrink-0" />
       </button>
 
       <Modal open={prOpen} onClose={() => setPrOpen(false)} title="Personal records">
@@ -1212,18 +1212,18 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
           <div className="space-y-5">
             {prGroups.map(({ group, label, items }) => (
               <div key={group}>
-                <div className="flex items-center gap-2 mb-3 pb-2.5 px-1" style={{ borderBottom: '1px solid #1a1a1a' }}>
-                  <span className="te-label" style={{ color: 'rgba(244,241,236,0.35)' }}>{label}</span>
-                  <span className="te-label ml-auto" style={{ color: 'rgba(244,241,236,0.35)' }}>{items.length}</span>
+                <div className="flex items-center gap-2 mb-3 pb-2.5 px-1" style={{ borderBottom: '1px solid var(--te-border)' }}>
+                  <span className="te-label">{label}</span>
+                  <span className="te-label ml-auto">{items.length}</span>
                 </div>
-                <div className="overflow-hidden divide-y divide-white/[0.05]" style={BENTO}>
+                <div className="overflow-hidden divide-y divide-[color:var(--te-border)]" style={BENTO}>
                   {items.map(pr => (
                     <div key={pr.id} className="flex items-center px-4 py-[14px] gap-3">
                       <div className="flex-1 min-w-0">
-                        <p className="text-[15px] font-semibold text-[#f4f1ec] tracking-tight truncate">{pr.name}</p>
+                        <p className="text-[15px] font-semibold te-t1 tracking-tight truncate">{pr.name}</p>
                         <p className="te-label mt-0.5">{fmtFullDate(new Date(pr.date))}</p>
                       </div>
-                      <span className="te-digit text-[18px] font-bold tabular-nums text-[#f4f1ec] shrink-0">{pr.label}</span>
+                      <span className="te-digit text-[17px] font-bold tabular-nums te-t1 shrink-0">{pr.label}</span>
                     </div>
                   ))}
                 </div>
@@ -1256,7 +1256,7 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
             </div>
           </div>
 
-          <div className="mt-[18px]">
+          <div className="mt-8">
             <StreakCard logs={logs} schedule={schedule} routines={routines} exercises={exercises} />
           </div>
 
@@ -1275,8 +1275,8 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
               <div className="flex items-center gap-2 min-w-0">
                 <span className="w-[6px] h-[6px] rounded-full shrink-0" style={{ background: dotColor }} />
                 <span
-                  className="text-[11.5px] font-semibold uppercase truncate"
-                  style={{ fontFamily: MONO, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.85)' }}
+                  className="text-[10px] font-semibold uppercase truncate"
+                  style={{ fontFamily: MONO, letterSpacing: '0.08em', color: 'var(--te-text-1)' }}
                 >
                   {selected.name}
                 </span>
@@ -1291,7 +1291,7 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
           </CollapsibleSection>
 
           {/* Weight progress — its own time filter */}
-          <div className="mt-3">
+          <div className="mt-8">
             <RangePicker range={weightRange} onChange={setWeightRange} />
             <div className="mt-3">
               <ScrubbableChart
@@ -1319,7 +1319,7 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
           </div>
 
           {/* Daily completion (this exercise) — its own time filter */}
-          <div className="mt-6">
+          <div className="mt-8">
             <RangePicker range={dailyRange} onChange={setDailyRange} />
             <div className="mt-3">
               <ScrubbableChart

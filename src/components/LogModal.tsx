@@ -43,11 +43,11 @@ function ExercisePickerCard({ ex, onPick, toDisplay, unit }: {
     <button
       type="button"
       onClick={onPick}
-      className="te-panel w-full rounded-2xl overflow-hidden active:opacity-80 transition-opacity flex items-stretch text-left"
+      className="te-panel w-full rounded-te-md overflow-hidden active:opacity-80 transition-opacity flex items-stretch text-left"
     >
       <div style={{
         width: 64, flexShrink: 0,
-        background: '#0c0c10',
+        background: 'var(--te-surface-1)',
         borderRight: '1px solid var(--te-border)',
         position: 'relative', overflow: 'hidden', minHeight: 72,
       }}>
@@ -61,16 +61,16 @@ function ExercisePickerCard({ ex, onPick, toDisplay, unit }: {
         </div>
       </div>
       <div className="flex-1 min-w-0 px-4 py-3.5 flex flex-col justify-center">
-        <p className="text-[15px] font-semibold text-[#f4f1ec] truncate" style={{ letterSpacing: '-0.005em' }}>{ex.name}</p>
+        <p className="text-[15px] font-semibold te-t1 truncate" style={{ letterSpacing: '-0.005em' }}>{ex.name}</p>
         <div className="flex items-center gap-1.5 mt-1">
-          <span className="te-mono text-[11px] text-white/40 tabular-nums">{ex.target_reps}×{ex.sets}</span>
-          <span className="te-mono text-[9px] text-white/20">·</span>
-          <span className="te-mono text-[11px] text-white/40 tabular-nums">{toDisplay(ex.weight)}{unit}</span>
+          <span className="te-mono text-[10px] te-t4 tabular-nums">{ex.target_reps}×{ex.sets}</span>
+          <span className="te-mono text-[10px] te-t4">·</span>
+          <span className="te-mono text-[10px] te-t4 tabular-nums">{toDisplay(ex.weight)}{unit}</span>
         </div>
       </div>
       <div className="flex flex-col items-end justify-center gap-1 pr-4 shrink-0">
         <GroupChip group={ex.muscle_group} />
-        <ChevronRightIcon className="w-4 h-4 text-white/20 shrink-0" />
+        <ChevronRightIcon className="w-4 h-4 te-t4 shrink-0" />
       </div>
     </button>
   );
@@ -127,7 +127,7 @@ function StepperBtn({ label, onPress, onLongPress }: { label: string; onPress: (
       onPointerDown={handlePointerDown}
       onPointerUp={handlePointerUp}
       onPointerLeave={handlePointerUp}
-      className="te-toggle-off w-[50px] h-[35px] rounded-[50px] flex items-center justify-center te-mono text-[20px] text-white/80 select-none shrink-0"
+      className="te-toggle-off w-[50px] h-[35px] rounded-full flex items-center justify-center te-mono text-[20px] te-t2 select-none shrink-0"
     >
       {label}
     </button>
@@ -217,8 +217,8 @@ function Stepper({
         <StepperBtn label="–" onPress={() => onChange(clamp(value - step))} onLongPress={() => onChange(clamp(value - bigStep))} />
 
         <div
-          className="relative flex-1 flex items-center justify-center rounded-[20px] touch-none"
-          style={{ background: '#0b0b0b', border: '1px solid #1d1d1d' }}
+          className="relative flex-1 flex items-center justify-center rounded-te-md touch-none"
+          style={{ background: 'var(--te-well)', border: '1px solid var(--te-border-strong)' }}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
@@ -233,12 +233,12 @@ function Stepper({
             onFocus={e => e.target.select()}
             min={min}
             step="any"
-            className={`te-mono !text-[52px] font-bold text-white tabular-nums !leading-[38px] bg-transparent border-none focus:outline-none w-full text-center ${animClass}`}
+            className={`te-mono !text-[52px] font-bold te-t1 tabular-nums !leading-[38px] bg-transparent border-none focus:outline-none w-full text-center ${animClass}`}
             style={{ letterSpacing: '-1px', touchAction: 'none' }}
           />
           <div className="absolute right-3 top-1/2 -translate-y-1/2 flex flex-col gap-1.5 pointer-events-none">
-            <ChevronUpIcon className="w-[13.5px] h-[13.5px] text-white/15" />
-            <ChevronDownIcon className="w-[13.5px] h-[13.5px] text-white/15" />
+            <ChevronUpIcon className="w-[13.5px] h-[13.5px] te-t4" />
+            <ChevronDownIcon className="w-[13.5px] h-[13.5px] te-t4" />
           </div>
         </div>
 
@@ -334,7 +334,7 @@ export default function LogModal({
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search exercises..."
-            className="te-field w-full rounded-xl px-4 py-3 text-white text-[15px] placeholder:text-white/25 focus:outline-none focus:border-white/[0.13] transition-colors"
+            className="te-field w-full rounded-te-sm px-4 py-3 te-t1 text-[15px] placeholder:text-white/25 focus:outline-none focus:border-white/[0.13] transition-colors"
             autoFocus
           />
           {filtered.length === 0 ? (
@@ -398,7 +398,7 @@ export default function LogModal({
         {/* Log set */}
         <button
           type="submit"
-          className="te-white-btn w-full h-[55px] rounded-[20px] flex items-center justify-center gap-1.5"
+          className="te-white-btn w-full h-[55px] rounded-te-md flex items-center justify-center gap-1.5"
         >
           <CheckIcon className="w-[15px] h-[15px] text-black stroke-[2.5]" />
           <span className="text-[15px] font-semibold text-black tracking-[-0.17px]">
@@ -410,10 +410,10 @@ export default function LogModal({
           <button
             type="button"
             onClick={handleDelete}
-            className={`w-full py-3 rounded-[20px] text-[13px] font-semibold transition-all active:opacity-75 ${
+            className={`w-full py-3 rounded-te-md text-[13px] font-semibold transition-all active:opacity-75 ${
               confirmDelete
-                ? 'bg-apple-red/15 text-apple-red border border-apple-red/25'
-                : 'text-apple-red/50'
+                ? 'bg-[color-mix(in_srgb,var(--te-danger)_15%,transparent)] text-[color:var(--te-danger)] border border-[color-mix(in_srgb,var(--te-danger)_25%,transparent)]'
+                : 'text-[color:var(--te-danger)]/50'
             }`}
           >
             {confirmDelete ? 'Tap again to confirm' : 'Delete log'}

@@ -32,17 +32,17 @@ interface Props {
 // Small inline chip on a set row: warmup / drop / PR
 function SetBadge({ kind }: { kind: 'warmup' | 'drop' | 'pr' }) {
   const style: Record<string, { text: string; color: string; bg: string }> = {
-    warmup: { text: 'Warmup', color: 'rgba(244,241,236,0.35)', bg: 'rgba(255,255,255,0.05)' },
+    warmup: { text: 'Warmup', color: 'var(--te-text-4)', bg: 'var(--te-border)' },
     drop:   { text: 'Drop',   color: 'var(--te-warn)',          bg: 'rgba(232,166,87,0.10)' },
-    pr:     { text: 'PR',     color: '#30d158',                 bg: 'rgba(48,209,88,0.12)' },
+    pr:     { text: 'PR',     color: 'var(--te-success)',                 bg: 'rgba(48,209,88,0.12)' },
   };
   const s = style[kind];
   return (
     <span
       className="te-mono shrink-0"
       style={{
-        fontSize: 8.5, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase',
-        color: s.color, background: s.bg, padding: '2.5px 6px', borderRadius: 100, lineHeight: 1,
+        fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase',
+        color: s.color, background: s.bg, padding: '2.5px 6px', borderRadius: 9999, lineHeight: 1,
       }}
     >
       {s.text}
@@ -119,14 +119,14 @@ function DayRing({
   const c = 2 * Math.PI * r;
   const dash = c * Math.max(0, Math.min(1, progress));
 
-  const arcColor = isToday ? '#ff453a' : '#f4f1ec';
+  const arcColor = isToday ? 'var(--te-accent)' : 'var(--te-text-1)';
   // White initial marks a day that's on the routine (or the selected day);
   // other days stay dim.
   const letterColor = isToday
-    ? '#ff453a'
+    ? 'var(--te-accent)'
     : hasSchedule || isSelected
-    ? '#f4f1ec'
-    : 'rgba(244,241,236,0.35)';
+    ? 'var(--te-text-1)'
+    : 'var(--te-text-4)';
 
   return (
     <button
@@ -138,7 +138,7 @@ function DayRing({
       <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
         <circle
           cx={size / 2} cy={size / 2} r={r}
-          fill="none" stroke="rgba(255,255,255,0.10)" strokeWidth={stroke}
+          fill="none" stroke="var(--te-border-strong)" strokeWidth={stroke}
         />
         {progress > 0 && (
           <circle
@@ -151,16 +151,16 @@ function DayRing({
       </svg>
       <span
         className="absolute select-none"
-        style={{ fontSize: 10.7, fontWeight: 600, letterSpacing: '-0.01em', color: letterColor }}
+        style={{ fontSize: 10, fontWeight: 600, letterSpacing: '-0.01em', color: letterColor }}
       >
         {initial}
       </span>
-      {/* Dot below the ring (outside the circle) — red marks today, white marks
-          the selected day */}
+      {/* Dot below the ring (outside the circle) — the accent marks today,
+          plain off-white marks the selected day */}
       {(isToday || isSelected) && (
         <span
           className="absolute rounded-full"
-          style={{ width: 4, height: 4, background: isToday ? '#ff453a' : '#f4f1ec', bottom: -7, left: '50%', transform: 'translateX(-50%)' }}
+          style={{ width: 4, height: 4, background: isToday ? 'var(--te-accent)' : 'var(--te-text-1)', bottom: -7, left: '50%', transform: 'translateX(-50%)' }}
         />
       )}
     </button>
@@ -328,10 +328,10 @@ function SwipeableRow({ skipped, onToggle, children }: { skipped: boolean; onTog
         transition: snapping ? 'opacity 0.2s ease' : 'none',
         pointerEvents: 'none',
       }}>
-        <ForwardIcon style={{ width: 14, height: 14, color: 'rgba(255,255,255,0.35)', strokeWidth: 2 }} />
+        <ForwardIcon style={{ width: 14, height: 14, color: 'var(--te-text-4)', strokeWidth: 2 }} />
         <span style={{
           fontFamily: "'Geist Mono', monospace", fontSize: 10, fontWeight: 600,
-          letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)',
+          letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--te-text-4)',
         }}>{skipped ? 'Unskip' : 'Skip'}</span>
       </div>
       {/* Card */}
@@ -442,24 +442,24 @@ function SessionRecapCard({
   if (!todayLogs.length || dismissed) return null;
 
   return (
-    <div className="te-panel-dark rounded-2xl overflow-hidden">
+    <div className="te-panel-dark rounded-te-md overflow-hidden">
       <div className="px-3.5 py-3 flex items-start justify-between gap-3" style={{ background: 'rgba(48,209,88,0.1)' }}>
         <div className="min-w-0">
-          <p className="text-[16px] font-semibold text-white tracking-tight leading-tight">{headline}</p>
-          <p className="te-label mt-1 leading-relaxed">{sentence}</p>
+          <p className="text-[17px] font-semibold te-t1 tracking-tight leading-tight">{headline}</p>
+          <p className="text-[13px] mt-1 te-t3 leading-snug">{sentence}</p>
         </div>
         <div className="flex items-center gap-2.5 shrink-0">
           {score !== null && (
             <div className="flex items-baseline gap-1">
-              <span className="text-[16px] font-bold tabular-nums leading-none te-digit" style={{ color: '#30d158' }}>{score}</span>
-              <span className="te-label" style={{ fontSize: 10 }}>/10</span>
+              <span className="text-[17px] font-bold tabular-nums leading-none te-digit" style={{ color: 'var(--te-success)' }}>{score}</span>
+              <span className="te-label">/10</span>
             </div>
           )}
           <button
             type="button"
             onClick={dismiss}
             className="p-1 -mr-1 active:opacity-50 transition-opacity"
-            style={{ color: 'rgba(48,209,88,0.45)' }}
+            style={{ color: 'var(--te-text-4)' }}
             aria-label="Dismiss recap"
           >
             <XMarkIcon className="w-4 h-4" />
@@ -468,17 +468,17 @@ function SessionRecapCard({
       </div>
 
       {summaries.length > 0 && (
-        <div className="divide-y divide-white/[0.05]" style={{ maxHeight: 110, overflowY: 'auto', WebkitOverflowScrolling: 'touch' as never }}>
-          <div className="h-px bg-white/[0.06]" />
+        <div className="divide-y divide-[color:var(--te-border)]" style={{ maxHeight: 110, overflowY: 'auto', WebkitOverflowScrolling: 'touch' as never }}>
+          <div className="h-px" style={{ background: 'var(--te-border)' }} />
           {summaries.map(({ exercise, bestWeight, bestReps, sets }) => (
             <div key={exercise.id} className="flex items-center justify-between px-3.5 py-2">
               <div className="min-w-0">
-                <p className="text-[12.5px] font-semibold text-white/80 tracking-tight truncate">{exercise.name}</p>
-                <p className="te-label" style={{ fontSize: 9.5, marginTop: 1 }}>
+                <p className="text-[13px] font-semibold te-t2 tracking-tight truncate">{exercise.name}</p>
+                <p className="te-label" style={{ marginTop: 1 }}>
                   {sets} set{sets !== 1 ? 's' : ''}
                 </p>
               </div>
-              <p className="te-mono text-[11.5px] font-semibold text-white/35 tabular-nums shrink-0 ml-3">
+              <p className="te-mono text-[10px] font-semibold te-t4 tabular-nums shrink-0 ml-3">
                 {toDisplay(bestWeight)}{unit} × {bestReps}
               </p>
             </div>
@@ -806,13 +806,13 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
           </div>
 
           {/* Selected date + session info */}
-          <div className="flex items-center gap-2 pb-2 mb-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-            <p className="te-label" style={{ color: isToday ? '#ff453a' : 'rgba(244,241,236,0.5)' }}>
+          <div className="flex items-center gap-2 pb-2 mb-3" style={{ borderBottom: '1px solid var(--te-border)' }}>
+            <p className="te-label" style={{ color: isToday ? 'var(--te-accent)' : 'var(--te-text-3)' }}>
               {isToday ? 'Today' : selectedLabel}
             </p>
             <div className="flex items-center gap-2 ml-auto">
               {selectedRoutine && (
-                <p className="te-label" style={{ color: '#f4f1ec' }}>{selectedRoutine.name}</p>
+                <p className="te-label" style={{ color: 'var(--te-text-1)' }}>{selectedRoutine.name}</p>
               )}
             </div>
           </div>
@@ -821,18 +821,21 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
 
       {/* No routines exist yet — invite the user to create one */}
       {routines.length === 0 && !noRoutineDismissed && (
-        <div className="te-panel-dark rounded-2xl overflow-hidden">
+        <div className="te-panel-dark rounded-te-md overflow-hidden">
           <div className="px-4 py-3.5 flex items-start gap-3">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: 'rgba(255,255,255,0.06)' }}>
-              <QueueListIcon className="w-4 h-4 text-white/50" />
+            <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: 'var(--te-border)' }}>
+              <QueueListIcon className="w-4 h-4 te-t3" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[14px] font-semibold text-[#f4f1ec] tracking-tight">No routine yet</p>
-              <p className="te-label mt-1 leading-relaxed">Create a routine to start planning your weekly schedule.</p>
+              <p className="text-[15px] font-semibold te-t1 tracking-tight">No routine yet</p>
+              {/* Sentence-length copy belongs in te-caption, not te-label —
+                  tracked-out uppercase mono wraps to two lines here and reads
+                  as a system message rather than a prompt. */}
+              <p className="text-[13px] mt-1 te-t3 leading-snug">Plan your week by creating a routine.</p>
             </div>
             <button
               onClick={() => setNoRoutineDismissed(true)}
-              className="p-1 -mr-1 -mt-1 text-white/25 active:text-white/50 transition-colors"
+              className="p-1 -mr-1 -mt-1 te-t4 active:text-white/50 transition-colors"
               aria-label="Dismiss"
             >
               <XMarkIcon className="w-4 h-4" />
@@ -841,7 +844,7 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
           <button
             onClick={onCreateRoutine}
             className="w-full py-3 text-[13px] font-semibold text-center active:bg-white/[0.04] transition-colors"
-            style={{ borderTop: '1px solid rgba(255,255,255,0.06)', color: '#f4f1ec' }}
+            style={{ borderTop: '1px solid var(--te-border)', color: 'var(--te-text-1)' }}
           >
             Create a routine
           </button>
@@ -852,21 +855,21 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
       {displayEntries.length === 0 ? (
         isToday && exercises.length === 0 ? (
           <EmptyState
-            icon={<QueueListIcon className="w-7 h-7 text-apple-label-tertiary" />}
+            icon={<QueueListIcon className="w-7 h-7 te-t4" />}
             title="Your exercises will appear here"
             subtitle="Go to Exercises first and create an exercise to start logging."
           />
         ) : selectedRoutine ? (
           // Day has a planned routine but nothing was recorded
           <EmptyState
-            icon={<QueueListIcon className="w-7 h-7 text-apple-label-tertiary" />}
+            icon={<QueueListIcon className="w-7 h-7 te-t4" />}
             title="No workout logged"
             subtitle={isToday ? 'Tap + to log a workout.' : 'Nothing was recorded on this day.'}
           />
         ) : (
           // Day has no routine scheduled
           <EmptyState
-            icon={<QueueListIcon className="w-7 h-7 text-apple-label-tertiary" />}
+            icon={<QueueListIcon className="w-7 h-7 te-t4" />}
             title="Your logs will appear here"
             subtitle="No routine is scheduled for this day."
           />
@@ -907,7 +910,7 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
                     onClick={() => toggleCollapsed(exerciseId, workoutDone && isDone)}
                   >
                     <div className="flex items-baseline min-w-0">
-                      <p className="text-[16px] font-semibold text-[#f4f1ec] tracking-tight truncate min-w-0" style={{ letterSpacing: '-0.01em' }}>
+                      <p className="text-[17px] font-semibold te-t1 tracking-tight truncate min-w-0" style={{ letterSpacing: '-0.01em' }}>
                         {exercise?.name ?? 'Unknown'}
                       </p>
                       {/* set/set counter — smoothly slides in to the right of the
@@ -915,7 +918,7 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
                       <span
                         className="te-mono tabular-nums shrink-0 overflow-hidden whitespace-nowrap leading-none"
                         style={{
-                          color: isDone ? '#30d158' : 'rgba(244,241,236,0.5)',
+                          color: isDone ? 'var(--te-success)' : 'var(--te-text-3)',
                           fontSize: 13,
                           maxWidth: isCollapsed ? 64 : 0,
                           opacity: isCollapsed ? 1 : 0,
@@ -929,9 +932,9 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
                   </button>
                   <div className="flex items-center gap-1.5 shrink-0 ml-2">
                     {isSkipped ? (
-                      <div className="flex items-center gap-1 px-2 py-0.5 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                        <ForwardIcon className="w-3 h-3 stroke-[2]" style={{ color: 'rgba(255,255,255,0.3)' }} />
-                        <span className="te-label" style={{ color: 'rgba(255,255,255,0.3)', fontSize: 10 }}>Skipped</span>
+                      <div className="flex items-center gap-1 px-2 py-0.5 rounded-full" style={{ background: 'var(--te-border)' }}>
+                        <ForwardIcon className="w-3 h-3 stroke-[2]" style={{ color: 'var(--te-text-4)' }} />
+                        <span className="te-label" style={{ color: 'var(--te-text-4)' }}>Skipped</span>
                       </div>
                     ) : isDone ? (
                       <div
@@ -939,19 +942,19 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
                         className="animate-check-pop flex items-center gap-1 px-2 py-0.5 rounded-full"
                         style={{ background: 'rgba(48,209,88,0.14)' }}
                       >
-                        <CheckIcon className="w-3 h-3 stroke-[2.5]" style={{ color: '#30d158' }} />
-                        <span className="te-label" style={{ color: '#30d158', fontSize: 10 }}>Done</span>
+                        <CheckIcon className="w-3 h-3 stroke-[2.5]" style={{ color: 'var(--te-success)' }} />
+                        <span className="te-label" style={{ color: 'var(--te-success)' }}>Done</span>
                       </div>
                     ) : null}
                     {exercise && libraryByName.has(exercise.name.toLowerCase()) && (
                       <button
                         onClick={() => setViewLibraryEx(libraryByName.get(exercise.name.toLowerCase())!)}
-                        className="p-1 text-white/25 active:text-white/60 transition-colors"
+                        className="p-1 te-t4 active:text-white/50 transition-colors"
                       >
                         <BookOpenIcon className="w-4 h-4" />
                       </button>
                     )}
-                    <button onClick={() => toggleCollapsed(exerciseId, workoutDone && isDone)} className="p-1 text-white/20 active:text-white/50 transition-colors">
+                    <button onClick={() => toggleCollapsed(exerciseId, workoutDone && isDone)} className="p-1 te-t4 active:text-white/50 transition-colors">
                       <ChevronDownIcon
                         className="w-4 h-4 transition-transform duration-200"
                         style={{ transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}
@@ -963,19 +966,19 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
                 <div className="grid" style={{ gridTemplateRows: isCollapsed ? '0fr' : '1fr', transition: 'grid-template-rows 200ms ease' }}>
                   <div style={{ overflow: 'hidden' }}>
 
-                    <div className="te-panel rounded-2xl overflow-hidden mb-2">
+                    <div className="te-panel rounded-te-md overflow-hidden mb-2">
                       <div className="grid grid-cols-2 divide-x divide-white/[0.06]">
                         <div className="flex flex-col items-center py-3">
-                          <span className="text-[20px] font-bold tabular-nums leading-none te-digit" style={{ color: isDone ? '#30d158' : 'white' }}>
+                          <span className="text-[20px] font-bold tabular-nums leading-none te-digit" style={{ color: isDone ? 'var(--te-success)' : 'white' }}>
                             {totalSets}{targetSets > 0 && (
-                              <span className="text-[20px] font-bold" style={{ color: isDone ? '#30d158' : 'white' }}>/{targetSets}</span>
+                              <span className="text-[20px] font-bold" style={{ color: isDone ? 'var(--te-success)' : 'white' }}>/{targetSets}</span>
                             )}
                           </span>
                           <span className="te-label mt-1.5">sets</span>
                         </div>
                         <div className="flex flex-col items-center py-3">
-                          <span className="text-[20px] font-bold text-white tabular-nums leading-none te-digit">
-                            {displayedWeight}<span className="text-[20px] font-bold text-white ml-px">{unit}</span>
+                          <span className="text-[20px] font-bold te-t1 tabular-nums leading-none te-digit">
+                            {displayedWeight}<span className="text-[20px] font-bold te-t1 ml-px">{unit}</span>
                           </span>
                           <span className="te-label mt-1.5">weight</span>
                         </div>
@@ -983,7 +986,7 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
                     </div>
 
                     {exerciseLogs.length > 0 && (
-                      <div className="te-panel rounded-2xl overflow-hidden divide-y divide-white/[0.04]">
+                      <div className="te-panel rounded-te-md overflow-hidden divide-y divide-white/[0.04]">
                         {exerciseLogs.map(log => {
                           const prevMax = prevMaxWeights.get(log.exercise_id) ?? 0;
                           const isPR = log.set_type !== 'warmup' && prevMax > 0 && log.weight > prevMax;
@@ -997,19 +1000,19 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
                               <div className="flex items-center justify-between gap-2">
                                 <div className="flex items-center gap-2 min-w-0">
                                   <span className="flex items-baseline gap-1.5 shrink-0">
-                                    <span className="te-digit text-[15px] font-semibold text-white/75 tabular-nums leading-none">
+                                    <span className="te-digit text-[15px] font-semibold te-t2 tabular-nums leading-none">
                                       {log.reps_done}{exercise?.target_reps ? `/${exercise.target_reps}` : ''}
                                     </span>
-                                    <span className="te-label" style={{ fontSize: 9 }}>reps</span>
+                                    <span className="te-label">reps</span>
                                   </span>
                                   {log.set_type === 'warmup' && <SetBadge kind="warmup" />}
                                   {log.set_type === 'drop' && <SetBadge kind="drop" />}
                                   {isPR && <SetBadge kind="pr" />}
                                   {log.comment && (
-                                    <span className="text-[11px] text-white/25 italic truncate">{log.comment}</span>
+                                    <span className="text-[10px] te-t4 italic truncate">{log.comment}</span>
                                   )}
                                 </div>
-                                <span className="te-label shrink-0" style={{ fontSize: 9 }}>{formatTime(log.created_at)}</span>
+                                <span className="te-label shrink-0">{formatTime(log.created_at)}</span>
                               </div>
                             </div>
                           </button>
@@ -1021,7 +1024,7 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
                     {exercise && isToday && !isSkipped && !workoutDone && (
                       <button
                         onClick={() => onAddForExercise(exercise)}
-                        className="w-full mt-2 py-3.5 rounded-xl bg-transparent te-label active:bg-white/[0.03] transition-all flex items-center justify-center gap-1.5"
+                        className="w-full mt-2 py-3.5 rounded-te-sm bg-transparent te-label active:bg-white/[0.03] transition-all flex items-center justify-center gap-1.5"
                       >
                         <PlusIcon className="w-3 h-3" />
                         Add set
@@ -1052,16 +1055,25 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
 
       {/* Complete workout — manual finish for non-routine days (routine days use
           the auto prompt instead). Shown once >=1 working set is logged.
-          Tap-again-to-confirm since completing is irreversible for the day. */}
+          Tap-again-to-confirm since completing is irreversible for the day.
+          Before completion this is the page's primary action, so it gets the
+          white button. After completion it is a disabled status, not an action
+          — it steps back to a tinted confirmation rather than staying a
+          full-bleed saturated green slab that outshouted the content beneath. */}
       {isToday && !selectedRoutine && dayLogs.some(l => l.set_type !== 'warmup') && (
         <button
           onClick={workoutDone ? undefined : handleCompletePress}
           disabled={workoutDone}
-          className={`w-full rounded-2xl font-semibold text-[15px] flex items-center justify-center gap-2 select-none ${
-            workoutDone ? 'te-toggle-on' : 'te-white-btn'
+          className={`w-full rounded-te-md font-semibold text-[15px] flex items-center justify-center gap-2 select-none ${
+            workoutDone ? '' : 'te-white-btn'
           }`}
           style={workoutDone
-            ? { height: 52, background: '#30d158', color: '#0a0908' }
+            ? {
+                height: 52,
+                background: 'color-mix(in srgb, var(--te-success) 12%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--te-success) 22%, transparent)',
+                color: 'var(--te-success)',
+              }
             : { height: 52, opacity: confirmComplete ? 0.7 : 1 }}
         >
           {workoutDone
@@ -1086,29 +1098,29 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
             className="absolute inset-0 bg-black/50 animate-fade-in"
             onClick={() => setPromptDismissed(true)}
           />
-          <div className="relative w-full max-w-lg te-panel rounded-[22px] px-5 py-5 animate-slide-up z-10">
+          <div className="relative w-full max-w-lg te-panel rounded-te-md px-5 py-5 animate-slide-up z-10">
             <div className="flex items-center gap-2 mb-1.5">
               <div className="flex items-center justify-center rounded-full" style={{ width: 20, height: 20, background: 'rgba(48,209,88,0.14)' }}>
-                <CheckIcon className="w-3 h-3 stroke-[2.5]" style={{ color: '#30d158' }} />
+                <CheckIcon className="w-3 h-3 stroke-[2.5]" style={{ color: 'var(--te-success)' }} />
               </div>
-              <p className="text-[16px] font-semibold text-[#f4f1ec] tracking-tight" style={{ letterSpacing: '-0.01em' }}>
+              <p className="text-[17px] font-semibold te-t1 tracking-tight" style={{ letterSpacing: '-0.01em' }}>
                 All exercises done
               </p>
             </div>
-            <p className="text-[13px] mb-4" style={{ color: 'rgba(244,241,236,0.5)' }}>
+            <p className="text-[13px] mb-4" style={{ color: 'var(--te-text-3)' }}>
               You've finished every exercise in {selectedRoutine?.name}. Complete this workout?
             </p>
             <div className="flex gap-2">
               <button
                 onClick={() => setPromptDismissed(true)}
-                className="te-toggle-off flex-1 py-[10px] rounded-[12px] text-[13px] font-semibold select-none"
-                style={{ color: 'rgba(255,255,255,0.5)' }}
+                className="te-toggle-off flex-1 py-[10px] rounded-te-sm text-[13px] font-semibold select-none"
+                style={{ color: 'var(--te-text-3)' }}
               >
                 Not yet
               </button>
               <button
                 onClick={completeFromPrompt}
-                className="te-white-btn flex-1 py-[10px] rounded-[12px] text-[13px] font-semibold select-none"
+                className="te-white-btn flex-1 py-[10px] rounded-te-sm text-[13px] font-semibold select-none"
               >
                 Complete
               </button>

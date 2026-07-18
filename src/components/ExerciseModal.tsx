@@ -93,8 +93,8 @@ export default function ExerciseModal({ open, onClose, onSave, onDelete, exercis
           value={name}
           onChange={e => setName(e.target.value)}
           placeholder="Exercise name"
-          className="w-full h-[55px] rounded-[20px] px-5 text-white text-[15px] placeholder:text-[#5c5a58] focus:outline-none focus:border-white/[0.13] transition-colors"
-          style={{ background: '#0b0b0b', border: '1px solid #1d1d1d' }}
+          className="w-full h-[55px] rounded-te-md px-5 te-t1 text-[15px] placeholder:text-white/25 focus:outline-none focus:border-white/[0.13] transition-colors"
+          style={{ background: 'var(--te-well)', border: '1px solid var(--te-border-strong)' }}
           autoFocus
         />
 
@@ -148,7 +148,7 @@ export default function ExerciseModal({ open, onClose, onSave, onDelete, exercis
           <button
             type="submit"
             disabled={!name.trim()}
-            className="te-white-btn w-full h-[55px] rounded-[20px] flex items-center justify-center gap-1.5 disabled:opacity-30"
+            className="te-white-btn w-full h-[55px] rounded-te-md flex items-center justify-center gap-1.5 disabled:opacity-30"
           >
             <CheckIcon className="w-[15px] h-[15px] text-black stroke-[2.5]" />
             <span className="text-[15px] font-semibold text-black tracking-[-0.17px]">
@@ -160,10 +160,10 @@ export default function ExerciseModal({ open, onClose, onSave, onDelete, exercis
             <button
               type="button"
               onClick={handleDelete}
-              className={`w-full py-3.5 rounded-[20px] text-[13px] font-semibold transition-all active:opacity-75 ${
+              className={`w-full py-3.5 rounded-te-md text-[13px] font-semibold transition-all active:opacity-75 ${
                 confirmDelete
-                  ? 'bg-apple-red/15 text-apple-red border border-apple-red/25'
-                  : 'text-apple-red/50'
+                  ? 'bg-[color-mix(in_srgb,var(--te-danger)_15%,transparent)] text-[color:var(--te-danger)] border border-[color-mix(in_srgb,var(--te-danger)_25%,transparent)]'
+                  : 'text-[color:var(--te-danger)]/50'
               }`}
             >
               {confirmDelete ? 'Tap again to confirm' : 'Delete exercise'}

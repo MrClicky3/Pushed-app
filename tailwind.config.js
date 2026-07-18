@@ -12,33 +12,19 @@ export default {
           bg:    '#010101',
           surface: '#181614',
         },
-        apple: {
-          bg: '#000000',
-          // glass surface tokens — used for cards/sheets/bars
-          glass: 'rgba(255,255,255,0.07)',
-          'glass-light': 'rgba(255,255,255,0.12)',
-          'glass-strong': 'rgba(255,255,255,0.15)',
-          // keep legacy opaque tokens as fallback
-          card: '#1c1c1e',
-          elevated: '#2c2c2e',
-          tertiary: '#3a3a3c',
-          green: '#30d158',
-          red: '#ff453a',
-          orange: '#ff9f0a',
-          blue: '#0a84ff',
-          label: {
-            primary: '#ffffff',
-            secondary: 'rgba(255,255,255,0.60)',
-            tertiary: 'rgba(255,255,255,0.35)',
-            quaternary: 'rgba(255,255,255,0.18)',
-          },
-          separator: 'rgba(255,255,255,0.10)',
-          fill: {
-            primary: 'rgba(120,120,128,0.36)',
-            secondary: 'rgba(120,120,128,0.32)',
-            tertiary: 'rgba(118,118,128,0.24)',
-          },
-        },
+        // The `apple-*` palette that used to live here has been removed. It was
+        // a second, parallel color system (pure-white text ramp, its own
+        // red/green/orange) competing with the `te-*` tokens, which is why text
+        // colour drifted between screens. Everything now resolves to the
+        // --te-* custom properties in index.css.
+      },
+      // Radius scale — mirrors the --te-radius-* tokens in index.css so markup
+      // and CSS can't drift apart. These three are the only radii in the app
+      // (plus rounded-full for pills).
+      borderRadius: {
+        'te-sm': 'var(--te-radius-sm)',
+        'te-md': 'var(--te-radius-md)',
+        'te-lg': 'var(--te-radius-lg)',
       },
       backdropBlur: {
         xs: '4px',

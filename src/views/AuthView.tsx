@@ -91,7 +91,7 @@ function FieldInput({
 }) {
   return (
     <div className="relative w-full">
-      <div className="absolute left-5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: '#6f6f6f' }}>
+      <div className="absolute left-5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--te-text-3)' }}>
         {icon}
       </div>
       <input
@@ -100,8 +100,8 @@ function FieldInput({
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
         autoComplete={autoComplete}
-        className="w-full h-[55px] rounded-full pl-[46px] pr-11 text-[16px] text-white placeholder:text-[#5c5a58] focus:outline-none"
-        style={{ background: '#212121' }}
+        className="w-full h-[55px] rounded-full pl-[46px] pr-11 text-[17px] te-t1 placeholder:text-white/25 focus:outline-none"
+        style={{ background: 'var(--te-surface-3)' }}
       />
       {right && (
         <div className="absolute right-5 top-1/2 -translate-y-1/2">{right}</div>
@@ -222,11 +222,11 @@ export default function AuthView({ onSignIn, onSignUp, onResend, onVerifyOtp, on
               className="w-20 h-20"
             />
             <div className="flex flex-col items-center gap-1">
-              <p className="text-[20px] font-semibold text-white tracking-[-0.17px] text-center inline-flex items-center gap-1.5">
+              <p className="text-[20px] font-semibold te-t1 tracking-[-0.17px] text-center inline-flex items-center gap-1.5">
                 Welcome back to Overload!
                 <span className="inline-flex items-center" style={{ transform: 'rotate(35deg)' }} aria-hidden><IconWave /></span>
               </p>
-              <p className="text-[18px]" style={{ color: '#5c5a58' }}>
+              <p className="text-[17px]" style={{ color: 'var(--te-text-3)' }}>
                 {mode === 'signin' ? 'Sign in to continue' : 'Create an account to start'}
               </p>
             </div>
@@ -255,7 +255,7 @@ export default function AuthView({ onSignIn, onSignUp, onResend, onVerifyOtp, on
                 autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
                 right={
                   <button type="button" onClick={() => setShowPw(p => !p)}
-                    className="p-1 transition-opacity active:opacity-50" style={{ color: '#6f6f6f' }}>
+                    className="p-1 transition-opacity active:opacity-50" style={{ color: 'var(--te-text-3)' }}>
                     <IconEye show={showPw} />
                   </button>
                 }
@@ -263,14 +263,14 @@ export default function AuthView({ onSignIn, onSignUp, onResend, onVerifyOtp, on
               {mode === 'signin' && (
                 <button type="button"
                   onClick={() => { setForgotEmail(email); setStep('forgot'); setError(null); }}
-                  className="text-[14px] text-right w-full pr-1 transition-opacity active:opacity-60"
-                  style={{ color: '#6f6f6f' }}>
+                  className="text-[15px] text-right w-full pr-1 transition-opacity active:opacity-60"
+                  style={{ color: 'var(--te-text-3)' }}>
                   Forgot password?
                 </button>
               )}
             </div>
 
-            {error && <p className="text-[13px] text-center" style={{ color: '#ff453a' }}>{error}</p>}
+            {error && <p className="text-[13px] text-center" style={{ color: 'var(--te-danger)' }}>{error}</p>}
 
             <div className="w-full flex flex-col gap-[15px]">
               <SubmitBtn
@@ -279,27 +279,27 @@ export default function AuthView({ onSignIn, onSignUp, onResend, onVerifyOtp, on
               />
 
               <div className="flex items-center gap-3">
-                <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.08)' }} />
-                <span className="text-[12px]" style={{ color: '#5c5a58' }}>or</span>
-                <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.08)' }} />
+                <div className="flex-1 h-px" style={{ background: 'var(--te-border)' }} />
+                <span className="text-[13px]" style={{ color: 'var(--te-text-3)' }}>or</span>
+                <div className="flex-1 h-px" style={{ background: 'var(--te-border)' }} />
               </div>
 
               <button
                 type="button"
                 onClick={async () => { const err = await onGoogle(); if (err) setError(friendlyError(err)); }}
-                className="w-full h-[52px] rounded-[16px] flex items-center justify-center gap-2.5 active:opacity-80 transition-opacity"
-                style={{ background: '#141414', border: '1px solid #1d1d1d' }}
+                className="w-full h-[52px] rounded-te-md flex items-center justify-center gap-2.5 active:opacity-80 transition-opacity"
+                style={{ background: 'var(--te-surface-3)', border: '1px solid var(--te-border-strong)' }}
               >
                 <IconGoogle />
-                <span className="text-[15px] font-semibold text-white tracking-[-0.17px]">
+                <span className="text-[15px] font-semibold te-t1 tracking-[-0.17px]">
                   Continue with Google
                 </span>
               </button>
 
-              <button type="button" onClick={switchMode} className="text-center text-[14px]" style={{ color: '#6f6f6f' }}>
+              <button type="button" onClick={switchMode} className="text-center text-[15px]" style={{ color: 'var(--te-text-3)' }}>
                 {mode === 'signin'
-                  ? <>No account yet?{' '}<span className="font-semibold text-white">Sign up for free</span></>
-                  : <>Already have an account?{' '}<span className="font-semibold text-white">Sign in</span></>
+                  ? <>No account yet?{' '}<span className="font-semibold te-t1">Sign up for free</span></>
+                  : <>Already have an account?{' '}<span className="font-semibold te-t1">Sign in</span></>
                 }
               </button>
             </div>
@@ -322,24 +322,24 @@ export default function AuthView({ onSignIn, onSignUp, onResend, onVerifyOtp, on
         <div className="flex items-center justify-center gap-3">
           <div className="relative">
             <div
-              className="absolute inset-0 rounded-[16px] blur-xl"
+              className="absolute inset-0 rounded-te-md blur-xl"
               style={{ background: '#f4f1ec', opacity: 0.12 }}
             />
             <img
               src="/apple-touch-icon.png"
               alt="Overload"
-              className="relative w-[44px] h-[44px] rounded-[14px]"
+              className="relative w-[44px] h-[44px] rounded-te-md"
               style={{ boxShadow: '0 4px 16px rgba(0,0,0,0.5)' }}
             />
           </div>
-          <p className="text-[22px] font-bold text-[#f4f1ec]" style={{ letterSpacing: '-0.03em' }}>
+          <p className="text-[20px] font-bold te-t1" style={{ letterSpacing: '-0.03em' }}>
             Overload
           </p>
         </div>
 
         <div
-          className="rounded-2xl p-5 space-y-4"
-          style={{ background: '#141414', border: '1px solid rgba(255,255,255,0.045)', boxShadow: '0 16px 48px rgba(0,0,0,0.45)' }}
+          className="rounded-te-md p-5 space-y-4"
+          style={{ background: 'var(--te-surface-3)', border: '1px solid var(--te-fill-subtle)', boxShadow: '0 16px 48px rgba(0,0,0,0.45)' }}
         >
 
           {step === 'verify' && (
@@ -356,9 +356,9 @@ export default function AuthView({ onSignIn, onSignUp, onResend, onVerifyOtp, on
                 </svg>
               </div>
               <div className="text-center space-y-1">
-                <p className="text-[16px] font-semibold text-[#f4f1ec] tracking-tight">Confirm your email</p>
-                <p className="text-[13px] leading-relaxed" style={{ color: 'rgba(244,241,236,0.45)' }}>
-                  We sent a confirmation link to <span className="text-white/70">{email}</span>. Open it on this
+                <p className="text-[17px] font-semibold te-t1 tracking-tight">Confirm your email</p>
+                <p className="text-[13px] leading-relaxed" style={{ color: 'var(--te-text-3)' }}>
+                  We sent a confirmation link to <span className="te-t2">{email}</span>. Open it on this
                   device to finish — you'll be signed in automatically.
                 </p>
               </div>
@@ -366,34 +366,34 @@ export default function AuthView({ onSignIn, onSignUp, onResend, onVerifyOtp, on
               <div className="flex flex-col items-center gap-1">
                 <button onClick={handleResend} disabled={resendCooldown > 0}
                   className="text-[13px] font-semibold disabled:opacity-40 transition-opacity"
-                  style={{ color: '#f4f1ec' }}>
+                  style={{ color: 'var(--te-text-1)' }}>
                   {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend email'}
                 </button>
-                {resendMsg && <p className="text-[12px]" style={{ color: resendMsg === 'Sent!' ? '#30d158' : '#ff453a' }}>{resendMsg}</p>}
+                {resendMsg && <p className="text-[13px]" style={{ color: resendMsg === 'Sent!' ? 'var(--te-success)' : 'var(--te-danger)' }}>{resendMsg}</p>}
               </div>
 
               {/* Secondary fallback — the 6-digit code, for anyone who opened the
                   email on another device. De-emphasised since it expires quickly. */}
               <div className="flex items-center gap-3">
-                <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
-                <span className="text-[11px] whitespace-nowrap" style={{ color: 'rgba(244,241,236,0.3)' }}>or enter the code</span>
-                <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
+                <div className="flex-1 h-px" style={{ background: 'var(--te-border)' }} />
+                <span className="text-[10px] whitespace-nowrap" style={{ color: 'var(--te-text-4)' }}>or enter the code</span>
+                <div className="flex-1 h-px" style={{ background: 'var(--te-border)' }} />
               </div>
               <input
                 type="text" inputMode="numeric" autoComplete="one-time-code"
                 value={otp} onChange={e => handleOtpChange(e.target.value)}
                 placeholder="000000" maxLength={6} disabled={loading}
-                className="w-full text-center rounded-2xl px-4 py-4 text-[28px] font-bold te-mono text-white placeholder:text-white/15 focus:outline-none disabled:opacity-50 transition-opacity"
-                style={{ letterSpacing: '0.25em', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.045)' }}
+                className="w-full text-center rounded-te-md px-4 py-4 text-[32px] font-bold te-mono te-t1 placeholder:text-white/25 focus:outline-none disabled:opacity-50 transition-opacity"
+                style={{ letterSpacing: '0.25em', background: 'var(--te-fill-subtle)', border: '1px solid var(--te-fill-subtle)' }}
               />
-              {error && <p className="text-[13px] text-center" style={{ color: '#ff453a' }}>{error}</p>}
+              {error && <p className="text-[13px] text-center" style={{ color: 'var(--te-danger)' }}>{error}</p>}
               {loading && <div className="flex justify-center"><div className="w-5 h-5 border-2 border-white/20 border-t-[#f4f1ec] rounded-full animate-spin" /></div>}
 
-              <div className="h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
-              <p className="text-[12px] text-center" style={{ color: 'rgba(244,241,236,0.3)' }}>
+              <div className="h-px" style={{ background: 'var(--te-border)' }} />
+              <p className="text-[13px] text-center" style={{ color: 'var(--te-text-4)' }}>
                 Already confirmed?{' '}
                 <button onClick={() => { setStep('form'); setMode('signin'); setError(null); setOtp(''); }}
-                  className="font-semibold" style={{ color: '#f4f1ec' }}>Sign in →</button>
+                  className="font-semibold" style={{ color: 'var(--te-text-1)' }}>Sign in →</button>
               </p>
             </div>
           )}
@@ -401,18 +401,18 @@ export default function AuthView({ onSignIn, onSignUp, onResend, onVerifyOtp, on
           {step === 'forgot' && (
             <form onSubmit={handleForgot} className="space-y-4">
               <div className="text-center space-y-1">
-                <p className="text-[16px] font-semibold text-[#f4f1ec] tracking-tight">Reset password</p>
-                <p className="text-[13px]" style={{ color: 'rgba(244,241,236,0.4)' }}>
+                <p className="text-[17px] font-semibold te-t1 tracking-tight">Reset password</p>
+                <p className="text-[13px]" style={{ color: 'var(--te-text-4)' }}>
                   We'll send a reset link to your email
                 </p>
               </div>
               <FieldInput icon={<IconEmail />} type="email" value={forgotEmail}
                 onChange={setForgotEmail} placeholder="Email" autoComplete="email" />
-              {error && <p className="text-[13px]" style={{ color: '#ff453a' }}>{error}</p>}
+              {error && <p className="text-[13px]" style={{ color: 'var(--te-danger)' }}>{error}</p>}
               <SubmitBtn label="Send reset link" disabled={!forgotEmail.trim()} />
               <button type="button" onClick={() => { setStep('form'); setError(null); }}
                 className="w-full text-center text-[13px] font-semibold"
-                style={{ color: 'rgba(244,241,236,0.35)' }}>← Back to sign in</button>
+                style={{ color: 'var(--te-text-4)' }}>← Back to sign in</button>
             </form>
           )}
 
@@ -427,15 +427,15 @@ export default function AuthView({ onSignIn, onSignUp, onResend, onVerifyOtp, on
                 </svg>
               </div>
               <div className="space-y-1">
-                <p className="text-[16px] font-semibold text-[#f4f1ec] tracking-tight">Check your inbox</p>
-                <p className="text-[13px] leading-relaxed" style={{ color: 'rgba(244,241,236,0.45)' }}>
-                  Reset link sent to <span className="text-white/70">{forgotEmail}</span>.
+                <p className="text-[17px] font-semibold te-t1 tracking-tight">Check your inbox</p>
+                <p className="text-[13px] leading-relaxed" style={{ color: 'var(--te-text-3)' }}>
+                  Reset link sent to <span className="te-t2">{forgotEmail}</span>.
                   Click it — it'll bring you straight back here.
                 </p>
               </div>
               <button onClick={() => { setStep('form'); setError(null); setForgotEmail(''); }}
                 className="w-full text-center text-[13px] font-semibold"
-                style={{ color: '#f4f1ec' }}>← Back to sign in</button>
+                style={{ color: 'var(--te-text-1)' }}>← Back to sign in</button>
             </div>
           )}
         </div>
