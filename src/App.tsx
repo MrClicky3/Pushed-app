@@ -940,39 +940,29 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
   aria-label="Profile"
   className="relative flex items-center justify-center active:opacity-60 transition-opacity select-none shrink-0"
   style={{
-    width: 44,
-    height: 44,
+    width: 62,
+    height: 62,
+    marginTop: -1, // adjust if needed
+    marginBottom: -1,
     background: 'transparent',
     border: 'none',
-    boxShadow: 'none',
     padding: 0,
   }}
 >
-  <span
-    style={{
-      display: 'inline-flex',
-      width: '100%',
-      height: '100%',
-      borderRadius: 9999,
-      overflow: 'hidden',
-      opacity: tab === 'profile' ? 1 : 0.55,
-    }}
-  >
-    <Avatar
-      name={profileName}
-      avatarUrl={profileRow?.avatar_url}
-      size={44}
-      ring={false}
-    />
-  </span>
+  <Avatar
+    name={profileName}
+    avatarUrl={profileRow?.avatar_url}
+    size={62}
+    ring={false}
+  />
 
   {competeAttention && tab !== 'profile' && (
     <span
       aria-hidden
       style={{
         position: 'absolute',
-        top: 2,
-        right: 2,
+        top: 3,
+        right: 3,
         width: 7,
         height: 7,
         borderRadius: 9999,
