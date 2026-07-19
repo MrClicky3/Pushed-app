@@ -546,7 +546,9 @@ function CompetitionSheet({
   const title = done ? 'Results' : comp.name;
 
   return (
-    <Modal open={open} onClose={onClose} title={title}>
+    // A duel's detail is the app's most-read sheet, so it gets a height floor
+    // instead of collapsing to a strip hugging the home indicator.
+    <Modal open={open} onClose={onClose} title={title} minHeight="58dvh">
       <div className="space-y-4">
         <div className="flex items-center justify-between px-0.5">
           <div>

@@ -39,8 +39,8 @@ const CATEGORY_LABELS: Record<string, string> = {
 const MONO = "'Geist Mono', 'SF Mono', ui-monospace, monospace";
 
 // Resolved hex (not a var) because the chart paints SVG gradient stops.
-// Matches --te-success, the green the week meter directly above it uses.
-const SUCCESS_GREEN = '#30d158';
+// Matches --te-text-1, the app's primary off-white.
+const OVERALL_CHART_COLOR = '#f4f1ec';
 
 // Every bento block on this page shares one surface: same background,
 // same border colour and thickness, same corner radius.
@@ -1286,10 +1286,10 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
   const dailyPrevWindow = makeWindow(dailyAnalytics.prev, '%', catColor, dailyAnalytics.maxLabels);
   const dailyNextWindow = makeWindow(dailyAnalytics.next, '%', catColor, dailyAnalytics.maxLabels);
 
-  // The aggregate completion chart is scored against your plan, so it takes
-  // the same green the week meter and "on plan" chip use — the accent is
-  // reserved for per-exercise charts, which are colored by muscle group.
-  const overallColor = SUCCESS_GREEN;
+  // Neutral off-white: the aggregate chart covers every exercise, so it has
+  // no one muscle-group colour to take, and colour is left to carry meaning
+  // in the week meter and the per-exercise charts instead.
+  const overallColor = OVERALL_CHART_COLOR;
   const overallDef: PageDef = {
     key: 'overall',
     title: 'Daily completion',
