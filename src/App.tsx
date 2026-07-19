@@ -879,7 +879,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
               <svg
                 className="animate-bounce"
                 width="15" height="9" viewBox="0 0 15 9" fill="none"
-                style={{ display: 'block' }}
+                style={{ display: 'block', marginBottom: 4 }}
               >
                 <path
                   d="M1.6 7.4L7.5 1.6l5.9 5.8"
@@ -1145,6 +1145,10 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
         onSetHapticsEnabled={setHapticsEnabled}
         accent={accent}
         onSetAccent={setAccent}
+        categoryColors={categoryColors}
+        onSetCategoryColor={setCategoryColor}
+        bio={profileRow?.bio ?? null}
+        onUpdateBio={updateBio}
         unit={unit}
         onSetUnit={setUnit}
         toDisplay={toDisplay}
