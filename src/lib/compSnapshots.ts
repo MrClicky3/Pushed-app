@@ -5,8 +5,8 @@
 // needs no migration and degrades to "no delta shown" on a fresh device.
 
 export interface CompBaseline {
-  score: number | null;  // consistency %
-  delta: number | null;  // volume %Δ
+  score: number | null;  // ranking value (volume kg / streak days)
+  delta: number | null;  // legacy volume %Δ — NULL on new-style rows
   dayKey: string;        // local calendar day the baseline was frozen
 }
 

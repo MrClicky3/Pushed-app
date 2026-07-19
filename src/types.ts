@@ -98,7 +98,8 @@ export interface PendingRequest {
   avatar_url: string | null;
 }
 
-// get_friend_leaderboard() row.
+// get_friend_leaderboard() row. (The RPC still returns consistency_score; the
+// app no longer surfaces it anywhere, so it is not typed.)
 export interface LeaderboardRow {
   user_id: string;
   username: string;
@@ -106,7 +107,6 @@ export interface LeaderboardRow {
   avatar_url: string | null;
   current_streak: number;
   longest_streak: number;
-  consistency_score: number | null;
   is_self: boolean;
 }
 
@@ -121,7 +121,9 @@ export interface VolumeRow {
 }
 
 // ── Competitions ──────────────────────────────────────────────
-export type CompetitionTrack = 'consistency' | 'volume';
+// The retired 'consistency' track is converted to 'streak' by the 2026-07-19
+// migration, so no row carries it any more.
+export type CompetitionTrack = 'volume' | 'streak';
 export type CompetitionStatus = 'pending' | 'active' | 'completed' | 'cancelled';
 export type ParticipantStatus = 'invited' | 'accepted' | 'declined';
 export type BadgeTier = 'gold' | 'silver' | 'bronze' | 'finisher';
@@ -142,9 +144,10 @@ export interface CompetitionSummary {
   participant_count: number;
 }
 
-// get_competition_standings() row. score is the ranking value: for the
-// consistency track it is a completion %, for volume it is the %Δ (also in
-// `delta`). Live rows carry rank; pre-start/cancelled rows leave it null.
+// get_competition_standings() row. score is the ranking value: raw kg lifted
+// inside the window for the volume track, current streak in days for the
+// streak track. `delta` is a legacy field (old volume %Δ), NULL on new rows.
+// Live rows carry rank; pre-start/cancelled rows leave it null.
 export interface CompetitionStanding {
   user_id: string;
   username: string;
