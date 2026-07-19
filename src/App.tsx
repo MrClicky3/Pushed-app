@@ -903,7 +903,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
 
           {/* Tabs — hidden in focus mode */}
           {/* Swipe-up line — the grabber you drag up on to add. */}
-          <div className="flex justify-center" style={{ paddingTop: 6, paddingBottom: 2 }}>
+          <div className="flex justify-center" style={{ paddingTop: 5, paddingBottom: 1 }}>
             <div style={{ width: 68, height: 4, borderRadius: 9999, background: 'rgba(255,255,255,0.16)' }} />
           </div>
 
@@ -913,7 +913,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
             style={{ gridTemplateRows: focusMode ? '0fr' : '1fr', transition: 'grid-template-rows 0.36s cubic-bezier(0.22,1,0.36,1)' }}
           >
             <div style={{ overflow: 'hidden', opacity: focusMode ? 0 : 1, transition: `opacity ${focusMode ? '0.15s ease' : '0.3s ease 0.08s'}` }}>
-              <div className="flex justify-center items-center gap-2.5 pt-1 pb-0.5">
+              <div className="flex justify-center items-center gap-2.5 pt-0 pb-0.5">
                 <div
                   className="grid grid-cols-3 items-center rounded-full"
                   style={{ background: 'var(--te-border)', border: '1px solid var(--te-border)', padding: '5px 6px' }}
@@ -940,8 +940,8 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
   aria-label="Profile"
   className="relative flex items-center justify-center active:opacity-60 transition-opacity select-none shrink-0"
   style={{
-    width: 62,
-    height: 62,
+    width: 60,
+    height: 60,
     marginTop: -1, // adjust if needed
     marginBottom: -1,
     background: 'transparent',
@@ -949,12 +949,24 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
     padding: 0,
   }}
 >
+  <div
+  style={{
+    width: 60,
+    height: 60,
+    borderRadius: '9999px',
+    padding: tab === 'profile' ? 2 : 0,
+    boxSizing: 'border-box',
+    background: tab === 'profile' ? 'var(--te-accent)' : 'transparent',
+    overflow: 'hidden',
+  }}
+>
   <Avatar
     name={profileName}
     avatarUrl={profileRow?.avatar_url}
-    size={62}
+    size={60}
     ring={false}
   />
+</div>
 
   {competeAttention && tab !== 'profile' && (
     <span
