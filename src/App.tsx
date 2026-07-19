@@ -936,32 +936,48 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
                   })}
                 </div>
                 <button
-                  onClick={() => switchTab('profile')}
-                  aria-label="Profile"
-                  className="relative flex items-center justify-center rounded-full active:opacity-60 transition-opacity select-none shrink-0"
-                  style={{
-                    width: 46,
-                    height: 46,
-                    background: 'var(--te-border)',
-                    border: '1px solid var(--te-border)',
-                    boxShadow: tab === 'profile' ? '0 0 0 1.5px rgba(255,255,255,0.9)' : 'none',
-                  }}
-                >
-                  <span style={{ display: 'inline-flex', borderRadius: 9999, opacity: tab === 'profile' ? 1 : 0.55 }}>
-                    <Avatar name={profileName} avatarUrl={profileRow?.avatar_url} size={26} ring={tab !== 'profile'} />
-                  </span>
-                  {competeAttention && tab !== 'profile' && (
-                    <span
-                      aria-hidden
-                      style={{
-                        position: 'absolute', top: 2, right: 2,
-                        width: 7, height: 7, borderRadius: 9999,
-                        background: 'var(--te-accent)',
-                        boxShadow: '0 0 0 2px var(--te-border)',
-                      }}
-                    />
-                  )}
-                </button>
+  onClick={() => switchTab('profile')}
+  aria-label="Profile"
+  className="relative flex items-center justify-center active:opacity-60 transition-opacity select-none shrink-0"
+  style={{
+    width: 46,
+    height: 46,
+    background: 'transparent',
+    border: 'none',
+    boxShadow: 'none',
+  }}
+>
+  <span
+    style={{
+      display: 'inline-flex',
+      borderRadius: 9999,
+      opacity: tab === 'profile' ? 1 : 0.55,
+    }}
+  >
+    <Avatar
+      name={profileName}
+      avatarUrl={profileRow?.avatar_url}
+      size={26}
+      ring={false}
+    />
+  </span>
+
+  {competeAttention && tab !== 'profile' && (
+    <span
+      aria-hidden
+      style={{
+        position: 'absolute',
+        top: 2,
+        right: 2,
+        width: 7,
+        height: 7,
+        borderRadius: 9999,
+        background: 'var(--te-accent)',
+        boxShadow: '0 0 0 2px transparent',
+      }}
+    />
+  )}
+</button>
               </div>
             </div>
           </div>
