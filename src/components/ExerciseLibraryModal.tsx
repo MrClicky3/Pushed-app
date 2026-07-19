@@ -88,8 +88,14 @@ const SvgBookmark = ({ c }: { c: string }) => <svg width="20" height="20" viewBo
 // ── Exercise animation — autoplays, no controls ───────────────
 const ANIM_BASE = 'https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main';
 
+// The animation's first frame — a still shipped alongside each clip. Used as
+// the poster under the playing gif, and as the card art in the library grid.
+function posterFor(gifUrl: string): string {
+  return `${ANIM_BASE}/${gifUrl.replace('videos/', 'images/').replace('.gif', '.jpg')}`;
+}
+
 function ExerciseAnimation({ gifUrl, inline }: { gifUrl: string; inline?: boolean }) {
-  const posterUrl = `${ANIM_BASE}/${gifUrl.replace('videos/', 'images/').replace('.gif', '.jpg')}`;
+  const posterUrl = posterFor(gifUrl);
   const animUrl   = `${ANIM_BASE}/${gifUrl}`;
 
   const wrapper: React.CSSProperties = inline
@@ -164,26 +170,41 @@ const CarouselCard = React.memo(function CarouselCard({ exercise, onTap, onToggl
         borderRadius: 'var(--te-radius-md)', overflow: 'hidden', cursor: 'pointer', textAlign: 'left',
       }}
     >
-      {/* Muscle model fills the card (solid card background, single scrim below) */}
-      <div style={{
-        position: 'absolute',
-        // Lower-body figures sit higher so the target muscles stay in frame.
-        [isUpper ? 'top' : 'bottom']: isUpper ? 26 : 14,
-        left: '50%', transform: 'translateX(-50%)', width: '58%',
-      }}>
-        <Model type={view} data={mapData} bodyColor="#343434" highlightedColors={[accentHex()]} style={{ width: '100%' }} />
-      </div>
+      {/* Card art: the animation's first frame, so the grid previews the actual
+          movement. Exercises without a clip keep the muscle model. */}
+      {exercise.gifUrl ? (
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '74%', background: '#f5f2ee' }}>
+          <img
+            src={posterFor(exercise.gifUrl)}
+            alt=""
+            loading="lazy"
+            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+          />
+        </div>
+      ) : (
+        <div style={{
+          position: 'absolute',
+          // Lower-body figures sit higher so the target muscles stay in frame.
+          [isUpper ? 'top' : 'bottom']: isUpper ? 26 : 14,
+          left: '50%', transform: 'translateX(-50%)', width: '58%',
+        }}>
+          <Model type={view} data={mapData} bodyColor="#343434" highlightedColors={[accentHex()]} style={{ width: '100%' }} />
+        </div>
+      )}
       {/* Single gradient — solid card fading up from behind the title */}
       <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 118, background: 'linear-gradient(to top, var(--te-surface-3) 30%, rgba(20,20,20,0) 100%)' }} />
 
       {/* Tag */}
       <div style={{ position: 'relative', padding: '11px 46px 0 11px' }}>
+        {/* Sits over the card art, which is light — so the pill carries its own
+            near-opaque backing rather than the translucent one it used against
+            the old dark muscle model. */}
         <span className="te-label" style={{
           display: 'inline-block', maxWidth: '100%',
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-          color: 'var(--te-text-3)', fontSize: 10,
-          padding: '3px 8px', borderRadius: 9999, border: `1px solid ${HAIRLINE}`,
-          background: 'rgba(8,8,10,0.5)',
+          color: 'rgba(255,255,255,0.88)', fontSize: 10,
+          padding: '3px 8px', borderRadius: 9999, border: '1px solid rgba(255,255,255,0.12)',
+          background: 'rgba(10,10,12,0.82)',
         }}>
           {exercise.primaryMuscles[0]?.replace(/-/g, ' ')}
         </span>

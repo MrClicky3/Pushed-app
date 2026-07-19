@@ -57,9 +57,9 @@
   /* ─── Radius scale ───────────────────────────────────────────────────────
      18px is the card/panel radius (te-panel). The others are for controls and
      the full-page sheet lip. */
-  --te-radius-sm: 12px;   /* chips, small controls   */
-  --te-radius-md: 18px;   /* cards, panels, buttons  */
-  --te-radius-lg: 26px;   /* overlays, sheet corners */
+  --te-radius-sm: 14px;   /* chips, small controls   */
+  --te-radius-md: 22px;   /* cards, panels, buttons  */
+  --te-radius-lg: 30px;   /* overlays, sheet corners */
 }
 
 html, body {
@@ -141,12 +141,14 @@ body {
   .te-t3 { color: var(--te-text-3); }
   .te-t4 { color: var(--te-text-4); }
 
-  /* ─── Continuous ("squircle") corners ───
-     iOS rounds corners with a superellipse rather than a circular arc, which
-     is why plain border-radius reads slightly pinched next to native UI.
-     `corner-shape` is progressive enhancement: browsers without it keep the
-     ordinary rounded corners, so nothing regresses. Deliberately scoped to
-     the radius tokens — pills and avatars use 9999px and must stay circular. */
+  /* ─── Continuous corners ───
+     iOS rounds corners with a superellipse rather than a circular arc.
+     `squircle` is superellipse(4), which flattens the sides and tightens the
+     actual turn — it reads sharper than a plain radius, not smoother. A gentle
+     exponent just past a circle gives the continuous look while keeping the
+     corner round. Progressive enhancement: browsers without `corner-shape`
+     keep the ordinary rounded corners. Scoped to the radius tokens — pills and
+     avatars use 9999px and must stay circular. */
   [class*="rounded-te-"],
   .te-panel,
   .te-panel-dark,
@@ -154,7 +156,7 @@ body {
   .te-field,
   .te-well,
   .te-bento {
-    corner-shape: squircle;
+    corner-shape: superellipse(2.2);
   }
 
   /* Shared bento surface, so the analytics cards can pick up the squircle
@@ -162,7 +164,7 @@ body {
   .te-bento {
     background: var(--te-surface-1);
     border: 1px solid var(--te-border);
-    border-radius: 20px;
+    border-radius: var(--te-radius-md);
   }
 
   /* ─── TE Panel: flat matte surface ─── */

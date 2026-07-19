@@ -979,8 +979,6 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
         unit={unit}
         toDisplay={toDisplay}
         fromDisplay={fromDisplay}
-        categoryColors={categoryColors}
-        onSetCategoryColor={setCategoryColor}
       />
 
       <ExerciseLibraryModal
