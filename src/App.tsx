@@ -874,9 +874,21 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
                 transition: 'opacity 0.2s ease',
               }}
             >
-              <span className="animate-bounce" style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, lineHeight: 1, fontFamily: "'Geist Mono', monospace", fontWeight: 700 }}>
-                ^
-              </span>
+              {/* iOS-style chevron: rounded caps and joins, drawn rather than
+                  typed, so it reads as an affordance instead of a caret. */}
+              <svg
+                className="animate-bounce"
+                width="15" height="9" viewBox="0 0 15 9" fill="none"
+                style={{ display: 'block' }}
+              >
+                <path
+                  d="M1.6 7.4L7.5 1.6l5.9 5.8"
+                  stroke="rgba(255,255,255,0.45)"
+                  strokeWidth="2.1"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
               <span style={{
                 fontFamily: "'Geist Mono', monospace", fontSize: 9, fontWeight: 600,
                 letterSpacing: '0.12em', textTransform: 'uppercase',

@@ -131,17 +131,19 @@ export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, 
         }} />
 
         <div style={{ position: 'absolute', top: 20, left: 20 }}>
-          <p style={{ fontFamily: "'Geist Mono', monospace", fontSize: 17, fontWeight: 600, letterSpacing: '-0.17px', textTransform: 'uppercase', color: 'var(--te-accent)', lineHeight: 1 }}>
+          <p style={{ fontFamily: "'Geist Mono', monospace", fontSize: 21, fontWeight: 600, letterSpacing: '-0.3px', textTransform: 'uppercase', color: 'var(--te-accent)', lineHeight: 1 }}>
             Exercise Library
           </p>
-          <p style={{ fontFamily: "'Geist', sans-serif", fontSize: 13, fontWeight: 400, letterSpacing: '-0.1px', color: 'var(--te-text-4)', marginTop: 9, lineHeight: 1 }}>
+          {/* Tinted from the accent rather than left grey, so the subtitle
+              belongs to the title instead of reading as disabled text. */}
+          <p style={{ fontFamily: "'Geist', sans-serif", fontSize: 13, fontWeight: 500, letterSpacing: '-0.1px', color: 'color-mix(in srgb, var(--te-accent) 72%, #ffffff)', marginTop: 10, lineHeight: 1 }}>
             Form guides, muscle maps
           </p>
         </div>
 
         <div style={{ position: 'absolute', bottom: 20, left: 20 }}>
-          <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: 32, fontWeight: 600, color: 'var(--te-text-1)', lineHeight: 1, letterSpacing: '-1.76px', display: 'block' }}>{EXERCISE_LIBRARY.length}</span>
-          <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: 13, fontWeight: 600, letterSpacing: '-0.52px', textTransform: 'uppercase', color: 'var(--te-text-1)', marginTop: 8, display: 'block', lineHeight: 1 }}>exercises</span>
+          <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: 40, fontWeight: 600, color: 'var(--te-text-1)', lineHeight: 1, letterSpacing: '-2.2px', display: 'block' }}>{EXERCISE_LIBRARY.length}</span>
+          <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: 15, fontWeight: 600, letterSpacing: '-0.5px', textTransform: 'uppercase', color: 'var(--te-text-1)', marginTop: 9, display: 'block', lineHeight: 1 }}>exercises</span>
         </div>
 
         <div style={{ position: 'absolute', bottom: 0, right: 6, display: 'flex', alignItems: 'flex-end', gap: 0 }}>
