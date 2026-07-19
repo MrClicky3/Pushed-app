@@ -3,7 +3,6 @@ import { CheckIcon } from '@heroicons/react/24/outline';
 import Modal from './Modal';
 import { SECTION_LABEL, ToggleButton } from './SheetControls';
 import SwipeStepper from './SwipeStepper';
-import { PICKER_SWATCHES, type CategoryColors, type CategoryKey } from '../lib/categoryColors';
 import type { Exercise, LoadType } from '../types';
 import type { WeightUnit } from '../hooks/useSettings';
 
@@ -39,11 +38,9 @@ interface Props {
   unit: WeightUnit;
   toDisplay: (kg: number) => number;
   fromDisplay: (val: number) => number;
-  categoryColors: CategoryColors;
-  onSetCategoryColor: (cat: CategoryKey, paletteKey: string) => void;
 }
 
-export default function ExerciseModal({ open, onClose, onSave, onDelete, exercise, prefill, unit, toDisplay, fromDisplay, categoryColors, onSetCategoryColor }: Props) {
+export default function ExerciseModal({ open, onClose, onSave, onDelete, exercise, prefill, unit, toDisplay, fromDisplay }: Props) {
   const [name, setName] = useState('');
   const [group, setGroup] = useState('upper');
   const [loadType, setLoadType] = useState<LoadType>('weighted');
@@ -143,34 +140,10 @@ export default function ExerciseModal({ open, onClose, onSave, onDelete, exercis
           </div>
         </div>
 
-        <div className="space-y-2.5">
-          {/* Colour is a property of the category, not the individual exercise:
-              picking here recolours every exercise sharing this body half (its
-              dot and progress-chart fill). Four presets, no custom picker. */}
-          <p style={SECTION_LABEL}>Color</p>
-          <div className="flex items-center gap-3">
-            {PICKER_SWATCHES.map(sw => {
-              const selected = categoryColors[group as CategoryKey] === sw.key;
-              return (
-                <button
-                  key={sw.key}
-                  type="button"
-                  onClick={() => onSetCategoryColor(group as CategoryKey, sw.key)}
-                  aria-label={sw.label}
-                  aria-pressed={selected}
-                  className="rounded-full shrink-0 transition-transform active:scale-90"
-                  style={{
-                    width: 30, height: 30, borderRadius: '50%',
-                    background: sw.color,
-                    boxShadow: selected
-                      ? `0 0 0 2px var(--te-ink), 0 0 0 4px ${sw.color}`
-                      : 'inset 0 1px 2px rgba(255,255,255,0.3), inset 0 -1px 2px rgba(0,0,0,0.3)',
-                  }}
-                />
-              );
-            })}
-          </div>
-        </div>
+        {/* Colour is a property of the body half, not the individual exercise,
+            so it belongs in Settings › Exercise colors rather than here — this
+            sheet was offering a control that silently recoloured every other
+            exercise sharing the category. */}
 
         <div className="space-y-2.5">
           <p style={SECTION_LABEL}>Type</p>
