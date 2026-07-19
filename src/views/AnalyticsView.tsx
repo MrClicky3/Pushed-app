@@ -101,8 +101,10 @@ function fmtYLabel(v: number): string {
 
 const CW = 440;
 const C_PT = 10;
-const C_XH = 30;
-const C_CH = 176;
+const C_XH = 32;
+const C_CH = 174;
+const LABEL_PLATE_Y = C_PT + C_CH;
+const LINE_BOTTOM = LABEL_PLATE_Y - 2;
 
 // Points span the chart's full width edge-to-edge (no reserved left/right
 // margin) so that when two windows are tiled side by side for swiping, a
@@ -154,14 +156,14 @@ function ScrubChart({
   const TOTAL_H = C_PT + C_CH + C_XH;
   const yRange = yMax - yMin || 1;
 
-  // Clamped so a value outside the domain (e.g. an edge-case seed of 0 below
-  // yMin) can never draw the line past the chart's own bottom edge, into the
-  // x-axis label row below it.
-  const py = (v: number) => Math.min(C_PT + C_CH, Math.max(C_PT, C_PT + ((yMax - v) / yRange) * C_CH));
+  // Clamped so a value outside the domain can never draw the stroke past the
+  // chart bottom edge; LINE_BOTTOM sits 2px above the label backing plate so
+  // round caps aren't clipped.
+  const py = (v: number) => Math.min(LINE_BOTTOM, Math.max(C_PT, C_PT + ((yMax - v) / yRange) * C_CH));
   const xs = points.map((_, i) => chartX(i, points.length));
   const ys = points.map(p => py(p.value));
 
-  const areaBot = C_PT + C_CH;
+  const areaBot = LINE_BOTTOM;
 
   const lineD = (() => {
     const n = xs.length;
@@ -247,7 +249,7 @@ function ScrubChart({
 
       {/* Solid backing plate behind the date row (matches the page bg) so the
           line/area is fully hidden behind the axis labels. */}
-      <rect x={0} y={C_PT + C_CH} width={CW} height={C_XH} fill="#010101" />
+      <rect x={0} y={LABEL_PLATE_Y} width={CW} height={C_XH} fill="#010101" />
 
       {labelIdxs.map((i, li) => {
         const first = li === 0;
@@ -256,7 +258,7 @@ function ScrubChart({
           <text
             key={i}
             x={xs[i]}
-            y={C_PT + C_CH + 23}
+            y={LABEL_PLATE_Y + 22}
             textAnchor={first ? 'start' : last ? 'end' : 'middle'}
             fontSize="12.5"
             fill={hi === i ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.4)'}
@@ -465,13 +467,12 @@ function ScrubbableChart({ def, prevDef, nextDef, domain, yTicks, onShiftWindow 
   }
 
   return (
-    <div className="pt-2 pb-1">
+    <div className="pt-2">
       <PageHeader def={def} scrubIndex={scrub} />
       <div className="mt-3 relative">
         <div
           ref={viewportRef}
-          className="overflow-hidden"
-          style={{ touchAction: 'pan-y' }}
+          style={{ touchAction: 'pan-y', overflowX: 'hidden', overflowY: 'visible' }}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={endGesture}
