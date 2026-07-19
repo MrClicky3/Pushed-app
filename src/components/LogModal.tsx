@@ -520,8 +520,10 @@ export default function LogModal({
             onClick={handleDelete}
             className={`w-full py-3 rounded-te-md text-[13px] font-semibold transition-all active:opacity-75 ${
               confirmDelete
+                // Grey at rest — deleting is a rare escape hatch, not something
+                // the sheet should advertise. Only the armed state goes red.
                 ? 'bg-[color-mix(in_srgb,var(--te-danger)_15%,transparent)] text-[color:var(--te-danger)] border border-[color-mix(in_srgb,var(--te-danger)_25%,transparent)]'
-                : 'text-[color:var(--te-danger)]/50'
+                : 'te-t4'
             }`}
           >
             {confirmDelete ? 'Tap again to confirm' : 'Delete log'}

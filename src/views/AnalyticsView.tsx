@@ -42,14 +42,9 @@ const MONO = "'Geist Mono', 'SF Mono', ui-monospace, monospace";
 // Matches --te-text-1, the app's primary off-white.
 const OVERALL_CHART_COLOR = '#f4f1ec';
 
-// Every bento block on this page shares one surface: same background,
-// same border colour and thickness, same corner radius.
-const BENTO_RADIUS = 20;
-const BENTO: React.CSSProperties = {
-  background: 'var(--te-surface-1)',
-  border: '1px solid var(--te-border)',
-  borderRadius: BENTO_RADIUS,
-};
+// Every bento block on this page shares one surface — background, border and
+// corner radius all live in the `.te-bento` class (index.css) so the
+// stylesheet's squircle rule can reach them.
 
 function fmtDate(d: Date) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -528,8 +523,8 @@ function ScrubbableChart({ def, prevDef, nextDef, domain, yTicks, onShiftWindow 
 function StatCard({ label, value, sub }: { label: string; value: string; sub: string }) {
   return (
     <div
-      className="px-[18px] py-[13px] flex items-center justify-between gap-3"
-      style={BENTO}
+      className="px-[18px] py-[13px] flex items-center justify-between gap-3 te-bento"
+      
     >
       <div className="min-w-0">
         <p className="text-[15px] font-semibold te-t1 tracking-tight">{label}</p>
@@ -922,7 +917,7 @@ function GroupedExercisePicker({
   const allGroups = [...orderedGroups, ...otherGroups];
 
   return (
-    <div className="overflow-hidden" style={BENTO}>
+    <div className="overflow-hidden te-bento" >
       {allGroups.map((group, gi) => (
         <div key={group}>
           {gi > 0 && <div className="h-px mx-3" style={{ background: 'var(--te-border)' }} />}
@@ -983,7 +978,7 @@ function ThisWeekCard({ logs, schedule, routines, exercises }: {
   );
 
   return (
-    <div className="px-4 pt-3 pb-3.5" style={BENTO}>
+    <div className="px-4 pt-3 pb-3.5 te-bento" >
       <div className="flex items-center justify-between gap-3">
         <p className="te-label" style={{ color: 'var(--te-text-4)' }}>This week</p>
         {chip && (
@@ -1054,8 +1049,8 @@ function StreakCard({ logs, schedule, routines, exercises }: {
       {items.map(({ value, label }) => (
         <div
           key={label}
-          className="flex-1 flex flex-col items-center justify-center gap-1.5 h-[60px]"
-          style={BENTO}
+          className="flex-1 flex flex-col items-center justify-center gap-1.5 h-[60px] te-bento"
+          
         >
           <span className="text-[17px] font-bold tabular-nums leading-none te-digit te-t1 tracking-[-0.17px]">
             {value}
@@ -1313,8 +1308,8 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
     <>
       <button
         onClick={() => setPrOpen(true)}
-        className="w-full px-4 py-3.5 mt-3 flex items-center gap-3 active:bg-white/[0.04] transition-colors text-left"
-        style={BENTO}
+        className="w-full px-4 py-3.5 mt-3 flex items-center gap-3 active:bg-white/[0.04] transition-colors text-left te-bento"
+        
       >
         <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: 'var(--te-border-strong)' }}>
           <StarIconSolid className="w-4 h-4" style={{ color: '#ffffff' }} />
@@ -1334,7 +1329,7 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
 
       <Modal open={prOpen} onClose={() => setPrOpen(false)} title="Personal records">
         {prs.length === 0 ? (
-          <div className="px-4 py-8 text-center te-label" style={BENTO}>No records yet</div>
+          <div className="px-4 py-8 text-center te-label te-bento" >No records yet</div>
         ) : (
           <div className="space-y-5">
             {/* Recently broken — the PR history that used to vanish with the
@@ -1347,7 +1342,7 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
                     <span className="te-label ml-auto" style={{ color: 'var(--te-success)' }}>{prsThisWeek} this week</span>
                   )}
                 </div>
-                <div className="overflow-hidden divide-y divide-[color:var(--te-border)]" style={BENTO}>
+                <div className="overflow-hidden divide-y divide-[color:var(--te-border)] te-bento" >
                   {prEvents.slice(0, 12).map(e => {
                     const ex = exercises.find(x => x.id === e.exerciseId);
                     return (
@@ -1378,7 +1373,7 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
                   <span className="te-label" style={{ color: 'var(--te-text-4)' }}>{label}</span>
                   <span className="te-label ml-auto">{items.length}</span>
                 </div>
-                <div className="overflow-hidden divide-y divide-[color:var(--te-border)]" style={BENTO}>
+                <div className="overflow-hidden divide-y divide-[color:var(--te-border)] te-bento" >
                   {items.map(pr => (
                     <div key={pr.id} className="flex items-center px-4 py-[14px] gap-3">
                       <div className="flex-1 min-w-0">

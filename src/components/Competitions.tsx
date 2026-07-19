@@ -51,7 +51,7 @@ function scoreText(track: CompetitionTrack, s: CompetitionStanding): { text: str
   if (track === 'volume') {
     if (s.delta === null || s.delta === undefined) return { text: '—', color: 'var(--te-text-4)' };
     const sign = s.delta > 0 ? '+' : '';
-    return { text: `${sign}${s.delta}%`, color: s.delta >= 0 ? 'var(--te-pr)' : '#e8a657' };
+    return { text: `${sign}${s.delta}%`, color: s.delta >= 0 ? 'var(--te-pr)' : 'var(--te-warn)' };
   }
   if (s.score === null || s.score === undefined) return { text: '—', color: 'var(--te-text-4)' };
   return { text: `${Math.round(s.score)}%`, color: 'var(--te-text-1)' };
@@ -546,9 +546,10 @@ function CompetitionSheet({
   const title = done ? 'Results' : comp.name;
 
   return (
-    // A duel's detail is the app's most-read sheet, so it gets a height floor
-    // instead of collapsing to a strip hugging the home indicator.
-    <Modal open={open} onClose={onClose} title={title} minHeight="58dvh">
+    // No height floor: the sheet's own content plus the safe-area padding now
+    // gives it the right presence, and forcing a minimum only added dead space
+    // under the last row.
+    <Modal open={open} onClose={onClose} title={title}>
       <div className="space-y-4">
         <div className="flex items-center justify-between px-0.5">
           <div>
@@ -848,8 +849,8 @@ function StatusPill({ text, live, urgent }: { text: string; live?: boolean; urge
         fontFamily: "'Geist Mono', monospace", fontSize: 10, fontWeight: 600,
         letterSpacing: '0.04em', textTransform: 'uppercase', lineHeight: 1,
         padding: '4px 8px', borderRadius: 9999,
-        color: urgent ? '#e8a657' : live ? 'var(--te-pr)' : 'var(--te-text-3)',
-        background: urgent ? 'rgba(232,166,87,0.12)' : live ? 'rgba(127,213,127,0.12)' : 'var(--te-border)',
+        color: urgent ? 'var(--te-warn)' : live ? 'var(--te-pr)' : 'var(--te-text-3)',
+        background: urgent ? 'rgba(255,107,94,0.12)' : live ? 'rgba(127,213,127,0.12)' : 'var(--te-border)',
       }}
     >
       {text}
@@ -1110,7 +1111,7 @@ export function CompetitionMiniWidget({ comps, onOpen }: {
         <p className="text-[13px] font-semibold te-t1 tracking-tight truncate">{soonest.name}</p>
         {status && <p className="te-label mt-0.5 truncate">{status}</p>}
       </div>
-      <span className="te-label shrink-0 whitespace-nowrap" style={urgent ? { color: '#e8a657' } : undefined}>
+      <span className="te-label shrink-0 whitespace-nowrap" style={urgent ? { color: 'var(--te-warn)' } : undefined}>
         ends {fmtLeft(soonest.end_at, '')}
       </span>
       <ChevronRightIcon className="w-3.5 h-3.5 te-t4 shrink-0" />
