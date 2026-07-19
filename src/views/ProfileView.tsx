@@ -213,7 +213,7 @@ function StreakRows({ rows, onSelect }: { rows: LeaderboardRow[]; onSelect: (r: 
             </p>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
-            <FireIcon className="w-4 h-4" style={{ color: r.current_streak > 0 ? '#f4f1ec' : 'rgba(255,255,255,0.2)' }} />
+            <FireIcon className="w-4 h-4" style={{ color: r.current_streak > 0 ? 'var(--te-danger)' : 'rgba(255,255,255,0.2)' }} />
             <span className="te-digit text-[20px] font-bold tabular-nums" style={{ color: r.current_streak > 0 ? '#f4f1ec' : 'rgba(255,255,255,0.3)' }}>
               {r.current_streak}
             </span>
@@ -294,12 +294,8 @@ function Leaderboard({
       }}
     >
       <div className="flex items-center gap-2.5 mb-3.5 px-0.5">
-        <div
-          className="flex items-center justify-center rounded-full shrink-0"
-          style={{ width: 30, height: 30, background: 'color-mix(in srgb, var(--te-gold) 14%, transparent)', border: '1px solid color-mix(in srgb, var(--te-gold) 28%, transparent)' }}
-        >
-          <Trophy className="w-4 h-4" style={{ color: 'var(--te-gold)' }} strokeWidth={2} />
-        </div>
+        {/* No plate behind it — the trophy carries the section on its own. */}
+        <Trophy className="w-[22px] h-[22px] shrink-0" style={{ color: 'var(--te-gold)' }} strokeWidth={2} />
         <div className="min-w-0">
           <p className="text-[17px] font-bold te-t1 tracking-tight leading-none" style={{ letterSpacing: '-0.03em' }}>
             Leaderboard
@@ -318,7 +314,7 @@ function Leaderboard({
 
       {friendCount === 0 ? (
         <div className="te-panel rounded-te-md px-5 py-8 text-center">
-          <FireIcon className="w-8 h-8 mx-auto mb-2.5" style={{ color: 'var(--te-text-1)' }} />
+          <FireIcon className="w-8 h-8 mx-auto mb-2.5" style={{ color: 'var(--te-danger)' }} />
           <p className="text-[17px] font-semibold te-t1 tracking-tight">Compete with friends</p>
           <p className="text-[13px] te-t3 mt-1 leading-snug">
             Add a friend below to see who keeps the longest streak.

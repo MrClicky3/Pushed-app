@@ -1,11 +1,23 @@
 import { useEffect, useRef, useMemo } from 'react';
 import { FireIcon } from '@heroicons/react/24/outline';
-import Model from '@phelian/react-body-highlighter';
 import ExerciseCard from '../components/ExerciseCard';
-import { accentHex } from '../lib/accent';
 import { EXERCISE_LIBRARY } from '../data/exerciseLibrary';
 import type { Exercise, WorkoutLog } from '../types';
 import type { WeightUnit } from '../hooks/useSettings';
+
+// First frame of an exercise's animation (a .jpg poster beside the .gif) —
+// the same asset the library detail view shows before its clip plays.
+const ANIM_BASE = 'https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main';
+function posterUrl(gifUrl: string): string {
+  return `${ANIM_BASE}/${gifUrl.replace('videos/', 'images/').replace('.gif', '.jpg')}`;
+}
+// A few movements with clearly readable silhouettes to preview on the library
+// card. Fixed rather than random so the card doesn't flicker between renders.
+const CARD_PREVIEW_GIFS = [
+  'videos/0032-ila4NZS.gif', // deadlift
+  'videos/0652-lBDjFxJ.gif', // pull-up
+  'videos/0662-I4hDWkc.gif', // push-up
+];
 
 interface Props {
   exercises: Exercise[];
@@ -22,11 +34,6 @@ const GROUP_ORDER = ['upper', 'lower', 'push', 'pull', 'legs', 'core'];
 export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, unit, toDisplay }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const PREVIEW_FIGURES = [
-    { view: 'posterior' as const, muscles: ['upper-back', 'trapezius'] as never[], isUpper: true,  w: 52, h: 94,  opacity: 0.72 },
-    { view: 'anterior' as const,  muscles: ['chest', 'front-deltoids'] as never[], isUpper: true,  w: 66, h: 118, opacity: 1.00 },
-    { view: 'anterior' as const,  muscles: ['quadriceps', 'hamstring'] as never[], isUpper: false, w: 52, h: 90,  opacity: 0.72 },
-  ];
 
   useEffect(() => {
     const container = containerRef.current;
@@ -147,25 +154,39 @@ export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, 
           <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: 15, fontWeight: 600, letterSpacing: '-0.5px', textTransform: 'uppercase', color: 'var(--te-text-1)', marginTop: 9, display: 'block', lineHeight: 1 }}>exercises</span>
         </div>
 
-        <div style={{ position: 'absolute', bottom: 0, right: 6, display: 'flex', alignItems: 'flex-end', gap: 0 }}>
-          {PREVIEW_FIGURES.map((fig, i) => (
-            <div key={i} style={{ position: 'relative', width: fig.w, height: fig.h, flexShrink: 0, opacity: fig.opacity }}>
-              <div style={{
-                position: 'absolute',
-                [fig.isUpper ? 'top' : 'bottom']: -6,
-                left: '50%', transform: 'translateX(-50%)',
-                width: '120%',
-              }}>
-                <Model
-                  type={fig.view}
-                  data={[{ name: 'p', muscles: fig.muscles }]}
-                  bodyColor="#181818"
-                  highlightedColors={[accentHex()]}
-                  style={{ width: '100%' }}
+        {/* Exercise-animation first frames, fanned like a small stack of
+            cards. The posters have a light background, so each sits in its own
+            rounded tile with a hairline — reads as physical thumbnails on the
+            dark wash rather than floating cut-outs. */}
+        <div style={{ position: 'absolute', bottom: 14, right: 14, display: 'flex', alignItems: 'flex-end' }}>
+          {CARD_PREVIEW_GIFS.map((gif, i) => {
+            const last = i === CARD_PREVIEW_GIFS.length - 1;
+            const size = last ? 88 : 76;
+            return (
+              <div
+                key={gif}
+                style={{
+                  width: size, height: size,
+                  marginLeft: i === 0 ? 0 : -size * 0.46,
+                  borderRadius: 16,
+                  overflow: 'hidden',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  boxShadow: '0 6px 16px rgba(0,0,0,0.45)',
+                  background: '#f5f2ee',
+                  transform: `rotate(${(i - 1) * 5}deg)`,
+                  opacity: last ? 1 : 0.9,
+                  zIndex: i,
+                }}
+              >
+                <img
+                  src={posterUrl(gif)}
+                  alt=""
+                  loading="lazy"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </button>

@@ -6,7 +6,7 @@
   --te-upper: #9b8cf2;
   --te-lower: #f2c08c;
   --te-pr:    #7fd57f;
-  --te-warn:  #e8a657;
+  --te-warn:  #ff6b5e;   /* was orange; unified with the app's red */
   /* Single source of truth for every bento/card border — keep card borders on
      this token so they stay uniform in opacity and thickness. */
   --te-border: rgba(255, 255, 255, 0.06);
@@ -140,6 +140,30 @@ body {
   .te-t2 { color: var(--te-text-2); }
   .te-t3 { color: var(--te-text-3); }
   .te-t4 { color: var(--te-text-4); }
+
+  /* ─── Continuous ("squircle") corners ───
+     iOS rounds corners with a superellipse rather than a circular arc, which
+     is why plain border-radius reads slightly pinched next to native UI.
+     `corner-shape` is progressive enhancement: browsers without it keep the
+     ordinary rounded corners, so nothing regresses. Deliberately scoped to
+     the radius tokens — pills and avatars use 9999px and must stay circular. */
+  [class*="rounded-te-"],
+  .te-panel,
+  .te-panel-dark,
+  .te-inset,
+  .te-field,
+  .te-well,
+  .te-bento {
+    corner-shape: squircle;
+  }
+
+  /* Shared bento surface, so the analytics cards can pick up the squircle
+     above instead of carrying an inline radius the CSS can't reach. */
+  .te-bento {
+    background: var(--te-surface-1);
+    border: 1px solid var(--te-border);
+    border-radius: 20px;
+  }
 
   /* ─── TE Panel: flat matte surface ─── */
   .te-panel {

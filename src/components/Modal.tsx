@@ -8,16 +8,13 @@ interface Props {
   onBack?: () => void;
   noPadTop?: boolean;
   noPadBottom?: boolean;
-  /** Floor for the sheet's height, e.g. "56dvh". Keeps short sheets from
-   *  presenting as a cramped strip above the home indicator. */
-  minHeight?: string;
 }
 
 const DISMISS_THRESHOLD = 160;
 const VELOCITY_THRESHOLD = 900;
 const START_THRESHOLD = 6;
 
-export default function Modal({ open, onClose, title, children, onBack, noPadTop, noPadBottom, minHeight }: Props) {
+export default function Modal({ open, onClose, title, children, onBack, noPadTop, noPadBottom }: Props) {
   const sheetRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const drag = useRef<{
@@ -191,7 +188,6 @@ export default function Modal({ open, onClose, title, children, onBack, noPadTop
         className={`relative w-full max-w-lg rounded-t-te-lg z-10 flex flex-col ${!dismissing && !isDragging ? 'animate-slide-up' : ''}`}
         style={{
           maxHeight: '90dvh',
-          minHeight,
           transform: sheetTransform,
           transition: isDragging ? 'none' : 'transform 0.32s cubic-bezier(0.32, 0.72, 0, 1)',
           willChange: 'transform',

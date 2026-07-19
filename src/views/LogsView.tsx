@@ -42,7 +42,7 @@ interface Props {
 function SetBadge({ kind }: { kind: 'warmup' | 'drop' | 'pr' }) {
   const style: Record<string, { text: string; color: string; bg: string }> = {
     warmup: { text: 'Warmup', color: 'var(--te-text-4)', bg: 'var(--te-border)' },
-    drop:   { text: 'Drop',   color: 'var(--te-warn)',          bg: 'rgba(232,166,87,0.10)' },
+    drop:   { text: 'Drop',   color: 'var(--te-warn)',          bg: 'rgba(255,107,94,0.10)' },
     pr:     { text: 'PR',     color: 'var(--te-success)',                 bg: 'rgba(48,209,88,0.12)' },
   };
   const s = style[kind];

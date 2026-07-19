@@ -16,6 +16,15 @@ import {
   CATEGORY_LABELS, CATEGORY_PALETTE,
   type CategoryColors, type CategoryKey,
 } from '../lib/categoryColors';
+
+// Only Upper and Lower are offered: they're the two halves the Add Exercise
+// sheet actually assigns, so the rest of the palette keys have nothing to
+// recolour. Five swatches keeps the row to one line at any width.
+const SETTABLE_CATEGORIES: CategoryKey[] = ['upper', 'lower'];
+const SETTINGS_SWATCH_KEYS = ['purple', 'orange', 'blue', 'green', 'white'];
+const SETTINGS_SWATCHES = SETTINGS_SWATCH_KEYS
+  .map(k => CATEGORY_PALETTE.find(s => s.key === k))
+  .filter((s): s is NonNullable<typeof s> => Boolean(s));
 import { categoryVar, CATEGORY_KEYS } from '../lib/categoryColors';
 import ReportBugSheet from './ReportBugSheet';
 
@@ -630,13 +639,13 @@ export default function ScheduleModal({
                 <p className="text-[15px] font-medium te-t1 tracking-tight">Exercise colors</p>
                 <p className="text-[13px] te-t3 mt-0.5 leading-snug">The dot beside each category, and its charts</p>
                 <div className="mt-3 space-y-2.5">
-                  {CATEGORY_KEYS.map(cat => (
+                  {SETTABLE_CATEGORIES.map(cat => (
                     <div key={cat} className="flex items-center gap-3">
                       <span className="te-label shrink-0" style={{ width: 44, color: 'var(--te-text-3)' }}>
                         {CATEGORY_LABELS[cat]}
                       </span>
                       <div className="flex items-center gap-2 flex-wrap">
-                        {CATEGORY_PALETTE.map(sw => {
+                        {SETTINGS_SWATCHES.map(sw => {
                           const selected = categoryColors[cat] === sw.key;
                           return (
                             <button
@@ -670,12 +679,7 @@ export default function ScheduleModal({
               onClick={() => setEditProfileOpen(true)}
               className="te-panel w-full flex items-center justify-between px-4 py-3.5 rounded-te-md active:bg-white/[0.04] transition-colors text-left gap-3"
             >
-              <div className="min-w-0">
-                <p className="text-[15px] font-medium te-t1 tracking-tight">Edit profile</p>
-                <p className="text-[13px] te-t3 mt-0.5 leading-snug truncate">
-                  {userName || 'Name not set'}{bio ? ` · ${bio}` : ''}
-                </p>
-              </div>
+              <p className="text-[15px] font-medium te-t1 tracking-tight min-w-0 truncate">Edit profile</p>
               <ChevronRightIcon className="w-3.5 h-3.5 te-t4 shrink-0" />
             </button>
           </div>
@@ -687,10 +691,7 @@ export default function ScheduleModal({
               onClick={() => setDataMenuOpen(true)}
               className="te-panel w-full flex items-center justify-between px-4 py-3.5 rounded-te-md active:bg-white/[0.04] transition-colors text-left"
             >
-              <div>
-                <p className="text-[15px] font-medium te-t1 tracking-tight">Export</p>
-                <p className="text-[13px] te-t3 mt-0.5 leading-snug">CSV or JSON</p>
-              </div>
+              <p className="text-[15px] font-medium te-t1 tracking-tight">Export</p>
               <ChevronRightIcon className="w-3.5 h-3.5 te-t4 shrink-0" />
             </button>
           </div>
