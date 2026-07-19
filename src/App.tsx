@@ -903,7 +903,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
 
           {/* Tabs — hidden in focus mode */}
           {/* Swipe-up line — the grabber you drag up on to add. */}
-          <div className="flex justify-center" style={{ paddingTop: 5, paddingBottom: 1 }}>
+          <div className="flex justify-center" style={{ paddingTop: 8, paddingBottom: 0 }}>
             <div style={{ width: 68, height: 4, borderRadius: 9999, background: 'rgba(255,255,255,0.16)' }} />
           </div>
 
@@ -940,8 +940,8 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
   aria-label="Profile"
   className="relative flex items-center justify-center active:opacity-60 transition-opacity select-none shrink-0"
   style={{
-    width: 60,
-    height: 60,
+    width: 57,
+    height: 57,
     marginTop: -1, // adjust if needed
     marginBottom: -1,
     background: 'transparent',
@@ -951,19 +951,19 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
 >
   <div
   style={{
-    width: 60,
-    height: 60,
+    width: 57,
+    height: 57,
     borderRadius: '9999px',
     padding: tab === 'profile' ? 2 : 0,
     boxSizing: 'border-box',
-    background: tab === 'profile' ? 'var(--te-accent)' : 'transparent',
+    background: tab === 'profile' ? '#282828' : 'transparent',
     overflow: 'hidden',
   }}
 >
   <Avatar
     name={profileName}
     avatarUrl={profileRow?.avatar_url}
-    size={60}
+    size={57}
     ring={false}
   />
 </div>
