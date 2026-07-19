@@ -421,10 +421,13 @@ function SessionRecapCard({
       if (!me) return null;
       const base = baselineFor(c.id);
       if (!base || base.dayKey !== compTodayKey()) return null;
-      const cur = c.track === 'volume' ? (me.delta ?? null) : (me.score ?? null);
-      const prev = c.track === 'volume' ? base.delta : base.score;
+      // Both tracks rank on `score` now: raw kg for volume, streak days.
+      const cur = me.score ?? null;
+      const prev = base.score;
       if (cur === null || prev === null || Math.round(cur) === Math.round(prev)) return null;
-      const fmt = (v: number) => c.track === 'volume' ? `${v > 0 ? '+' : ''}${Math.round(v)}%` : `${Math.round(v)}%`;
+      const fmt = (v: number) => c.track === 'streak'
+        ? `${Math.round(v)}d`
+        : `${Math.round(toDisplay(v)).toLocaleString()}${unit.toUpperCase()}`;
       return {
         id: c.id,
         name: c.name,

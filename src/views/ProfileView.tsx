@@ -209,7 +209,7 @@ function StreakRows({ rows, onSelect }: { rows: LeaderboardRow[]; onSelect: (r: 
               {r.display_name || r.username}{r.is_self && <span className="te-t4 font-normal"> · you</span>}
             </p>
             <p className="te-label mt-1">
-              {r.consistency_score === null ? '— consistency' : `${r.consistency_score}% consistent`}
+              longest {r.longest_streak}d
             </p>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
@@ -300,7 +300,7 @@ function Leaderboard({
           <p className="text-[17px] font-bold te-t1 tracking-tight leading-none" style={{ letterSpacing: '-0.03em' }}>
             Leaderboard
           </p>
-          <p className="te-label mt-1">Streaks & 30-day volume</p>
+          <p className="te-label mt-1">Last 30 days</p>
         </div>
       </div>
 
@@ -575,9 +575,9 @@ export default function ProfileView({
         </button>
       </div>
 
-      <CompetitionsSection comps={competitions} friendsList={friends.friendsList} />
+      <CompetitionsSection comps={competitions} friendsList={friends.friendsList} unit={unit} toDisplay={toDisplay} />
 
-      <BadgeShelf badges={badges} comps={competitions} />
+      <BadgeShelf badges={badges} comps={competitions} unit={unit} toDisplay={toDisplay} />
 
       <Leaderboard
         friendCount={friends.friendCount}

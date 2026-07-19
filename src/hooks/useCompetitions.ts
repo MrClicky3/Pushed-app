@@ -29,9 +29,9 @@ function deviceTimezone(): string {
 
 /**
  * Competitions data layer. `scheduledDays` is the current user's scheduled
- * training weekdays (Mon=0…Sun=6), derived from the client-only schedule; it
- * is frozen server-side on create/accept so the consistency track can be
- * scored without the schedule living in the database.
+ * training weekdays (Mon=0…Sun=6), derived from the client-only schedule.
+ * The retired consistency track froze it server-side on create/accept; it is
+ * still passed for signature stability, but the volume/streak tracks ignore it.
  */
 export function useCompetitions(scheduledDays: number[]) {
   const [competitions, setCompetitions] = useState<CompetitionSummary[]>([]);

@@ -314,9 +314,9 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
   const friends = useFriends(userId);
   const { needsUsername, profile: profileRow, pushStats, createProfile, inviteUrl, setAvatar, uploadAvatarFile, updateBio } = profileApi;
 
-  // Weekdays (Mon=0…Sun=6) the user has a non-empty routine scheduled — frozen
-  // into a competition on create/accept so the consistency track can be scored
-  // server-side without the schedule (localStorage-only) living in the DB.
+  // Weekdays (Mon=0…Sun=6) the user has a non-empty routine scheduled — still
+  // passed to the competition RPCs for signature stability (the retired
+  // consistency track froze it server-side; volume/streak ignore it).
   const scheduledDays = useMemo(
     () => schedule
       .filter(s => {
