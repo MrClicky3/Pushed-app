@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { QueueListIcon, PlusIcon, CheckIcon, ChevronDownIcon, ForwardIcon, XMarkIcon, TrophyIcon } from '@heroicons/react/24/outline';
-import { BookOpenIcon } from '@heroicons/react/24/solid';
+import { BookOpenIcon, StarIcon } from '@heroicons/react/24/solid';
 import EmptyState from '../components/EmptyState';
 import ExerciseLibraryModal from '../components/ExerciseLibraryModal';
 import { EXERCISE_LIBRARY } from '../data/exerciseLibrary';
@@ -14,6 +14,7 @@ import { feedback } from '../lib/feedback';
 import { loadDaySet, saveDaySet, saveWorkoutDoneAt, isWorkoutDone } from '../lib/skips';
 import { dayCompletionPct } from '../lib/streak';
 import { baselineFor, todayKey as compTodayKey } from '../lib/compSnapshots';
+import { buildPREvents, prEventsOn, prEventsThisWeek, prLabel } from '../lib/prs';
 
 interface Props {
   logs: WorkoutLog[];
@@ -438,6 +439,13 @@ function SessionRecapCard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [competitions?.competitions, logs.length, dismissed]);
 
+  // PRs set today, and the running week tally — the toast that flashed during
+  // the set becomes a record you can still see afterwards.
+  const { todayPRs, weekPRCount } = useMemo(() => {
+    const all = buildPREvents(logs);
+    return { todayPRs: prEventsOn(all, new Date()), weekPRCount: prEventsThisWeek(all).length };
+  }, [logs]);
+
   // Fist bumps received today (hidden until the migration is live).
   const [bumps, setBumps] = useState<BumpSender[]>([]);
   useEffect(() => {
@@ -545,6 +553,38 @@ function SessionRecapCard({
               </p>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* PRs set today — the headline achievement of the session */}
+      {todayPRs.length > 0 && (
+        <div style={{ borderTop: '1px solid var(--te-border)', background: 'rgba(48,209,88,0.06)' }}>
+          <div className="flex items-center justify-between px-3.5 pt-2.5 pb-1.5">
+            <div className="flex items-center gap-1.5">
+              <StarIcon className="w-3.5 h-3.5" style={{ color: 'var(--te-success)' }} />
+              <p className="te-label" style={{ color: 'var(--te-success)' }}>
+                {todayPRs.length} personal record{todayPRs.length === 1 ? '' : 's'}
+              </p>
+            </div>
+            {weekPRCount > todayPRs.length && (
+              <p className="te-label" style={{ color: 'var(--te-text-4)' }}>{weekPRCount} this week</p>
+            )}
+          </div>
+          <div className="pb-2">
+            {todayPRs.map(pr => {
+              const ex = exercises.find(e => e.id === pr.exerciseId);
+              return (
+                <div key={pr.logId} className="flex items-center justify-between px-3.5 py-1 gap-3">
+                  <p className="text-[13px] font-semibold te-t2 tracking-tight truncate">
+                    {ex?.name ?? 'Unknown'}
+                  </p>
+                  <p className="te-mono text-[11px] font-semibold tabular-nums shrink-0" style={{ color: 'var(--te-success)' }}>
+                    {prLabel(pr, unit, toDisplay)}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
@@ -675,11 +715,15 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
     new Map(EXERCISE_LIBRARY.map(e => [e.name.toLowerCase(), e])),
   []);
 
-  function toggleCollapsed(id: string, locked = false) {
-    // Once the workout is complete, finished exercises stay collapsed — only
-    // still-incomplete ones can be re-opened.
-    if (locked) return;
-    setCollapsedIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  // Collapsing is always the user's call — including after the workout is
+  // finished, and on past days, where reviewing what you did is the whole
+  // point of opening the page.
+  function toggleCollapsed(id: string) {
+    setCollapsedIds(prev => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
   }
 
   // Resolve the routine scheduled for a given date's day-of-week
@@ -1019,7 +1063,7 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
                 <div className="flex items-center justify-between mb-2">
                   <button
                     className="flex-1 text-left active:opacity-70 transition-opacity min-w-0"
-                    onClick={() => toggleCollapsed(exerciseId, workoutDone && isDone)}
+                    onClick={() => toggleCollapsed(exerciseId)}
                   >
                     <div className="flex items-baseline min-w-0">
                       <p className="text-[17px] font-semibold te-t1 tracking-tight truncate min-w-0" style={{ letterSpacing: '-0.01em' }}>
@@ -1066,7 +1110,7 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
                         <BookOpenIcon className="w-4 h-4" />
                       </button>
                     )}
-                    <button onClick={() => toggleCollapsed(exerciseId, workoutDone && isDone)} className="p-1 te-t4 active:text-white/50 transition-colors">
+                    <button onClick={() => toggleCollapsed(exerciseId)} className="p-1 te-t4 active:text-white/50 transition-colors">
                       <ChevronDownIcon
                         className="w-4 h-4 transition-transform duration-200"
                         style={{ transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}

@@ -1,13 +1,17 @@
-// Compete — the social layer's home tab: competitions, badge case,
-// leaderboard, and friends. These sections used to live buried inside the
-// Profile page; Profile now keeps identity + settings only.
-import { useState, useEffect, useCallback } from 'react';
+// Profile — the fourth tab. Identity (avatar, bio) sits above the whole
+// social layer: competitions, badge case, leaderboard and friends, with
+// settings at the foot. Reached by its own tab, whose icon is the user's
+// avatar, so nothing here is hidden behind a gesture or a corner button.
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   LinkIcon, MagnifyingGlassIcon, CheckIcon, ClockIcon, UserPlusIcon,
+  Cog6ToothIcon, ChevronRightIcon, CameraIcon, PhotoIcon,
 } from '@heroicons/react/24/outline';
 import { FireIcon } from '@heroicons/react/24/solid';
 import { Trophy } from 'lucide-react';
-import Avatar from '../components/Avatar';
+import Avatar, { AVATAR_PRESETS, presetKeyOf } from '../components/Avatar';
+import Modal from '../components/Modal';
+import ReportBugSheet from '../components/ReportBugSheet';
 import { CompetitionsSection, BadgeShelf } from '../components/Competitions';
 import FriendProfile, { type FriendProfileTarget } from '../components/FriendProfile';
 import { ToggleButton } from '../components/SheetControls';
@@ -15,11 +19,13 @@ import type { Profile, LeaderboardRow, VolumeRow, Badge } from '../types';
 import type { useFriends, ProfileLite } from '../hooks/useFriends';
 import type { useCompetitions } from '../hooks/useCompetitions';
 import type { useFistBumps } from '../hooks/useFistBumps';
+import type { useProfile } from '../hooks/useProfile';
 import type { WeightUnit } from '../hooks/useSettings';
 
 type FriendsApi = ReturnType<typeof useFriends>;
 type CompetitionsApi = ReturnType<typeof useCompetitions>;
 type FistBumpsApi = ReturnType<typeof useFistBumps>;
+type ProfileApi = ReturnType<typeof useProfile>;
 
 interface Props {
   profile: Profile | null;
@@ -29,6 +35,156 @@ interface Props {
   unit: WeightUnit;
   toDisplay: (kg: number) => number;
   inviteUrl: string;
+  onOpenSettings: () => void;
+  setAvatar: ProfileApi['setAvatar'];
+  uploadAvatarFile: ProfileApi['uploadAvatarFile'];
+  updateBio: ProfileApi['updateBio'];
+}
+
+const BIO_MAX = 160;
+
+// ── Bio edit sheet ───────────────────────────────────────────────
+function BioEditSheet({
+  open, onClose, bio, updateBio,
+}: {
+  open: boolean;
+  onClose: () => void;
+  bio: string | null;
+  updateBio: ProfileApi['updateBio'];
+}) {
+  const [value, setValue] = useState(bio ?? '');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => { if (open) { setValue(bio ?? ''); setError(null); } }, [open, bio]);
+
+  async function save() {
+    if (saving) return;
+    setSaving(true);
+    setError(null);
+    const err = await updateBio(value);
+    if (err) { setError(err); setSaving(false); return; }
+    setSaving(false);
+    onClose();
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title="Bio">
+      <div className="space-y-3">
+        <textarea
+          data-no-drag
+          autoFocus
+          value={value}
+          onChange={e => setValue(e.target.value.slice(0, BIO_MAX))}
+          placeholder="Tell friends a bit about yourself…"
+          rows={4}
+          className="w-full rounded-te-md px-3.5 py-3 text-[15px] te-t1 placeholder-white/25 tracking-tight outline-none resize-none"
+          style={{ background: 'var(--te-well)', border: '1px solid var(--te-border)' }}
+        />
+        <div className="flex items-center justify-between px-0.5">
+          <p className="te-label" style={{ color: error ? 'var(--te-danger)' : 'var(--te-text-4)' }}>
+            {error ?? `${value.length}/${BIO_MAX}`}
+          </p>
+        </div>
+        <button
+          onClick={save}
+          disabled={saving}
+          className="te-white-btn w-full rounded-te-md font-semibold text-[15px] disabled:opacity-50"
+          style={{ height: 48 }}
+        >
+          {saving ? 'Saving…' : 'Save'}
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+// ── Avatar picker sheet — 5 presets + upload your own ──────────
+function AvatarPickerSheet({
+  open, onClose, name, avatarUrl, setAvatar, uploadAvatarFile,
+}: {
+  open: boolean;
+  onClose: () => void;
+  name: string;
+  avatarUrl: string | null;
+  setAvatar: ProfileApi['setAvatar'];
+  uploadAvatarFile: ProfileApi['uploadAvatarFile'];
+}) {
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const selectedPreset = presetKeyOf(avatarUrl);
+
+  async function choosePreset(key: string) {
+    if (saving) return;
+    setSaving(true);
+    setError(null);
+    const err = await setAvatar(`preset:${key}`);
+    if (err) setError(err);
+    setSaving(false);
+  }
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-selecting the same file later
+    if (!file) return;
+    setSaving(true);
+    setError(null);
+    const err = await uploadAvatarFile(file);
+    if (err) setError(err);
+    setSaving(false);
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title="Profile photo">
+      <div className="space-y-5">
+        <div className="flex justify-center">
+          <Avatar name={name} avatarUrl={avatarUrl} size={88} />
+        </div>
+
+        <div>
+          <p className="te-label mb-2 px-0.5">Choose an icon</p>
+          <div className="grid grid-cols-5 gap-2.5">
+            {AVATAR_PRESETS.map(p => (
+              <button
+                key={p.key}
+                onClick={() => choosePreset(p.key)}
+                disabled={saving}
+                className="relative flex items-center justify-center rounded-full active:opacity-70 transition-opacity disabled:opacity-40"
+                style={{
+                  aspectRatio: '1 / 1',
+                  boxShadow: selectedPreset === p.key ? '0 0 0 2px #f4f1ec' : 'none',
+                  borderRadius: '9999px',
+                }}
+              >
+                <img src={p.src} alt="" className="w-full h-full rounded-full" />
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={saving}
+          className="te-panel w-full flex items-center gap-3 px-4 py-3.5 rounded-te-md active:bg-white/[0.04] transition-colors text-left disabled:opacity-50"
+        >
+          <PhotoIcon className="w-4 h-4 te-t4 shrink-0" />
+          <span className="flex-1 text-[15px] font-medium te-t1 tracking-tight">
+            {saving ? 'Uploading…' : 'Upload photo'}
+          </span>
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/png,image/jpeg,image/webp,image/gif"
+          className="hidden"
+          onChange={handleFile}
+        />
+
+        {error && <p className="text-[13px] px-0.5" style={{ color: 'var(--te-danger)' }}>{error}</p>}
+      </div>
+    </Modal>
+  );
 }
 
 // ── Leaderboard rows ────────────────────────────────────────────
@@ -366,10 +522,17 @@ function FriendsSection({ friends, inviteUrl }: { friends: FriendsApi; inviteUrl
   );
 }
 
-// ── Compete tab ─────────────────────────────────────────────────
-export default function CompeteView({ profile, friends, competitions, fistBumps, unit, toDisplay, inviteUrl }: Props) {
+// ── Profile tab ─────────────────────────────────────────────────
+export default function ProfileView({
+  profile, friends, competitions, fistBumps, unit, toDisplay, inviteUrl,
+  onOpenSettings, setAvatar, uploadAvatarFile, updateBio,
+}: Props) {
+  const name = profile?.display_name || profile?.username || 'You';
   const [badges, setBadges] = useState<Badge[]>([]);
   const [friendTarget, setFriendTarget] = useState<FriendProfileTarget | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [bioOpen, setBioOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
 
   // Own badge case — refreshed when a competition completes (list changes).
   useEffect(() => {
@@ -381,6 +544,41 @@ export default function CompeteView({ profile, friends, competitions, fistBumps,
 
   return (
     <div className="space-y-6">
+      {/* Identity band */}
+      <div className="flex flex-col items-center gap-3">
+        <button
+          onClick={() => setPickerOpen(true)}
+          className="relative shrink-0 active:opacity-70 transition-opacity"
+          aria-label="Change profile photo"
+        >
+          <Avatar name={name} avatarUrl={profile?.avatar_url} size={88} />
+          <span
+            className="absolute flex items-center justify-center rounded-full"
+            style={{ width: 24, height: 24, right: -2, bottom: -2, background: '#f4f1ec', border: '2.5px solid var(--te-ink)' }}
+          >
+            <CameraIcon className="w-3.5 h-3.5" style={{ color: 'var(--te-ink)' }} strokeWidth={1.5} />
+          </span>
+        </button>
+
+        <div className="text-center">
+          <p className="text-[20px] font-bold te-t1 tracking-tight" style={{ letterSpacing: '-0.02em' }}>
+            {name}
+          </p>
+          {profile?.username && <p className="te-label mt-1">@{profile.username}</p>}
+        </div>
+
+        <button
+          onClick={() => setBioOpen(true)}
+          className="text-center active:opacity-60 transition-opacity max-w-[300px]"
+        >
+          {profile?.bio ? (
+            <p className="text-[15px] te-t2 leading-snug">{profile.bio}</p>
+          ) : (
+            <p className="te-label" style={{ color: 'var(--te-text-2)' }}>+ Add bio</p>
+          )}
+        </button>
+      </div>
+
       <CompetitionsSection comps={competitions} friendsList={friends.friendsList} />
 
       <BadgeShelf badges={badges} comps={competitions} />
@@ -396,6 +594,57 @@ export default function CompeteView({ profile, friends, competitions, fistBumps,
       />
 
       <FriendsSection friends={friends} inviteUrl={inviteUrl} />
+
+      {/* Utility rows */}
+      <div className="te-panel rounded-te-md overflow-hidden divide-y divide-[color:var(--te-border)]">
+        <button
+          onClick={onOpenSettings}
+          className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-white/[0.04] transition-colors text-left"
+        >
+          <Cog6ToothIcon className="w-4 h-4 te-t4 shrink-0" />
+          <span className="flex-1 text-[15px] font-medium te-t1 tracking-tight">Settings & schedule</span>
+          <ChevronRightIcon className="w-3.5 h-3.5 te-t4 shrink-0" />
+        </button>
+        <button
+          onClick={() => setReportOpen(true)}
+          className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-white/[0.04] transition-colors text-left"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--te-text-4)" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+            <path d="M8 2l1.5 2.5M16 2l-1.5 2.5" />
+            <rect x="7" y="6" width="10" height="12" rx="5" />
+            <path d="M12 6v12M3 10h4M17 10h4M3 15h4M17 15h4M4 6l3 2M20 6l-3 2M4 19l3-2M20 19l-3-2" />
+          </svg>
+          <span className="flex-1 text-[15px] font-medium te-t1 tracking-tight">Report a bug</span>
+          <ChevronRightIcon className="w-3.5 h-3.5 te-t4 shrink-0" />
+        </button>
+      </div>
+
+      {/* Legal */}
+      <div className="flex items-center justify-center gap-4">
+        <a href="/privacy.html" target="_blank" rel="noopener" className="te-label active:opacity-60 transition-opacity" style={{ color: 'var(--te-text-4)' }}>
+          Privacy Policy
+        </a>
+        <span className="te-label" style={{ color: 'var(--te-text-4)' }}>·</span>
+        <a href="/terms.html" target="_blank" rel="noopener" className="te-label active:opacity-60 transition-opacity" style={{ color: 'var(--te-text-4)' }}>
+          Terms of Service
+        </a>
+      </div>
+
+      <AvatarPickerSheet
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        name={name}
+        avatarUrl={profile?.avatar_url ?? null}
+        setAvatar={setAvatar}
+        uploadAvatarFile={uploadAvatarFile}
+      />
+      <BioEditSheet
+        open={bioOpen}
+        onClose={() => setBioOpen(false)}
+        bio={profile?.bio ?? null}
+        updateBio={updateBio}
+      />
+      <ReportBugSheet open={reportOpen} onClose={() => setReportOpen(false)} context="Profile" />
 
       <FriendProfile
         open={friendTarget !== null}
