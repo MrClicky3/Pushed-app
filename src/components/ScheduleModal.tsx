@@ -12,6 +12,10 @@ import type { Routine, ScheduleDay, WorkoutLog } from '../types';
 import type { Exercise } from '../types';
 import type { WeightUnit, WeekStartDay } from '../hooks/useSettings';
 import { ACCENTS, ACCENT_ORDER, type AccentKey } from '../lib/accent';
+import {
+  CATEGORY_LABELS, CATEGORY_PALETTE,
+  type CategoryColors, type CategoryKey,
+} from '../lib/categoryColors';
 import { categoryVar, CATEGORY_KEYS } from '../lib/categoryColors';
 import ReportBugSheet from './ReportBugSheet';
 
@@ -67,6 +71,10 @@ interface Props {
   onSetHapticsEnabled: (on: boolean) => void;
   accent: AccentKey;
   onSetAccent: (key: AccentKey) => void;
+  categoryColors: CategoryColors;
+  onSetCategoryColor: (key: CategoryKey, paletteKey: string) => void;
+  bio: string | null;
+  onUpdateBio: (bio: string) => Promise<string | null>;
   unit: WeightUnit;
   onSetUnit: (u: WeightUnit) => void;
   toDisplay: (kg: number) => number;
@@ -110,6 +118,96 @@ function StepperControl({
       <div className="w-px self-stretch" style={{ background: 'var(--te-border)' }} />
       <button type="button" onClick={onInc} className={btn} style={{ width: 38, height: 38, fontSize: 17 }}>+</button>
     </div>
+  );
+}
+
+// ── Edit profile ─────────────────────────────────────────────────
+// Name and bio in one sheet. Name lives on the auth user, bio on the profile
+// row, so they save independently and each reports its own error.
+const BIO_MAX = 160;
+
+function EditProfileSheet({
+  open, onClose, userName, bio, onUpdateName, onUpdateBio,
+}: {
+  open: boolean;
+  onClose: () => void;
+  userName: string;
+  bio: string | null;
+  onUpdateName: (name: string) => Promise<string | null>;
+  onUpdateBio: (bio: string) => Promise<string | null>;
+}) {
+  const [name, setName] = useState(userName);
+  const [bioDraft, setBioDraft] = useState(bio ?? '');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    setName(userName);
+    setBioDraft(bio ?? '');
+    setError(null);
+  }, [open, userName, bio]);
+
+  async function save() {
+    if (saving) return;
+    setSaving(true);
+    setError(null);
+    const trimmed = name.trim();
+    if (trimmed !== userName) {
+      const err = await onUpdateName(trimmed);
+      if (err) { setError(err); setSaving(false); return; }
+    }
+    if (bioDraft !== (bio ?? '')) {
+      const err = await onUpdateBio(bioDraft);
+      if (err) { setError(err); setSaving(false); return; }
+    }
+    setSaving(false);
+    onClose();
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title="Edit profile">
+      <div className="space-y-4">
+        <div>
+          <p className="te-label mb-2 px-0.5">Name</p>
+          <input
+            data-no-drag
+            value={name}
+            onChange={e => setName(e.target.value.slice(0, 40))}
+            placeholder="Your name"
+            className="w-full rounded-te-md px-3.5 py-3 text-[15px] te-t1 placeholder-white/25 tracking-tight outline-none"
+            style={{ background: 'var(--te-well)', border: '1px solid var(--te-border)' }}
+          />
+        </div>
+
+        <div>
+          <p className="te-label mb-2 px-0.5">Bio</p>
+          <textarea
+            data-no-drag
+            value={bioDraft}
+            onChange={e => setBioDraft(e.target.value.slice(0, BIO_MAX))}
+            placeholder="Tell friends a bit about yourself…"
+            rows={4}
+            className="w-full rounded-te-md px-3.5 py-3 text-[15px] te-t1 placeholder-white/25 tracking-tight outline-none resize-none"
+            style={{ background: 'var(--te-well)', border: '1px solid var(--te-border)' }}
+          />
+          <p className="te-label mt-1.5 px-0.5" style={{ color: 'var(--te-text-4)' }}>
+            {bioDraft.length}/{BIO_MAX}
+          </p>
+        </div>
+
+        {error && <p className="text-[13px] px-0.5" style={{ color: 'var(--te-danger)' }}>{error}</p>}
+
+        <button
+          onClick={save}
+          disabled={saving}
+          className="te-white-btn w-full rounded-te-md font-semibold text-[15px] disabled:opacity-50"
+          style={{ height: 48 }}
+        >
+          {saving ? 'Saving…' : 'Save'}
+        </button>
+      </div>
+    </Modal>
   );
 }
 
@@ -189,6 +287,10 @@ export default function ScheduleModal({
   onSetHapticsEnabled,
   accent,
   onSetAccent,
+  categoryColors,
+  onSetCategoryColor,
+  bio,
+  onUpdateBio,
   unit,
   onSetUnit,
   toDisplay,
@@ -199,8 +301,7 @@ export default function ScheduleModal({
   const [routineName, setRoutineName] = useState('');
   const [selectedExerciseIds, setSelectedExerciseIds] = useState<string[]>([]);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [editingName, setEditingName] = useState(false);
-  const [nameInput, setNameInput] = useState('');
+  const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [signOutConfirm, setSignOutConfirm] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [previewRoutine, setPreviewRoutine] = useState<Routine | null>(null);
@@ -217,7 +318,7 @@ export default function ScheduleModal({
       setTimeout(() => {
         setView({ type: 'main' });
         setConfirmDelete(false);
-        setEditingName(false);
+        setEditProfileOpen(false);
         setSignOutConfirm(false);
         setPreviewRoutine(null);
         setDataMenuOpen(false);
@@ -493,80 +594,90 @@ export default function ScheduleModal({
 
             </div>
 
-            {/* Accent color — its own panel, spaced apart from the toggles */}
-            <div className="te-panel rounded-te-md px-4 py-3.5 mt-3">
-              <p className="text-[15px] font-medium te-t1 tracking-tight">Accent color</p>
-              <p className="text-[13px] te-t3 mt-0.5 leading-snug">Toggles and body models</p>
-              <div className="flex items-center gap-3 mt-3">
-                {ACCENT_ORDER.map(key => {
-                  const a = ACCENTS[key];
-                  const selected = accent === key;
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => onSetAccent(key)}
-                      aria-label={a.label}
-                      className="rounded-full shrink-0 transition-transform active:scale-90"
-                      style={{
-                        width: 30, height: 30, borderRadius: '50%',
-                        background: a.color,
-                        boxShadow: selected
-                          ? `0 0 0 2px var(--te-ink), 0 0 0 4px ${a.color}`
-                          : 'inset 0 1px 2px rgba(255,255,255,0.35), inset 0 -1px 2px rgba(0,0,0,0.3)',
-                      }}
-                    />
-                  );
-                })}
+            {/* Colours — the app accent and the per-category dots together, so
+                every colour the app uses is set in one place. The Add Exercise
+                sheet still offers a category's colour inline for convenience;
+                both write the same setting. */}
+            <div className="te-panel rounded-te-md overflow-hidden mt-3 divide-y divide-[color:var(--te-border)]">
+              <div className="px-4 py-3.5">
+                <p className="text-[15px] font-medium te-t1 tracking-tight">Accent color</p>
+                <p className="text-[13px] te-t3 mt-0.5 leading-snug">Toggles and body models</p>
+                <div className="flex items-center gap-2.5 mt-3">
+                  {ACCENT_ORDER.map(key => {
+                    const a = ACCENTS[key];
+                    const selected = accent === key;
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => onSetAccent(key)}
+                        aria-label={a.label}
+                        className="rounded-full shrink-0 transition-transform active:scale-90"
+                        style={{
+                          width: 22, height: 22, borderRadius: '50%',
+                          background: a.color,
+                          boxShadow: selected
+                            ? `0 0 0 2px var(--te-ink), 0 0 0 3.5px ${a.color}`
+                            : 'inset 0 1px 2px rgba(255,255,255,0.35), inset 0 -1px 2px rgba(0,0,0,0.3)',
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="px-4 py-3.5">
+                <p className="text-[15px] font-medium te-t1 tracking-tight">Exercise colors</p>
+                <p className="text-[13px] te-t3 mt-0.5 leading-snug">The dot beside each category, and its charts</p>
+                <div className="mt-3 space-y-2.5">
+                  {CATEGORY_KEYS.map(cat => (
+                    <div key={cat} className="flex items-center gap-3">
+                      <span className="te-label shrink-0" style={{ width: 44, color: 'var(--te-text-3)' }}>
+                        {CATEGORY_LABELS[cat]}
+                      </span>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {CATEGORY_PALETTE.map(sw => {
+                          const selected = categoryColors[cat] === sw.key;
+                          return (
+                            <button
+                              key={sw.key}
+                              type="button"
+                              onClick={() => onSetCategoryColor(cat, sw.key)}
+                              aria-label={`${CATEGORY_LABELS[cat]}: ${sw.label}`}
+                              className="rounded-full shrink-0 transition-transform active:scale-90"
+                              style={{
+                                width: 18, height: 18, borderRadius: '50%',
+                                background: sw.color,
+                                boxShadow: selected
+                                  ? `0 0 0 2px var(--te-ink), 0 0 0 3px ${sw.color}`
+                                  : 'inset 0 1px 2px rgba(255,255,255,0.3), inset 0 -1px 2px rgba(0,0,0,0.3)',
+                              }}
+                            />
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-
-            {/* Category colours moved into the Add Exercise sheet — you now set
-                a body half's colour where you pick the body half, so the whole
-                colour system lives in one place instead of a settings panel
-                divorced from the exercises it recolours. */}
           </div>
 
           {/* Profile section */}
           <div>
             <p className="te-label mb-2 px-0.5">Profile</p>
-            <div className="te-panel rounded-te-md overflow-hidden">
-              {editingName ? (
-                <div className="px-4 py-3 flex gap-2">
-                  <input
-                    type="text"
-                    value={nameInput}
-                    onChange={e => setNameInput(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter') { onUpdateName(nameInput); setEditingName(false); }
-                      if (e.key === 'Escape') setEditingName(false);
-                    }}
-                    placeholder="Your name"
-                    autoFocus
-                    className="te-field flex-1 rounded-te-sm px-4 py-2.5 te-t1 text-[15px] placeholder:text-white/25 focus:outline-none"
-                  />
-                  <button
-                    onClick={() => { onUpdateName(nameInput); setEditingName(false); }}
-                    className="te-toggle-off px-4 rounded-te-sm te-label active:opacity-75 transition-opacity"
-                  >
-                    Save
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => { setNameInput(userName); setEditingName(true); }}
-                  className="w-full flex items-center justify-between px-4 py-3.5 active:bg-white/[0.04] transition-colors"
-                >
-                  <div>
-                    <p className="te-label mb-0.5">Name</p>
-                    <p className="text-[15px] font-medium te-t1 tracking-tight">
-                      {userName || <span className="te-t4">Not set</span>}
-                    </p>
-                  </div>
-                  <span className="te-label">Edit</span>
-                </button>
-              )}
-            </div>
+            <button
+              onClick={() => setEditProfileOpen(true)}
+              className="te-panel w-full flex items-center justify-between px-4 py-3.5 rounded-te-md active:bg-white/[0.04] transition-colors text-left gap-3"
+            >
+              <div className="min-w-0">
+                <p className="text-[15px] font-medium te-t1 tracking-tight">Edit profile</p>
+                <p className="text-[13px] te-t3 mt-0.5 leading-snug truncate">
+                  {userName || 'Name not set'}{bio ? ` · ${bio}` : ''}
+                </p>
+              </div>
+              <ChevronRightIcon className="w-3.5 h-3.5 te-t4 shrink-0" />
+            </button>
           </div>
 
           {/* Data — opens a small popup with the export options */}
@@ -606,6 +717,15 @@ export default function ScheduleModal({
 
         </div>
         <ReportBugSheet open={reportOpen} onClose={() => setReportOpen(false)} context="Settings" />
+
+        <EditProfileSheet
+          open={editProfileOpen}
+          onClose={() => setEditProfileOpen(false)}
+          userName={userName}
+          bio={bio}
+          onUpdateName={onUpdateName}
+          onUpdateBio={onUpdateBio}
+        />
 
         {/* Data export — small popup with both formats */}
         <Modal open={dataMenuOpen} onClose={() => setDataMenuOpen(false)} title="Export data">

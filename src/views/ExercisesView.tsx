@@ -134,9 +134,9 @@ export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, 
           <p style={{ fontFamily: "'Geist Mono', monospace", fontSize: 21, fontWeight: 600, letterSpacing: '-0.3px', textTransform: 'uppercase', color: 'var(--te-accent)', lineHeight: 1 }}>
             Exercise Library
           </p>
-          {/* Tinted from the accent rather than left grey, so the subtitle
-              belongs to the title instead of reading as disabled text. */}
-          <p style={{ fontFamily: "'Geist', sans-serif", fontSize: 13, fontWeight: 500, letterSpacing: '-0.1px', color: 'color-mix(in srgb, var(--te-accent) 72%, #ffffff)', marginTop: 10, lineHeight: 1 }}>
+          {/* Lightly tinted from the accent rather than left grey, so the
+              subtitle belongs to the title without competing with it. */}
+          <p style={{ fontFamily: "'Geist', sans-serif", fontSize: 12, fontWeight: 500, letterSpacing: '-0.1px', color: 'color-mix(in srgb, var(--te-accent) 42%, #ffffff)', marginTop: 9, lineHeight: 1 }}>
             Form guides, muscle maps
           </p>
         </div>

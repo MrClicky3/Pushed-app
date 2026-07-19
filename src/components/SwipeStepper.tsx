@@ -98,7 +98,12 @@ export default function SwipeStepper({
         className={`w-full bg-transparent te-t1 !text-[42px] font-bold te-mono focus:outline-none tabular-nums !leading-[32px] tracking-[-1px] text-left ${animClass}`}
         style={{ touchAction: 'none' }}
       />
-      <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex flex-col gap-1.5 pointer-events-none">
+      {/* Centred on the value's line rather than on the whole field, so the
+          drag affordance sits beside the number it changes instead of
+          floating between the label and the value. The field's bottom
+          padding is 13px and the value's line box is 32px tall, putting that
+          line's centre 29px up — half the 33px arrow stack below it. */}
+      <div className="absolute right-2.5 flex flex-col gap-1.5 pointer-events-none" style={{ bottom: 12 }}>
         <ChevronUpIcon className="w-[13.5px] h-[13.5px] te-t4" />
         <ChevronDownIcon className="w-[13.5px] h-[13.5px] te-t4" />
       </div>
