@@ -940,24 +940,28 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
   aria-label="Profile"
   className="relative flex items-center justify-center active:opacity-60 transition-opacity select-none shrink-0"
   style={{
-    width: 46,
-    height: 46,
+    width: 44,
+    height: 44,
     background: 'transparent',
     border: 'none',
     boxShadow: 'none',
+    padding: 0,
   }}
 >
   <span
     style={{
       display: 'inline-flex',
+      width: '100%',
+      height: '100%',
       borderRadius: 9999,
+      overflow: 'hidden',
       opacity: tab === 'profile' ? 1 : 0.55,
     }}
   >
     <Avatar
       name={profileName}
       avatarUrl={profileRow?.avatar_url}
-      size={26}
+      size={44}
       ring={false}
     />
   </span>
@@ -973,7 +977,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
         height: 7,
         borderRadius: 9999,
         background: 'var(--te-accent)',
-        boxShadow: '0 0 0 2px transparent',
+        boxShadow: '0 0 0 2px var(--te-bg)',
       }}
     />
   )}
