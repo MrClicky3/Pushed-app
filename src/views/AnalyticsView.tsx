@@ -519,17 +519,19 @@ function ScrubbableChart({ def, prevDef, nextDef, domain, yTicks, onShiftWindow 
   );
 }
 
+// Matches the friend-profile stat card's type scale so the app has one
+// stat-row treatment rather than two slightly different ones.
 function StatCard({ label, value, sub }: { label: string; value: string; sub: string }) {
   return (
     <div
-      className="px-[14px] py-[9px] flex items-center justify-between gap-3"
+      className="px-[18px] py-[13px] flex items-center justify-between gap-3"
       style={BENTO}
     >
       <div className="min-w-0">
-        <p className="text-[13px] font-semibold te-t1 tracking-tight">{label}</p>
-        <p className="text-[10px] mt-[2px] truncate" style={{ color: 'var(--te-text-4)' }}>{sub}</p>
+        <p className="text-[15px] font-semibold te-t1 tracking-tight">{label}</p>
+        <p className="text-[13px] mt-[3px] truncate" style={{ color: 'var(--te-text-4)' }}>{sub}</p>
       </div>
-      <p className="text-[17px] font-bold te-t1 tabular-nums leading-none tracking-tight te-digit shrink-0">{value}</p>
+      <p className="text-[20px] font-bold te-t1 tabular-nums leading-none tracking-tight te-digit shrink-0">{value}</p>
     </div>
   );
 }
@@ -593,7 +595,7 @@ function RangePicker({
           <button
             key={key}
             onClick={() => onChange(key)}
-            className={`${active ? 'te-toggle-on te-toggle-mono' : 'te-toggle-off'} flex-1 py-[6px] rounded-te-sm text-[10px] font-semibold select-none`}
+            className={`${active ? 'te-toggle-on te-toggle-mono' : 'te-toggle-off'} flex-1 py-[9px] rounded-te-sm text-[12px] font-semibold select-none`}
             style={{ color: active ? 'var(--te-ink)' : 'rgba(255,255,255,0.4)' }}
           >
             {label}
