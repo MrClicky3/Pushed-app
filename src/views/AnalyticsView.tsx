@@ -9,7 +9,7 @@ import type { WeightUnit } from '../hooks/useSettings';
 import type { useCompetitions } from '../hooks/useCompetitions';
 import { calcStreak, dayCompletionPct, isScheduledDay } from '../lib/streak';
 import { buildWeekSummary, type WeekSegmentState } from '../lib/week';
-import { buildPREvents, prEventsThisWeek, prLabel, prKindLabel, epley } from '../lib/prs';
+import { buildPREvents, prEventsThisWeek, epley } from '../lib/prs';
 import { accentHex } from '../lib/accent';
 import { categoryVar, categoryHex } from '../lib/categoryColors';
 
@@ -1332,38 +1332,6 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
           <div className="px-4 py-8 text-center te-label te-bento" >No records yet</div>
         ) : (
           <div className="space-y-5">
-            {/* Recently broken — the PR history that used to vanish with the
-                toast. Each row is a moment: what was beaten, and when. */}
-            {prEvents.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-3 pb-2.5 px-1" style={{ borderBottom: '1px solid var(--te-surface-3)' }}>
-                  <span className="te-label" style={{ color: 'var(--te-text-4)' }}>Recently broken</span>
-                  {prsThisWeek > 0 && (
-                    <span className="te-label ml-auto" style={{ color: 'var(--te-success)' }}>{prsThisWeek} this week</span>
-                  )}
-                </div>
-                <div className="overflow-hidden divide-y divide-[color:var(--te-border)] te-bento" >
-                  {prEvents.slice(0, 12).map(e => {
-                    const ex = exercises.find(x => x.id === e.exerciseId);
-                    return (
-                      <div key={e.logId} className="flex items-center px-4 py-[13px] gap-3">
-                        <StarIconSolid className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--te-gold)' }} />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[15px] font-semibold te-t1 tracking-tight truncate">{ex?.name ?? 'Unknown'}</p>
-                          <p className="te-label mt-0.5">
-                            {prKindLabel(e.kind)} · {fmtFullDate(new Date(e.date))}
-                          </p>
-                        </div>
-                        <span className="te-digit text-[15px] font-bold tabular-nums te-t1 shrink-0">
-                          {prLabel(e, unit, toDisplay)}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
             {prGroups.map(({ group, label, items }) => (
               <div key={group}>
                 {/* Divider matches the Exercises page category header (e.g.
