@@ -486,7 +486,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
   function triggerAdd(viaGesture = false) {
     if (tab === 'log' && logDateInFuture) {
       feedback.skip();
-      flashAddError("Can't log a day that hasn't happened yet");
+      flashAddError("Can't log in future dates");
       return;
     }
     if (viaGesture && swipeUses < 2) {

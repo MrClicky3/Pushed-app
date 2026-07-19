@@ -1,9 +1,10 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { MagnifyingGlassIcon, XMarkIcon, CheckIcon } from '@heroicons/react/24/outline';
+import { CheckIcon } from '@heroicons/react/24/outline';
 import Model from '@phelian/react-body-highlighter';
 import type { Muscle } from '@phelian/react-body-highlighter';
 import FullPageSheet from './FullPageSheet';
 import Modal from './Modal';
+import SearchField from './SearchField';
 import { accentHex, accentAlpha } from '../lib/accent';
 import {
   EXERCISE_LIBRARY,
@@ -26,9 +27,7 @@ const ACCENT_DIM = 'var(--te-text-4)';
 
 // Surfaces
 const CARD_BG    = 'var(--te-surface-3)';
-const FIELD_BG   = 'var(--te-surface-3)';
 const HAIRLINE   = 'var(--te-border-strong)';   // matches the app's border tokens
-const PLACEHOLDER = 'var(--te-text-3)';
 const MINI_BG    = 'var(--te-surface-1)';   // muscle-filter previews sit darker than the fields
 const SAVED = '__saved__';   // sentinel filter for user-saved exercises
 
@@ -352,7 +351,6 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, existing
   const [search, setSearch]       = useState('');
   const [selected, setSelected]   = useState<LibraryExercise | null>(initialSelected ?? null);
   const [addedIds, setAddedIds]   = useState<Set<string>>(new Set());
-  const [focused, setFocused]     = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -510,23 +508,9 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, existing
     <FullPageSheet open={open} onClose={handleClose} title="Exercise Library">
       <div style={{ margin: 0, position: 'relative' }}>
 
-        {/* Search — pill */}
+        {/* Search — shared pill (see SearchField) */}
         <div style={{ padding: '0 20px 16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0 18px', height: 45, background: FIELD_BG, borderRadius: 9999, border: `1px solid ${focused ? accentHex() : HAIRLINE}`, boxShadow: '0 0 7.5px rgba(0,0,0,0.25)', transition: 'border-color .15s' }}>
-            <MagnifyingGlassIcon style={{ width: 16, height: 16, flexShrink: 0, color: focused ? accentHex() : PLACEHOLDER }} />
-            <input
-              value={search} onChange={e => setSearch(e.target.value)}
-              onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
-              placeholder="Search exercises"
-              className="text-[15px] te-t1 placeholder:text-white/25"
-              style={{ flex: 1, background: 'none', border: 'none', outline: 'none', letterSpacing: '-0.01em' }}
-            />
-            {search && (
-              <button onClick={() => setSearch('')} style={{ background: 'var(--te-border-strong)', border: 'none', cursor: 'pointer', width: 19, height: 19, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <XMarkIcon style={{ width: 11, height: 11, color: 'var(--te-text-2)' }} />
-              </button>
-            )}
-          </div>
+          <SearchField value={search} onChange={setSearch} placeholder="Search exercises" />
         </div>
 
         {/* Saved filter + muscle-filter mini cards */}

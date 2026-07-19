@@ -3,6 +3,7 @@ import { ChevronRightIcon, CheckIcon } from '@heroicons/react/24/outline';
 import { ChevronUpIcon, ChevronDownIcon } from '@heroicons/react/24/solid';
 import Model from '@phelian/react-body-highlighter';
 import Modal from './Modal';
+import SearchField from './SearchField';
 import { ToggleButton } from './SheetControls';
 import { EXERCISE_LIBRARY } from '../data/exerciseLibrary';
 import type { Exercise, WorkoutLog, SetType } from '../types';
@@ -431,16 +432,16 @@ export default function LogModal({
     return (
       <Modal open={open} onClose={onClose} title="Choose exercise">
         <div className="space-y-3">
-          <input
-            type="text"
+          <SearchField
             value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search exercises..."
-            className="te-field w-full rounded-te-sm px-4 py-3 te-t1 text-[15px] placeholder:text-white/25 focus:outline-none focus:border-white/[0.13] transition-colors"
-            autoFocus
+            onChange={setSearch}
+            placeholder="Search exercises"
           />
           {filtered.length === 0 ? (
-            <p className="te-label text-center py-8">No exercises found</p>
+            <div className="te-panel rounded-te-md px-4 py-8 text-center">
+              <p className="text-[15px] font-semibold te-t1 tracking-tight">No exercises found</p>
+              <p className="text-[13px] te-t3 mt-1 leading-snug">Try a different search.</p>
+            </div>
           ) : (
             <div className="space-y-2 pb-2">
               {filtered.map(ex => (
