@@ -91,15 +91,18 @@ function BadgeDetailSheet({ badge, comps, onClose }: {
     ? comps.competitions.find(c => c.id === badge.competition_id) ?? null
     : null;
 
+  const { getStandings, getCachedStandings } = comps;
+  const compId = comp?.id ?? null;
+
   useEffect(() => {
-    if (!badge || !comp) { setRows([]); setLoading(false); return; }
+    if (!badge || !compId) { setRows([]); setLoading(false); return; }
     let alive = true;
     setLoading(true);
-    const cached = comps.getCachedStandings(comp.id);
+    const cached = getCachedStandings(compId);
     if (cached) { setRows(cached); setLoading(false); return; }
-    comps.getStandings(comp.id).then(r => { if (alive) { setRows(r); setLoading(false); } });
+    getStandings(compId).then(r => { if (alive) { setRows(r); setLoading(false); } });
     return () => { alive = false; };
-  }, [badge, comp, comps]);
+  }, [badge, compId, getStandings, getCachedStandings]);
 
   if (!badge) return null;
   const meta = TIER_META[badge.tier];
@@ -355,15 +358,16 @@ export interface SeasonRecord {
 }
 
 function seasonRecordFor(
-  comps: CompetitionsApi,
+  competitions: CompetitionSummary[],
+  getCachedStandings: CompetitionsApi['getCachedStandings'],
   track: CompetitionTrack,
   opponentId: string,
 ): SeasonRecord | null {
   let wins = 0, losses = 0, ties = 0, rounds = 0;
   let opponentName = '';
-  for (const c of comps.competitions) {
+  for (const c of competitions) {
     if (c.status !== 'completed' || c.track !== track) continue;
-    const rows = comps.getCachedStandings(c.id);
+    const rows = getCachedStandings(c.id);
     if (!rows) continue;
     const pair = duelPair(rows);
     if (!pair || pair.them.user_id !== opponentId) continue;
@@ -500,19 +504,42 @@ function CompetitionSheet({
 }) {
   const [rows, setRows] = useState<CompetitionStanding[]>([]);
   const [loading, setLoading] = useState(true);
+  // Depend on the stable fetcher, never the whole api object — `comps` gets a
+  // fresh identity on every render of the hook, which would refire this.
+  const { getStandings } = comps;
+  const compId = comp?.id ?? null;
 
   const loadRows = useCallback(() => {
-    if (!comp) return;
-    return comps.getStandings(comp.id).then(r => setRows(r));
-  }, [comp, comps]);
+    if (!compId) return;
+    return getStandings(compId).then(r => setRows(r));
+  }, [compId, getStandings]);
 
   useEffect(() => {
-    if (!open || !comp) return;
+    if (!open || !compId) return;
     let alive = true;
     setLoading(true);
-    comps.getStandings(comp.id).then(r => { if (alive) { setRows(r); setLoading(false); } });
+    getStandings(compId).then(r => { if (alive) { setRows(r); setLoading(false); } });
     return () => { alive = false; };
-  }, [open, comp, comps]);
+  }, [open, compId, getStandings]);
+
+  // Season record for a finished duel. Standings for the earlier rounds have
+  // to be fetched before the tally can be counted — the cache only holds what
+  // has already been rendered.
+  const [season, setSeason] = useState<SeasonRecord | null>(null);
+  const competitions = comps.competitions;
+  const { getCachedStandings } = comps;
+  useEffect(() => {
+    const pair = duelPair(rows);
+    if (!open || !comp || comp.status !== 'completed' || !pair) { setSeason(null); return; }
+    let alive = true;
+    const priorRounds = competitions
+      .filter(c => c.status === 'completed' && c.track === comp.track && c.participant_count === 2)
+      .slice(0, 10);
+    Promise.all(priorRounds.map(c => getStandings(c.id))).then(() => {
+      if (alive) setSeason(seasonRecordFor(competitions, getCachedStandings, comp.track, pair.them.user_id));
+    });
+    return () => { alive = false; };
+  }, [open, comp, rows, competitions, getStandings, getCachedStandings]);
 
   if (!comp) return null;
   const done = comp.status === 'completed';
@@ -576,26 +603,22 @@ function CompetitionSheet({
           <CancelVote comp={comp} rows={rows} comps={comps} onVoted={loadRows} />
         )}
 
-        {done && (() => {
-          const pair = duelPair(rows);
-          const season = pair ? seasonRecordFor(comps, comp.track, pair.them.user_id) : null;
-          return (
-            <>
-              {season && (
-                <p className="te-label text-center" style={{ color: 'var(--te-text-3)' }}>
-                  {seasonLine(season)}
-                </p>
-              )}
-              <button
-                onClick={() => { feedback.log(); onRematch(comp, rows); }}
-                className="te-white-btn w-full rounded-te-md font-semibold text-[15px]"
-                style={{ height: 48 }}
-              >
-                {season ? `Run it back · Round ${season.rounds + 1}` : 'Rematch'}
-              </button>
-            </>
-          );
-        })()}
+        {done && (
+          <>
+            {season && (
+              <p className="te-label text-center" style={{ color: 'var(--te-text-3)' }}>
+                {seasonLine(season)}
+              </p>
+            )}
+            <button
+              onClick={() => { feedback.log(); onRematch(comp, rows); }}
+              className="te-white-btn w-full rounded-te-md font-semibold text-[15px]"
+              style={{ height: 48 }}
+            >
+              {season ? `Run it back · Round ${season.rounds + 1}` : 'Rematch'}
+            </button>
+          </>
+        )}
       </div>
     </Modal>
   );
@@ -842,13 +865,14 @@ function CompetitionCard({ comp, comps, onOpen }: {
   onOpen: () => void;
 }) {
   const [rows, setRows] = useState<CompetitionStanding[]>([]);
+  const { getStandings } = comps;
 
   useEffect(() => {
     if (comp.status !== 'active' && comp.status !== 'completed') return;
     let alive = true;
-    comps.getStandings(comp.id).then(r => { if (alive) setRows(r); });
+    getStandings(comp.id).then(r => { if (alive) setRows(r); });
     return () => { alive = false; };
-  }, [comp.id, comp.status, comps]);
+  }, [comp.id, comp.status, getStandings]);
 
   const active = comp.status === 'active';
   const done = comp.status === 'completed';
@@ -1050,10 +1074,11 @@ export function CompetitionMiniWidget({ comps, onOpen }: {
   // One line of standing context ("You lead · +8%" / "Jānis leads") so the
   // banner answers am-I-winning without a trip into the profile.
   const [status, setStatus] = useState<string | null>(null);
+  const { getStandings } = comps;
   useEffect(() => {
     if (!soonest) { setStatus(null); return; }
     let alive = true;
-    comps.getStandings(soonest.id).then(rows => {
+    getStandings(soonest.id).then(rows => {
       if (!alive) return;
       const accepted = rows.filter(r => r.status === 'accepted');
       const me = accepted.find(r => r.is_self);
@@ -1067,8 +1092,8 @@ export function CompetitionMiniWidget({ comps, onOpen }: {
       setStatus(`${leader.display_name || leader.username} leads`);
     });
     return () => { alive = false; };
-    // Re-check when the competition or its standings could have changed.
-  }, [soonest?.id, soonest?.track, comps]); // eslint-disable-line react-hooks/exhaustive-deps
+    // Re-check when the competition changes; getStandings is stable.
+  }, [soonest?.id, soonest?.track, getStandings]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!soonest) return null;
   const urgent = endsWithin24h(soonest.end_at);
