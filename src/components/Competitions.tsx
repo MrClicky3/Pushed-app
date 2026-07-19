@@ -42,15 +42,15 @@ function fitFontSize(text: string, base: number, avail: number): number {
 // side columns are whatever is left over — these are the widths a value has to
 // fit into at a 375px viewport (the narrowest the app targets).
 //
-// The divider's rules are drawn wider than its column via negative margins, so
-// they read as long lines without stealing width from the values. They sit at
-// avatar height, where the side columns hold only an edge-aligned avatar, so
-// there is empty space for them to run into (Figma does the same thing with
-// overlapping frames).
+// The divider is drawn as an overlay inset from both edges by exactly the
+// avatar width plus DUEL_RULE_GAP_PX, so its rules always stop the same short
+// distance from each player's picture whatever the viewport. Equal insets also
+// mean the "vs" lands dead centre for free. The middle grid column below is
+// only a spacer, reserving room so long values never run into the "vs".
 const AVATAR_PX = 50;
 const RANK_BADGE_PX = 22;
 const DUEL_DIVIDER_PX = 90;
-const DUEL_RULE_BLEED_PX = 26;
+const DUEL_RULE_GAP_PX = 16;
 const DUEL_SIDE_PX = 102;
 const GRID_CELL_PX = 92;
 
@@ -234,17 +234,23 @@ function DuelBody({ track, me, them, volFmt, names }: {
     </div>
   );
 
-  // Equal-width (1fr) outer columns are what actually centres the divider: the
-  // two sides hold different-length values, so a flex row would centre the
-  // "vs" on the content rather than on the card.
+  // Equal-width (1fr) outer columns centre the card; the vs divider is an
+  // overlay on the avatar row, inset AVATAR_PX + DUEL_RULE_GAP_PX from each
+  // edge so the rules always stop 10px from each picture.
   return (
-    <div className="grid" style={{ gridTemplateColumns: '1fr auto 1fr' }}>
+    <div className="relative grid" style={{ gridTemplateColumns: '1fr auto 1fr' }}>
       <Side s={me} leads={iLead} />
-      <div className="flex items-center gap-2.5" style={{ width: DUEL_DIVIDER_PX, height: AVATAR_PX }}>
-        <span
-          className="flex-1 h-px"
-          style={{ background: 'var(--te-border-strong)', marginLeft: -DUEL_RULE_BLEED_PX }}
-        />
+      <div aria-hidden style={{ width: DUEL_DIVIDER_PX, height: AVATAR_PX }} />
+      <Side s={them} leads={theyLead} right />
+      <div
+        className="absolute inset-x-0 top-0 flex items-center gap-2.5 pointer-events-none"
+        style={{
+          height: AVATAR_PX,
+          paddingLeft: AVATAR_PX + DUEL_RULE_GAP_PX,
+          paddingRight: AVATAR_PX + DUEL_RULE_GAP_PX,
+        }}
+      >
+        <span className="flex-1 h-px" style={{ background: 'var(--te-border-strong)' }} />
         <span
           className="te-mono shrink-0"
           style={{
@@ -254,12 +260,8 @@ function DuelBody({ track, me, them, volFmt, names }: {
         >
           vs
         </span>
-        <span
-          className="flex-1 h-px"
-          style={{ background: 'var(--te-border-strong)', marginRight: -DUEL_RULE_BLEED_PX }}
-        />
+        <span className="flex-1 h-px" style={{ background: 'var(--te-border-strong)' }} />
       </div>
-      <Side s={them} leads={theyLead} right />
     </div>
   );
 }

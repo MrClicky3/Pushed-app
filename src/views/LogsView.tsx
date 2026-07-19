@@ -1007,6 +1007,7 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
       {displayEntries.length === 0 ? (
         isToday && exercises.length === 0 ? (
           <EmptyState
+            page
             icon={<QueueListIcon className="w-7 h-7 te-t4" />}
             title="Your exercises will appear here"
             subtitle="Go to Exercises first and create an exercise to start logging."
@@ -1014,6 +1015,7 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
         ) : isFuture ? (
           // Future day — nothing can be logged here yet
           <EmptyState
+            page
             icon={<QueueListIcon className="w-7 h-7 te-t4" />}
             title={selectedRoutine ? `${selectedRoutine.name} is planned` : 'Rest day planned'}
             subtitle="This day hasn't happened yet."
@@ -1021,6 +1023,7 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
         ) : selectedRoutine ? (
           // Day has a planned routine but nothing was recorded
           <EmptyState
+            page
             icon={<QueueListIcon className="w-7 h-7 te-t4" />}
             title="No workout logged"
             subtitle={isToday ? 'Swipe up to log a workout.' : 'Nothing was recorded on this day.'}
@@ -1028,6 +1031,7 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
         ) : (
           // Day has no routine scheduled
           <EmptyState
+            page
             icon={<QueueListIcon className="w-7 h-7 te-t4" />}
             title="Your logs will appear here"
             subtitle="No routine is scheduled for this day."

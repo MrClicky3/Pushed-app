@@ -495,7 +495,10 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
       try { localStorage.setItem(SWIPE_USES_KEY, String(next)); } catch { /* ignore */ }
     }
     if (tab === 'exercises') { setExercisePrefill(undefined); setExerciseModal({ open: true, exercise: null }); }
-    else { setLogModal({ open: true, exercise: null, editLog: null }); }
+    else {
+      if (tab !== 'log') switchTab('log');
+      setLogModal({ open: true, exercise: null, editLog: null });
+    }
   }
   function onDockTouchStart(e: React.TouchEvent) {
     // Only arm the swipe if it begins at/above the nav bar's mid-line. Touches
@@ -652,11 +655,10 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
   // The Profile tab's "icon" is the user's own avatar rather than a glyph —
   // it's the one tab that represents a person, and it doubles as the identity
   // affordance the header's corner button used to provide.
-  const tabs: { key: Tab; label: string; icon?: React.FC<{ className?: string; style?: React.CSSProperties }> }[] = [
+  const mainTabs: { key: Tab; label: string; icon: React.FC<{ className?: string; style?: React.CSSProperties }> }[] = [
     { key: 'exercises', label: 'Exercises', icon: RectangleStackIcon },
     { key: 'log', label: 'Log', icon: QueueListIcon },
     { key: 'analytics', label: 'Progress', icon: ChartBarSquareIcon },
-    { key: 'profile', label: 'Profile' },
   ];
 
   const tabTitles: Record<Tab, string> = {
@@ -911,51 +913,21 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
             style={{ gridTemplateRows: focusMode ? '0fr' : '1fr', transition: 'grid-template-rows 0.36s cubic-bezier(0.22,1,0.36,1)' }}
           >
             <div style={{ overflow: 'hidden', opacity: focusMode ? 0 : 1, transition: `opacity ${focusMode ? '0.15s ease' : '0.3s ease 0.08s'}` }}>
-              <div className="flex justify-center pt-1 pb-0.5">
+              <div className="flex justify-center items-center gap-2.5 pt-1 pb-0.5">
                 <div
-                  className="flex items-center rounded-full"
-                  style={{ background: 'var(--te-border)', border: '1px solid var(--te-border)', padding: '4px 10px' }}
+                  className="grid grid-cols-3 items-center rounded-full"
+                  style={{ background: 'var(--te-border)', border: '1px solid var(--te-border)', padding: '5px 6px' }}
                 >
-                  {tabs.map(({ key, label, icon: Icon }) => {
+                  {mainTabs.map(({ key, label, icon: Icon }) => {
                     const isActive = tab === key;
                     const color = isActive ? '#fff' : 'rgba(255,255,255,0.4)';
-                    const showDot = key === 'profile' && competeAttention && !isActive;
                     return (
                       <button
                         key={key}
                         onClick={() => switchTab(key)}
-                        className="flex flex-col items-center gap-0.5 px-4 py-1 rounded-full active:opacity-60 transition-opacity select-none"
+                        className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-full active:opacity-60 transition-opacity select-none"
                       >
-                        <span style={{ position: 'relative', display: 'inline-flex', height: 22, alignItems: 'center' }}>
-                          {Icon ? (
-                            <Icon className="w-[22px] h-[22px]" style={{ color }} />
-                          ) : (
-                            // Profile: the avatar itself, dimmed to match the
-                            // unselected glyphs and ringed when it's the
-                            // active tab.
-                            <span
-                              style={{
-                                display: 'inline-flex', borderRadius: 9999,
-                                opacity: isActive ? 1 : 0.55,
-                                boxShadow: isActive ? '0 0 0 1.5px rgba(255,255,255,0.9)' : 'none',
-                                transition: 'opacity 0.2s ease, box-shadow 0.2s ease',
-                              }}
-                            >
-                              <Avatar name={profileName} avatarUrl={profileRow?.avatar_url} size={22} ring={!isActive} />
-                            </span>
-                          )}
-                          {showDot && (
-                            <span
-                              aria-hidden
-                              style={{
-                                position: 'absolute', top: -1, right: -3,
-                                width: 6, height: 6, borderRadius: 9999,
-                                background: 'var(--te-accent)',
-                                boxShadow: '0 0 0 2px var(--te-border)',
-                              }}
-                            />
-                          )}
-                        </span>
+                        <Icon className="w-[24px] h-[24px]" style={{ color }} />
                         <span className="text-[10px] font-medium tracking-tight" style={{ color }}>
                           {label}
                         </span>
@@ -963,6 +935,33 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
                     );
                   })}
                 </div>
+                <button
+                  onClick={() => switchTab('profile')}
+                  aria-label="Profile"
+                  className="relative flex items-center justify-center rounded-full active:opacity-60 transition-opacity select-none shrink-0"
+                  style={{
+                    width: 46,
+                    height: 46,
+                    background: 'var(--te-border)',
+                    border: '1px solid var(--te-border)',
+                    boxShadow: tab === 'profile' ? '0 0 0 1.5px rgba(255,255,255,0.9)' : 'none',
+                  }}
+                >
+                  <span style={{ display: 'inline-flex', borderRadius: 9999, opacity: tab === 'profile' ? 1 : 0.55 }}>
+                    <Avatar name={profileName} avatarUrl={profileRow?.avatar_url} size={26} ring={tab !== 'profile'} />
+                  </span>
+                  {competeAttention && tab !== 'profile' && (
+                    <span
+                      aria-hidden
+                      style={{
+                        position: 'absolute', top: 2, right: 2,
+                        width: 7, height: 7, borderRadius: 9999,
+                        background: 'var(--te-accent)',
+                        boxShadow: '0 0 0 2px var(--te-border)',
+                      }}
+                    />
+                  )}
+                </button>
               </div>
             </div>
           </div>
