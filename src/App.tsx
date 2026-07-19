@@ -21,12 +21,11 @@ import { useFistBumps } from './hooks/useFistBumps';
 import ExercisesView from './views/ExercisesView';
 import LogsView from './views/LogsView';
 import AnalyticsView from './views/AnalyticsView';
-import CompeteView from './views/CompeteView';
+import ProfileView from './views/ProfileView';
 import AuthView from './views/AuthView';
 import ExerciseModal from './components/ExerciseModal';
 import LogModal from './components/LogModal';
 import ScheduleModal from './components/ScheduleModal';
-import ProfilePage from './components/ProfilePage';
 import Avatar from './components/Avatar';
 import EdgeSwipePeek from './components/EdgeSwipePeek';
 import UsernameSetupModal from './components/UsernameSetupModal';
@@ -48,7 +47,7 @@ if (typeof window !== 'undefined') {
   }
 }
 
-type Tab = 'exercises' | 'log' | 'analytics' | 'compete';
+type Tab = 'exercises' | 'log' | 'analytics' | 'profile';
 
 // First-run swipe-to-log hint: shown until the swipe-add gesture has actually
 // been used twice. Counted in localStorage so it never comes back.
@@ -399,7 +398,6 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
   // Set when the schedule sheet should jump straight to routine creation
   // (the Logs page's no-routine prompt), instead of the main settings list.
   const [scheduleInitialView, setScheduleInitialView] = useState<'routine' | undefined>(undefined);
-  const [showProfile, setShowProfile] = useState(false);
 
   const profileName = profileRow?.display_name || profileRow?.username || userName || 'You';
 
@@ -651,29 +649,32 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
     );
   }
 
-  const tabs: { key: Tab; label: string; icon: React.FC<{ className?: string; style?: React.CSSProperties }> }[] = [
+  // The Profile tab's "icon" is the user's own avatar rather than a glyph —
+  // it's the one tab that represents a person, and it doubles as the identity
+  // affordance the header's corner button used to provide.
+  const tabs: { key: Tab; label: string; icon?: React.FC<{ className?: string; style?: React.CSSProperties }> }[] = [
     { key: 'exercises', label: 'Exercises', icon: RectangleStackIcon },
     { key: 'log', label: 'Log', icon: QueueListIcon },
     { key: 'analytics', label: 'Progress', icon: ChartBarSquareIcon },
-    { key: 'compete', label: 'Compete', icon: TrophyIcon },
+    { key: 'profile', label: 'Profile' },
   ];
 
   const tabTitles: Record<Tab, string> = {
     log: 'Workout Log',
     exercises: 'Exercises',
     analytics: 'Progress',
-    compete: 'Compete',
+    profile: 'Profile',
   };
 
-  // Notification dot on the Compete tab: pending competition invites or
+  // Notification dot on the Profile tab: pending competition invites or
   // incoming friend requests waiting on you.
   const competeAttention = competitions.pendingInvites.length + friends.incoming.length > 0;
 
   return (
     <div className="bg-te-bg h-full overflow-hidden flex flex-col relative">
       <WideScreenNote />
-      {!showProfile && (
-        <EdgeSwipePeek name={profileName} avatarUrl={profileRow?.avatar_url} onComplete={() => setShowProfile(true)} />
+      {tab !== 'profile' && (
+        <EdgeSwipePeek name={profileName} avatarUrl={profileRow?.avatar_url} onComplete={() => switchTab('profile')} />
       )}
       <div
         ref={scrollContainerRef}
@@ -698,20 +699,10 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
           style={{ gridTemplateRows: focusMode ? '0fr' : '1fr', transition: 'grid-template-rows 0.36s cubic-bezier(0.22,1,0.36,1)' }}
         >
           <div style={{ overflow: 'hidden', opacity: focusMode ? 0 : 1, transition: `opacity ${focusMode ? '0.15s ease' : '0.3s ease 0.08s'}` }}>
-            {/* items-center vertically centers the greeting against the avatar;
-                the row's own padding gives the avatar's box-shadow ring
-                clearance from the edges so it isn't clipped (the padding lives
-                on the row, not the collapsing wrapper, so focus mode still
-                collapses cleanly). */}
-            <div className="flex items-center justify-between mb-1" style={{ paddingTop: 9, paddingBottom: 3, paddingRight: 3 }}>
+            {/* Session indicator only — the profile avatar moved to the nav
+                bar, where it's the Profile tab's icon. */}
+            <div className="flex items-center mb-1" style={{ paddingTop: 9, paddingBottom: 3 }}>
               <SessionIndicator sessionStart={showDuration ? sessionStart : null} doneAt={workoutDoneAt} />
-              <button
-                onClick={() => setShowProfile(true)}
-                className="active:opacity-70 transition-opacity shrink-0"
-                aria-label="Profile"
-              >
-                <Avatar name={profileName} avatarUrl={profileRow?.avatar_url} size={28} />
-              </button>
             </div>
           </div>
         </div>
@@ -768,10 +759,10 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
             routines={routines}
             schedule={schedule}
             competitions={competitions}
-            onOpenCompetitions={() => switchTab('compete')}
+            onOpenCompetitions={() => switchTab('profile')}
           />
         ) : (
-          <CompeteView
+          <ProfileView
             profile={profileRow}
             friends={friends}
             competitions={competitions}
@@ -779,6 +770,10 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
             unit={unit}
             toDisplay={toDisplay}
             inviteUrl={inviteUrl}
+            onOpenSettings={() => setScheduleOpen(true)}
+            setAvatar={setAvatar}
+            uploadAvatarFile={uploadAvatarFile}
+            updateBio={updateBio}
           />
         )}
 
@@ -912,15 +907,31 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
                   {tabs.map(({ key, label, icon: Icon }) => {
                     const isActive = tab === key;
                     const color = isActive ? '#fff' : 'rgba(255,255,255,0.4)';
-                    const showDot = key === 'compete' && competeAttention && !isActive;
+                    const showDot = key === 'profile' && competeAttention && !isActive;
                     return (
                       <button
                         key={key}
                         onClick={() => switchTab(key)}
                         className="flex flex-col items-center gap-0.5 px-4 py-1 rounded-full active:opacity-60 transition-opacity select-none"
                       >
-                        <span style={{ position: 'relative', display: 'inline-flex' }}>
-                          <Icon className="w-[22px] h-[22px]" style={{ color }} />
+                        <span style={{ position: 'relative', display: 'inline-flex', height: 22, alignItems: 'center' }}>
+                          {Icon ? (
+                            <Icon className="w-[22px] h-[22px]" style={{ color }} />
+                          ) : (
+                            // Profile: the avatar itself, dimmed to match the
+                            // unselected glyphs and ringed when it's the
+                            // active tab.
+                            <span
+                              style={{
+                                display: 'inline-flex', borderRadius: 9999,
+                                opacity: isActive ? 1 : 0.55,
+                                boxShadow: isActive ? '0 0 0 1.5px rgba(255,255,255,0.9)' : 'none',
+                                transition: 'opacity 0.2s ease, box-shadow 0.2s ease',
+                              }}
+                            >
+                              <Avatar name={profileName} avatarUrl={profileRow?.avatar_url} size={22} ring={!isActive} />
+                            </span>
+                          )}
                           {showDot && (
                             <span
                               aria-hidden
@@ -928,6 +939,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
                                 position: 'absolute', top: -1, right: -3,
                                 width: 6, height: 6, borderRadius: 9999,
                                 background: 'var(--te-accent)',
+                                boxShadow: '0 0 0 2px var(--te-border)',
                               }}
                             />
                           )}
@@ -1079,16 +1091,6 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
           }}
         />
       )}
-
-      <ProfilePage
-        open={showProfile}
-        onClose={() => setShowProfile(false)}
-        profile={profileRow}
-        onOpenSettings={() => { setShowProfile(false); setScheduleOpen(true); }}
-        setAvatar={setAvatar}
-        uploadAvatarFile={uploadAvatarFile}
-        updateBio={updateBio}
-      />
 
       {needsUsername && <UsernameSetupModal onCreate={createProfile} />}
 

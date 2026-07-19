@@ -1,12 +1,15 @@
 import React, { useState, useMemo, useRef, useId, useEffect } from 'react';
-import { ChevronDownIcon, ChartBarSquareIcon, TrophyIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { ChevronDownIcon, ChartBarSquareIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import EmptyState from '../components/EmptyState';
 import Modal from '../components/Modal';
 import { CompetitionMiniWidget } from '../components/Competitions';
 import type { Exercise, WorkoutLog, Routine, ScheduleDay } from '../types';
 import type { WeightUnit } from '../hooks/useSettings';
 import type { useCompetitions } from '../hooks/useCompetitions';
-import { calcStreak, dayCompletionPct, isScheduledDay, buildCompletedDays } from '../lib/streak';
+import { calcStreak, dayCompletionPct, isScheduledDay } from '../lib/streak';
+import { buildWeekSummary, type WeekSegmentState } from '../lib/week';
+import { buildPREvents, prEventsThisWeek, prLabel, prKindLabel, epley } from '../lib/prs';
 import { accentHex } from '../lib/accent';
 import { categoryVar, categoryHex } from '../lib/categoryColors';
 
@@ -948,115 +951,79 @@ function GroupedExercisePicker({
   );
 }
 
-// "This week" hero — the honest headline. Scheduled days completed vs planned
-// so far, with a 7-dot week strip. Rest days render as faint dots, not
-// failures; future scheduled days as hollow rings still to fill.
+// "This week" hero — the page's honest headline. Reads as a hardware level
+// meter rather than a calendar: one segment per training commitment this week
+// (scheduled days, plus any unscheduled day you trained anyway), filling as
+// the week goes. Rest days get no segment at all — they're not something to
+// be behind on, and the Log page's calendar already covers day-by-day detail.
+const SEGMENT_COLOR: Record<WeekSegmentState, string> = {
+  done: 'var(--te-success)',
+  bonus: 'var(--te-text-1)',
+  today: 'var(--te-accent)',
+  missed: 'rgba(255,69,58,0.35)',
+  upcoming: 'var(--te-border-strong)',
+  idle: 'var(--te-border-strong)',
+};
+
 function ThisWeekCard({ logs, schedule, routines, exercises }: {
   logs: WorkoutLog[];
   schedule: ScheduleDay[];
   routines: Routine[];
   exercises: Exercise[];
 }) {
-  const week = useMemo(() => {
-    const completed = buildCompletedDays(logs, schedule, routines, exercises);
-    const trained = new Set<string>();
-    for (const l of logs) {
-      if (l.set_type === 'warmup') continue;
-      const d = new Date(l.created_at);
-      trained.add(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`);
-    }
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const monday = new Date(today);
-    monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
-    const INITIALS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-    let scheduledSoFar = 0, scheduledTotal = 0, doneScheduled = 0, trainedDays = 0;
-    const days = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(monday);
-      d.setDate(monday.getDate() + i);
-      const k = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-      const scheduled = isScheduledDay(d, schedule, routines);
-      const isPast = d < today;
-      const isToday = d.getTime() === today.getTime();
-      const done = completed.has(k);
-      const didTrain = trained.has(k);
-      if (scheduled) {
-        scheduledTotal++;
-        if (isPast || isToday) scheduledSoFar++;
-        if (done) doneScheduled++;
-      }
-      if (done || didTrain) trainedDays++;
-      return { initial: INITIALS[i], scheduled, isPast, isToday, done, didTrain };
-    });
-    return { days, scheduledSoFar, scheduledTotal, doneScheduled, trainedDays };
-  }, [logs, schedule, routines, exercises]);
-
-  const { days, scheduledSoFar, scheduledTotal, doneScheduled, trainedDays } = week;
-  const behind = Math.max(0, scheduledSoFar - doneScheduled - (days.find(d => d.isToday)?.scheduled && !days.find(d => d.isToday)?.done ? 1 : 0));
-  const onPlan = scheduledTotal > 0 && behind === 0;
-
-  const headline = scheduledTotal > 0
-    ? `${doneScheduled} of ${scheduledTotal} scheduled days`
-    : trainedDays > 0
-    ? `${trainedDays} day${trainedDays === 1 ? '' : 's'} trained`
-    : 'No workouts yet';
+  const { segments, headline, subline, chip } = useMemo(
+    () => buildWeekSummary(logs, schedule, routines, exercises),
+    [logs, schedule, routines, exercises],
+  );
 
   return (
-    <div className="px-4 py-3.5" style={BENTO}>
+    <div className="px-4 pt-3 pb-3.5" style={BENTO}>
       <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <p className="te-label" style={{ color: 'var(--te-text-4)' }}>This week</p>
-          <p className="text-[17px] font-bold te-t1 tracking-tight mt-1 leading-none">{headline}</p>
-        </div>
-        {scheduledTotal > 0 && (
+        <p className="te-label" style={{ color: 'var(--te-text-4)' }}>This week</p>
+        {chip && (
           <span
-            className="shrink-0 whitespace-nowrap"
+            className="shrink-0 whitespace-nowrap flex items-center gap-1"
             style={{
               fontFamily: MONO, fontSize: 10, fontWeight: 600, letterSpacing: '0.06em',
-              textTransform: 'uppercase', lineHeight: 1, padding: '4px 8px', borderRadius: 9999,
-              color: onPlan ? 'var(--te-success)' : 'var(--te-warn)',
-              background: onPlan ? 'rgba(48,209,88,0.12)' : 'rgba(232,166,87,0.12)',
+              textTransform: 'uppercase', lineHeight: 1,
+              color: chip.ok ? 'var(--te-success)' : 'var(--te-warn)',
             }}
           >
-            {onPlan ? 'On plan' : `${behind} behind`}
+            <span
+              style={{
+                width: 5, height: 5, borderRadius: 9999,
+                background: chip.ok ? 'var(--te-success)' : 'var(--te-warn)',
+              }}
+            />
+            {chip.text}
           </span>
         )}
       </div>
-      <div className="flex items-center justify-between mt-3.5">
-        {days.map((d, i) => {
-          const credited = d.done || (!d.scheduled && d.didTrain);
-          const missed = d.scheduled && d.isPast && !d.done;
-          const upcoming = d.scheduled && !d.isPast && !d.done;
-          return (
-            <div key={i} className="flex flex-col items-center gap-1.5" style={{ width: 26 }}>
-              <span
-                className="flex items-center justify-center rounded-full"
-                style={{
-                  width: 20, height: 20,
-                  background: credited ? 'rgba(48,209,88,0.16)' : 'transparent',
-                  border: credited
-                    ? '1.5px solid color-mix(in srgb, var(--te-success) 55%, transparent)'
-                    : upcoming
-                    ? `1.5px solid ${d.isToday ? 'var(--te-accent)' : 'var(--te-border-strong)'}`
-                    : missed
-                    ? '1.5px solid rgba(255,69,58,0.3)'
-                    : '1.5px solid transparent',
-                }}
-              >
-                <span style={{
-                  fontSize: 9, fontWeight: 600,
-                  color: credited ? 'var(--te-success)'
-                    : d.isToday ? 'var(--te-accent)'
-                    : missed ? 'rgba(255,69,58,0.55)'
-                    : d.scheduled ? 'var(--te-text-3)' : 'var(--te-text-4)',
-                }}>
-                  {d.initial}
-                </span>
-              </span>
-            </div>
-          );
-        })}
-      </div>
+
+      <p className="text-[20px] font-bold te-t1 tracking-tight mt-1.5 leading-none" style={{ letterSpacing: '-0.03em' }}>
+        {headline}
+      </p>
+
+      {/* Level meter — one bar per commitment, in week order. */}
+      {segments.length > 0 && (
+        <div className="flex items-center gap-1 mt-3.5" style={{ height: 6 }}>
+          {segments.map((s, i) => (
+            <div
+              key={i}
+              title={s.label}
+              style={{
+                flex: 1,
+                height: s.state === 'upcoming' || s.state === 'idle' || s.state === 'missed' ? 4 : 6,
+                borderRadius: 9999,
+                background: SEGMENT_COLOR[s.state],
+                transition: 'background 0.3s ease, height 0.3s ease',
+              }}
+            />
+          ))}
+        </div>
+      )}
+
+      <p className="te-label mt-2.5" style={{ color: 'var(--te-text-4)' }}>{subline}</p>
     </div>
   );
 }
@@ -1114,15 +1081,27 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
   const dailyRangeDays: number = dailyRange;
   const overallRangeDays: number = overallRange;
 
+  // Every PR ever set, replayed from log history — newest first.
+  const prEvents = useMemo(() => buildPREvents(logs), [logs]);
+  const prsThisWeek = useMemo(() => prEventsThisWeek(prEvents).length, [prEvents]);
+
   // All-time personal records: the heaviest working set per exercise (ties
-  // broken by more reps), with the date it was set.
+  // broken by more reps) plus the best estimated 1RM, with dates.
   const prs = useMemo(() => {
-    const map = new Map<string, { weight: number; reps: number; date: string }>();
+    const map = new Map<string, { weight: number; reps: number; date: string; e1rm: number }>();
     for (const l of logs) {
       if (l.set_type === 'warmup') continue;
       const cur = map.get(l.exercise_id);
-      if (!cur || l.weight > cur.weight || (l.weight === cur.weight && l.reps_done > cur.reps)) {
-        map.set(l.exercise_id, { weight: l.weight, reps: l.reps_done, date: l.created_at });
+      const est = epley(l.weight, l.reps_done);
+      if (!cur) {
+        map.set(l.exercise_id, { weight: l.weight, reps: l.reps_done, date: l.created_at, e1rm: est });
+        continue;
+      }
+      if (est > cur.e1rm) cur.e1rm = est;
+      if (l.weight > cur.weight || (l.weight === cur.weight && l.reps_done > cur.reps)) {
+        cur.weight = l.weight;
+        cur.reps = l.reps_done;
+        cur.date = l.created_at;
       }
     }
     return Array.from(map.entries())
@@ -1133,6 +1112,7 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
           name: ex?.name ?? 'Unknown',
           group: ex?.muscle_group ?? 'other',
           label: pr.weight > 0 ? `${Math.round(toDisplay(pr.weight))}${unit} × ${pr.reps}` : `${pr.reps} reps`,
+          e1rmLabel: pr.weight > 0 ? `${Math.round(toDisplay(pr.e1rm))}${unit} est. 1RM` : null,
           date: pr.date,
         };
       })
@@ -1328,12 +1308,16 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
         style={BENTO}
       >
         <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: 'var(--te-border-strong)' }}>
-          <TrophyIcon className="w-4 h-4" style={{ color: '#ffffff' }} />
+          <StarIconSolid className="w-4 h-4" style={{ color: '#ffffff' }} />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-[15px] font-semibold te-t1 tracking-tight">Personal records</p>
           <p className="text-[13px] te-t3 mt-0.5 leading-snug">
-            {prs.length > 0 ? `${prs.length} exercise${prs.length === 1 ? '' : 's'} · your heaviest lifts` : 'Log sets to set records'}
+            {prs.length === 0
+              ? 'Log sets to set records'
+              : prsThisWeek > 0
+              ? `${prsThisWeek} new this week · ${prs.length} exercise${prs.length === 1 ? '' : 's'}`
+              : `${prs.length} exercise${prs.length === 1 ? '' : 's'} · your heaviest lifts`}
           </p>
         </div>
         <ChevronRightIcon className="w-3.5 h-3.5 te-t4 shrink-0" />
@@ -1344,6 +1328,38 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
           <div className="px-4 py-8 text-center te-label" style={BENTO}>No records yet</div>
         ) : (
           <div className="space-y-5">
+            {/* Recently broken — the PR history that used to vanish with the
+                toast. Each row is a moment: what was beaten, and when. */}
+            {prEvents.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-3 pb-2.5 px-1" style={{ borderBottom: '1px solid var(--te-surface-3)' }}>
+                  <span className="te-label" style={{ color: 'var(--te-text-4)' }}>Recently broken</span>
+                  {prsThisWeek > 0 && (
+                    <span className="te-label ml-auto" style={{ color: 'var(--te-success)' }}>{prsThisWeek} this week</span>
+                  )}
+                </div>
+                <div className="overflow-hidden divide-y divide-[color:var(--te-border)]" style={BENTO}>
+                  {prEvents.slice(0, 12).map(e => {
+                    const ex = exercises.find(x => x.id === e.exerciseId);
+                    return (
+                      <div key={e.logId} className="flex items-center px-4 py-[13px] gap-3">
+                        <StarIconSolid className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--te-gold)' }} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[15px] font-semibold te-t1 tracking-tight truncate">{ex?.name ?? 'Unknown'}</p>
+                          <p className="te-label mt-0.5">
+                            {prKindLabel(e.kind)} · {fmtFullDate(new Date(e.date))}
+                          </p>
+                        </div>
+                        <span className="te-digit text-[15px] font-bold tabular-nums te-t1 shrink-0">
+                          {prLabel(e, unit, toDisplay)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {prGroups.map(({ group, label, items }) => (
               <div key={group}>
                 {/* Divider matches the Exercises page category header (e.g.
@@ -1360,7 +1376,10 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
                         <p className="text-[15px] font-semibold te-t1 tracking-tight truncate">{pr.name}</p>
                         <p className="te-label mt-0.5">{fmtFullDate(new Date(pr.date))}</p>
                       </div>
-                      <span className="te-digit text-[17px] font-bold tabular-nums te-t1 shrink-0">{pr.label}</span>
+                      <div className="text-right shrink-0">
+                        <span className="te-digit text-[17px] font-bold tabular-nums te-t1 block">{pr.label}</span>
+                        {pr.e1rmLabel && <span className="te-label" style={{ color: 'var(--te-text-4)' }}>{pr.e1rmLabel}</span>}
+                      </div>
                     </div>
                   ))}
                 </div>
