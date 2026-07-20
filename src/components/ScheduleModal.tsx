@@ -63,6 +63,9 @@ interface Props {
   onUpdateRoutine: (id: string, name: string, exercise_ids: string[]) => void;
   onDeleteRoutine: (id: string) => void;
   onAssignDay: (day_of_week: number, routine_id: string | null) => void;
+  /** Closes the sheet, jumps to the Exercises page and opens the add form —
+      the escape hatch from building a routine with no exercises to put in it. */
+  onCreateExercise: () => void;
   onSignOut: () => void;
   userName: string;
   onUpdateName: (name: string) => Promise<string | null>;
@@ -279,6 +282,7 @@ export default function ScheduleModal({
   onUpdateRoutine,
   onDeleteRoutine,
   onAssignDay,
+  onCreateExercise,
   onSignOut,
   userName,
   onUpdateName,
@@ -978,7 +982,19 @@ export default function ScheduleModal({
                 </div>
               </div>
             ) : (
-              <p className="text-[13px] te-t3 text-center py-2">Add exercises first to build a routine.</p>
+              // Dead end otherwise: a routine needs exercises, and the only
+              // place to make one is a different page the user has to find
+              // and back out of settings to reach. This hands them the trip.
+              <div className="text-center py-2">
+                <p className="text-[13px] te-t3">Add exercises first to build a routine.</p>
+                <button
+                  type="button"
+                  onClick={onCreateExercise}
+                  className="te-fab w-full mt-3 py-3.5 rounded-te-sm te-mono text-[13px] tracking-[0.08em] uppercase te-t1 active:opacity-80 transition-opacity"
+                >
+                  Create an exercise
+                </button>
+              </div>
             )}
 
             {/* Save button — needs a name and at least one exercise */}

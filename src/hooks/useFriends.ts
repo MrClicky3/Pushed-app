@@ -11,6 +11,13 @@ export interface ProfileLite {
   avatar_url: string | null;
 }
 
+export interface SearchResult {
+  users: ProfileLite[];
+  /** Set when the query itself failed, so the UI can say so instead of
+      reporting an empty result set. */
+  error?: string;
+}
+
 export interface InviteResult {
   ok: boolean;
   reason: 'accepted' | 'already_friends' | 'self' | 'invalid_code' | 'error';
@@ -113,15 +120,29 @@ export function useFriends(userId: string) {
     return 'none';
   }, [acceptedIds, outgoingIds, incomingIds]);
 
-  const searchUsers = useCallback(async (q: string): Promise<ProfileLite[]> => {
+  // Searches every profile in the app, not just friends — the "profiles public
+  // read" policy exists for exactly this. Matches display name as well as
+  // username, since that's the name shown everywhere else in the UI and
+  // searching for it and getting nothing reads as "this user doesn't exist".
+  //
+  // Errors are returned rather than swallowed: a failing query and a genuine
+  // zero-result search are indistinguishable to the user otherwise, and the
+  // most likely failure here (the social migration not having been applied to
+  // the live database) looks exactly like "no users found".
+  const searchUsers = useCallback(async (q: string): Promise<SearchResult> => {
     const term = q.trim();
-    if (term.length < 2) return [];
-    const { data } = await supabase
+    if (term.length < 2) return { users: [] };
+    // PostgREST needs the wildcards inside the or() filter's value, and a term
+    // containing , ( ) or . would otherwise break out of the filter grammar.
+    const safe = term.replace(/[,().*]/g, ' ').trim();
+    if (!safe) return { users: [] };
+    const { data, error } = await supabase
       .from('profiles').select('id,username,display_name,avatar_url')
-      .ilike('username', `%${term}%`)
+      .or(`username.ilike.%${safe}%,display_name.ilike.%${safe}%`)
       .neq('id', userId)
       .limit(15);
-    return (data as ProfileLite[]) ?? [];
+    if (error) return { users: [], error: error.message };
+    return { users: (data as ProfileLite[]) ?? [] };
   }, [userId]);
 
   async function sendRequest(targetId: string) {

@@ -5,7 +5,7 @@
 // See supabase/migrations for rules. Card layouts follow the Figma
 // "Competition-volume/streak duel / 3-player / 6-player card" designs.
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { PlusIcon, ChevronRightIcon, ClockIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, ChevronRightIcon, ClockIcon, UsersIcon } from '@heroicons/react/24/outline';
 import { FireIcon } from '@heroicons/react/24/solid';
 import { Trophy, Medal, Award, CheckCircle2, Swords } from 'lucide-react';
 import Modal from './Modal';
@@ -206,12 +206,14 @@ function CardTag({ comp }: { comp: CompetitionSummary }) {
 // Duel body: the two players face off across a hairline "vs" divider.
 // `names` adds a small name caption per side (used in the detail sheet; the
 // list cards stay avatar+value only, per Figma).
-function DuelBody({ track, me, them, volFmt, names }: {
+function DuelBody({ track, me, them, volFmt, names, avatarPx = AVATAR_PX }: {
   track: CompetitionTrack;
   me: CompetitionStanding;
   them: CompetitionStanding;
   volFmt: VolFmt;
   names?: boolean;
+  /** Overridable so the detail sheet can run a smaller pair than the card. */
+  avatarPx?: number;
 }) {
   const a = scoreValue(me);
   const b = scoreValue(them);
@@ -222,7 +224,7 @@ function DuelBody({ track, me, them, volFmt, names }: {
   const Side = ({ s, leads, right }: { s: CompetitionStanding; leads: boolean; right?: boolean }) => (
     <div className={`flex flex-col gap-3.5 min-w-0 ${right ? 'items-end text-right' : 'items-start'}`}>
       <div className="relative">
-        <Avatar name={s.display_name || s.username} avatarUrl={s.avatar_url} size={AVATAR_PX} />
+        <Avatar name={s.display_name || s.username} avatarUrl={s.avatar_url} size={avatarPx} />
         {leads && <RankBadge rank={1} side={right ? 'left' : 'right'} />}
       </div>
       {names && (
@@ -240,14 +242,14 @@ function DuelBody({ track, me, them, volFmt, names }: {
   return (
     <div className="relative grid" style={{ gridTemplateColumns: '1fr auto 1fr' }}>
       <Side s={me} leads={iLead} />
-      <div aria-hidden style={{ width: DUEL_DIVIDER_PX, height: AVATAR_PX }} />
+      <div aria-hidden style={{ width: DUEL_DIVIDER_PX, height: avatarPx }} />
       <Side s={them} leads={theyLead} right />
       <div
         className="absolute inset-x-0 top-0 flex items-center gap-2.5 pointer-events-none"
         style={{
-          height: AVATAR_PX,
-          paddingLeft: AVATAR_PX + DUEL_RULE_GAP_PX,
-          paddingRight: AVATAR_PX + DUEL_RULE_GAP_PX,
+          height: avatarPx,
+          paddingLeft: avatarPx + DUEL_RULE_GAP_PX,
+          paddingRight: avatarPx + DUEL_RULE_GAP_PX,
         }}
       >
         <span className="flex-1 h-px" style={{ background: 'var(--te-border-strong)' }} />
@@ -497,12 +499,18 @@ function duelStatusLine(me: CompetitionStanding, them: CompetitionStanding, done
   return done ? 'Dead even — it ends in a tie.' : 'Dead even right now.';
 }
 
-function DuelFaceOff({ track, me, them, volFmt, done }: {
+// The detail sheet runs the pair a touch smaller than the Profile card does:
+// the sheet already establishes whose competition this is in its title, so the
+// avatars are identification, not the headline they are on a card in a list.
+const SHEET_AVATAR_PX = 44;
+
+function DuelFaceOff({ track, me, them, volFmt, done, avatarPx }: {
   track: CompetitionTrack;
   me: CompetitionStanding;
   them: CompetitionStanding;
   volFmt: VolFmt;
   done: boolean;
+  avatarPx?: number;
 }) {
   const a = scoreValue(me);
   const b = scoreValue(them);
@@ -511,7 +519,7 @@ function DuelFaceOff({ track, me, them, volFmt, done }: {
 
   return (
     <div>
-      <DuelBody track={track} me={me} them={them} volFmt={volFmt} names />
+      <DuelBody track={track} me={me} them={them} volFmt={volFmt} names avatarPx={avatarPx} />
 
       {/* Tug-of-war bar — your side fills from the left. */}
       <div className="mt-4 rounded-full overflow-hidden flex" style={{ height: 5, background: 'var(--te-border)' }}>
@@ -671,17 +679,22 @@ function CancelVote({
 
   return (
     <div>
+      {/* A real button rather than a 10px mono caption: cancelling is the one
+          action this sheet offers on a live competition, and at caption size
+          it read as a footnote people didn't find. Danger-tinted but outlined,
+          not filled — it should be findable, not the first thing you hit. */}
       <button
         onClick={toggle}
         disabled={busy}
-        className="w-full text-center py-1.5 active:opacity-60 transition-opacity disabled:opacity-40"
+        className="w-full rounded-te-md font-semibold text-[15px] active:opacity-70 transition-opacity disabled:opacity-40"
         style={{
-          fontFamily: "'Geist Mono', monospace", fontSize: 10, fontWeight: 500,
-          letterSpacing: '0.04em', textTransform: 'uppercase',
-          color: iVoted ? 'rgba(255,69,58,0.75)' : 'var(--te-text-4)',
+          height: 48,
+          background: 'color-mix(in srgb, var(--te-danger) 10%, transparent)',
+          border: '1px solid color-mix(in srgb, var(--te-danger) 30%, transparent)',
+          color: 'var(--te-danger)',
         }}
       >
-        {iVoted ? `Voted to cancel${suffix} · undo` : `Cancel competition${suffix}`}
+        {iVoted ? `Voted to cancel${suffix} · Undo` : `Cancel competition${suffix}`}
       </button>
       {error && (
         <p className="te-label text-center mt-1" style={{ color: 'var(--te-danger)' }}>{error}</p>
@@ -752,9 +765,10 @@ function CompetitionSheet({
       <div className="space-y-4">
         <div className="flex items-center justify-between px-0.5">
           <div>
-            <p className="te-label">
-              {trackLabel(comp.track)} · {playersLabel(comp.participant_count)} · started {fmtStarted(comp.start_at)}
-            </p>
+            {/* Track and player count are dropped here — the standings below
+                show both, and repeating them above the card just padded the
+                sheet's head with facts already on screen. */}
+            <p className="te-label">Started {fmtStarted(comp.start_at)}</p>
           </div>
           {comp.status === 'active' && (
             <div className="flex items-center gap-1.5 shrink-0">
@@ -785,20 +799,19 @@ function CompetitionSheet({
                 const pair = duelPair(rows);
                 return pair
                   ? (
+                    // Same card the Profile page shows, minus its header —
+                    // the name is the sheet's title and the countdown is in
+                    // the row above, so repeating either here read as a
+                    // second, competing header inside the sheet.
                     <div className="te-panel rounded-te-md px-4 py-4">
-                      <DuelFaceOff track={comp.track} me={pair.me} them={pair.them} volFmt={volFmt} done={done} />
+                      <DuelFaceOff
+                        track={comp.track} me={pair.me} them={pair.them}
+                        volFmt={volFmt} done={done} avatarPx={SHEET_AVATAR_PX}
+                      />
                     </div>
                   )
                   : <StandingsList track={comp.track} rows={rows} volFmt={volFmt} />;
               })()
-        )}
-
-        {(comp.status === 'active' || comp.status === 'completed') && !loading && (
-          <p className="te-label px-0.5 leading-relaxed" style={{ color: 'var(--te-text-4)' }}>
-            {comp.track === 'streak'
-              ? 'Scored on your current workout streak — keep it alive through the finish.'
-              : 'Scored as total working-set volume lifted during the competition. Flagged outlier sets don\'t count.'}
-          </p>
         )}
 
         {(comp.status === 'pending' || comp.status === 'active') && !loading && (
@@ -1118,6 +1131,44 @@ function CompetitionCard({ comp, comps, volFmt, onOpen }: {
   );
 }
 
+// Empty-state mark for the Competitions section. A competition is about the
+// people in it, so it leads with the faces you'd actually be competing
+// against — up to three, overlapped — rather than a trophy for a contest
+// that hasn't happened. With no friends yet there are no faces to show, so it
+// falls back to the generic group glyph.
+const STACK_AVATAR = 34;
+const STACK_OVERLAP = 11;
+
+function FriendStack({ friends }: { friends: ProfileLite[] }) {
+  const shown = friends.slice(0, 3);
+
+  if (shown.length === 0) {
+    return <UsersIcon className="w-8 h-8 mx-auto" style={{ color: 'var(--te-text-4)' }} />;
+  }
+
+  return (
+    <div className="flex items-center justify-center" style={{ height: STACK_AVATAR }}>
+      {shown.map((f, i) => (
+        <div
+          key={f.id}
+          // Later avatars tuck under earlier ones, so the stack reads
+          // left-to-right the way a row of faces should.
+          style={{
+            marginLeft: i === 0 ? 0 : -STACK_OVERLAP,
+            zIndex: shown.length - i,
+            // Cut the panel colour out around each avatar so the overlap
+            // reads as separation rather than two faces bleeding together.
+            boxShadow: '0 0 0 2px var(--te-surface-1)',
+            borderRadius: 9999,
+          }}
+        >
+          <Avatar name={f.display_name || f.username} avatarUrl={f.avatar_url} size={STACK_AVATAR} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ── Section (mounted inside ProfilePage) ────────────────────────
 export function CompetitionsSection({ comps, friendsList, unit, toDisplay }: {
   comps: CompetitionsApi;
@@ -1188,7 +1239,7 @@ export function CompetitionsSection({ comps, friendsList, unit, toDisplay }: {
 
       {invites.length === 0 && active.length === 0 && pendingMine.length === 0 && completed.length === 0 ? (
         <button onClick={openCreate} className="te-panel w-full rounded-te-md px-5 py-8 text-center active:bg-white/[0.04] transition-colors">
-          <Trophy className="w-8 h-8 mx-auto mb-2.5" style={{ color: 'var(--te-gold)' }} />
+          <div className="mb-2.5"><FriendStack friends={friendsList} /></div>
           <p className="text-[17px] font-semibold te-t1 tracking-tight">Start a competition</p>
           <p className="text-[13px] te-t3 mt-1 leading-snug">
             Challenge friends to a volume or streak battle — up to {MAX_PLAYERS} players.
