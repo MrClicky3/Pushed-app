@@ -81,7 +81,7 @@ const NAV_DOCK_H = 20 + 6 + NAV_PILL_H;
 // pill's mass is broken up by its rounded ends, the disc's is not. Trimming
 // the avatar by a few px is the optical overshoot correction that makes them
 // look the same size. The button keeps the full NAV_PILL_H as its tap target.
-const NAV_AVATAR_OVERSHOOT_PX = 4;
+const NAV_AVATAR_OVERSHOOT_PX = 9;
 const NAV_AVATAR_BOX = NAV_PILL_H - NAV_AVATAR_OVERSHOOT_PX;
 // Open-state ring. Drawn as a box-shadow sitting just outside the avatar
 // rather than a border inside it: a border would be overlapped by the picture
