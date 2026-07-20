@@ -43,25 +43,55 @@ export default async function handler(req: Req, res: Res) {
   const SUPABASE_ANON = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
   const authHeader = (req.headers['authorization'] || req.headers['Authorization']) as string | undefined;
 
-  let reporter = 'unknown';
   if (!authHeader) { res.status(401).json({ error: 'Please sign in to report a bug.' }); return; }
-  if (SUPABASE_URL && SUPABASE_ANON) {
-    try {
-      const u = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-        headers: { apikey: SUPABASE_ANON, Authorization: authHeader },
-      });
-      if (!u.ok) { res.status(401).json({ error: 'Your session expired — sign in again.' }); return; }
-      const j = (await u.json()) as { email?: string; id?: string };
-      reporter = j.email || j.id || 'authenticated';
-    } catch {
-      res.status(502).json({ error: 'Could not verify your session. Try again.' }); return;
+
+  // Fail closed: without these we cannot verify anyone, so accepting the
+  // report would mean emailing on behalf of an unauthenticated stranger.
+  if (!SUPABASE_URL || !SUPABASE_ANON) {
+    res.status(503).json({ error: 'Bug reporting isn\'t configured yet.' }); return;
+  }
+
+  let reporter = 'unknown';
+  let reporterId = '';
+  try {
+    const u = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: { apikey: SUPABASE_ANON, Authorization: authHeader },
+    });
+    if (!u.ok) { res.status(401).json({ error: 'Your session expired — sign in again.' }); return; }
+    const j = (await u.json()) as { email?: string; id?: string };
+    reporterId = j.id ?? '';
+    reporter = j.email || j.id || 'authenticated';
+  } catch {
+    res.status(502).json({ error: 'Could not verify your session. Try again.' }); return;
+  }
+
+  if (!reporterId) { res.status(401).json({ error: 'Your session expired — sign in again.' }); return; }
+
+  // Per-user rate limit. The counter lives in Postgres because a serverless
+  // instance's memory does not survive between invocations. RLS scopes both
+  // the count and the insert to the caller's own rows.
+  const REPORTS_PER_HOUR = 5;
+  const restHeaders = { apikey: SUPABASE_ANON, Authorization: authHeader, 'Content-Type': 'application/json' };
+  const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  try {
+    const recent = await fetch(
+      `${SUPABASE_URL}/rest/v1/bug_reports?select=id&created_at=gte.${encodeURIComponent(since)}`,
+      { headers: restHeaders },
+    );
+    if (recent.ok) {
+      const rows = (await recent.json()) as unknown[];
+      if (Array.isArray(rows) && rows.length >= REPORTS_PER_HOUR) {
+        res.status(429).json({ error: 'You\'ve sent a few reports already — try again in an hour.' });
+        return;
+      }
     }
-  } else {
-    reporter = 'authenticated (unverified)';
+  } catch {
+    // Counting failed (network/transient). This is a quota guard, not an auth
+    // boundary, so let the report through rather than losing it.
   }
 
   const RESEND_API_KEY = process.env.RESEND_API_KEY;
-  if (!RESEND_API_KEY) { res.status(500).json({ error: 'Bug reporting isn\'t configured yet.' }); return; }
+  if (!RESEND_API_KEY) { res.status(503).json({ error: 'Bug reporting isn\'t configured yet.' }); return; }
 
   const replyTo = /@/.test(reporter) ? reporter : undefined;
   const text = [
@@ -86,9 +116,17 @@ export default async function handler(req: Req, res: Res) {
       }),
     });
     if (!r.ok) {
-      const detail = await r.text().catch(() => '');
-      res.status(502).json({ error: 'Couldn\'t send the report.', detail: detail.slice(0, 300) }); return;
+      // Resend's own error text can name the account and key state — log it
+      // server-side, return something generic to the browser.
+      console.error('resend send failed', r.status, (await r.text().catch(() => '')).slice(0, 300));
+      res.status(502).json({ error: 'Couldn\'t send the report.' }); return;
     }
+    // Record the accepted report so it counts against the caller's hourly limit.
+    await fetch(`${SUPABASE_URL}/rest/v1/bug_reports`, {
+      method: 'POST',
+      headers: restHeaders,
+      body: JSON.stringify({ user_id: reporterId }),
+    }).catch(() => {});
     res.status(200).json({ ok: true });
   } catch {
     res.status(502).json({ error: 'Couldn\'t send the report.' });
