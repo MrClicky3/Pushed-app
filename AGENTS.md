@@ -83,13 +83,20 @@ is proven. Committing it still applies it nowhere.
 
 ## Persistence — this split is deliberate
 
-**Supabase:** exercises, workout logs, auth, profiles, friends/leaderboards.
+**Supabase:** exercises, workout logs, auth, profiles, friends/leaderboards, and —
+since 2026-07-20 — routines and the weekly schedule.
 
-**localStorage only:** routines, weekly schedule, settings. These are intentionally
-*not* in the database. Streaks are computed client-side from logs, not stored.
+**localStorage only:** settings (accent, units, timer, haptics) and small bits of UI
+state. Streaks are still computed client-side from logs, not stored.
 
-Do not "helpfully" migrate routines or the schedule into Supabase. If a change seems to
-require it, ask first.
+Routines and the schedule used to be localStorage-only. They were moved into the
+`routines` / `schedule` tables because they did not follow a user to a second device
+and vanished when the browser was cleared, while the logged workouts beside them
+survived — which read as a bug. `useSchedule.ts` still seeds its initial state from
+the old localStorage keys so the first render is instant, and lifts any pre-existing
+local data into the database once per user (remapping the old `routine-…` ids onto
+uuids). Do not remove that migration path until every active user has loaded the app
+at least once.
 
 Schema changes go in `supabase/migrations/`. Committing a migration does **not** apply
 it — someone must run it against the hosted project, staging first (see Environments).
