@@ -424,6 +424,9 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
   // Set when the schedule sheet should jump straight to routine creation
   // (the Logs page's no-routine prompt), instead of the main settings list.
   const [scheduleInitialView, setScheduleInitialView] = useState<'routine' | undefined>(undefined);
+  /** Set when the user leaves the routine builder to go make an exercise, so
+      saving it carries them back instead of stranding them on Exercises. */
+  const [returnToRoutineBuilder, setReturnToRoutineBuilder] = useState(false);
 
   const profileName = profileRow?.display_name || profileRow?.username || userName || 'You';
 
@@ -580,6 +583,14 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
       updateExercise(exerciseModal.exercise.id, data);
     } else {
       addExercise(data);
+      // They only came to this form because the routine builder had nothing to
+      // put in a routine. Hand them back to it with the exercise now waiting,
+      // rather than leaving them on a tab they did not ask for.
+      if (returnToRoutineBuilder) {
+        setReturnToRoutineBuilder(false);
+        setScheduleInitialView('routine');
+        setScheduleOpen(true);
+      }
     }
   }
 
@@ -792,6 +803,11 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
             focusMode={focusMode}
             weekStartDay={weekStartDay}
             onCreateRoutine={() => { setScheduleInitialView('routine'); setScheduleOpen(true); }}
+            onCreateExercise={() => {
+              switchTab('exercises');
+              setExercisePrefill(undefined);
+              setExerciseModal({ open: true, exercise: null });
+            }}
           />
         ) : tab === 'analytics' ? (
           <AnalyticsView
@@ -1044,7 +1060,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
 
       <ExerciseModal
         open={exerciseModal.open}
-        onClose={() => { setExerciseModal({ open: false, exercise: null }); setExercisePrefill(undefined); }}
+        onClose={() => { setExerciseModal({ open: false, exercise: null }); setExercisePrefill(undefined); setReturnToRoutineBuilder(false); }}
         onSave={handleSaveExercise}
         onDelete={deleteExercise}
         exercise={exerciseModal.exercise}
@@ -1200,6 +1216,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
         onDeleteRoutine={deleteRoutine}
         onAssignDay={assignDay}
         onCreateExercise={() => {
+          setReturnToRoutineBuilder(true);
           setScheduleOpen(false);
           setScheduleInitialView(undefined);
           switchTab('exercises');

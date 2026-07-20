@@ -31,6 +31,9 @@ interface Props {
   focusMode?: boolean;
   weekStartDay?: WeekStartDay;
   onCreateRoutine: () => void;
+  /** Jumps to Exercises and opens the add form. A routine needs exercises to
+      put in it, so with none the card below offers this instead. */
+  onCreateExercise: () => void;
   /** Fired when the day's workout is marked complete (epoch ms). */
   onWorkoutComplete?: (at: number) => void;
   /** Reports whether the selected calendar day is anything other than today.
@@ -641,7 +644,7 @@ function SessionRecapCard({
 // ── Main log view ─────────────────────────────────────────────
 type DisplayEntry = { exerciseId: string; exercise: Exercise | undefined; logs: WorkoutLog[] };
 
-export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExercise, onEdit, onDelete: _onDelete, unit, toDisplay, routines, schedule, focusMode = false, weekStartDay = 'monday', onCreateRoutine, onWorkoutComplete, onNonTodaySelectedChange, competitions, fistBumps }: Props) {
+export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExercise, onEdit, onDelete: _onDelete, unit, toDisplay, routines, schedule, focusMode = false, weekStartDay = 'monday', onCreateRoutine, onCreateExercise, onWorkoutComplete, onNonTodaySelectedChange, competitions, fistBumps }: Props) {
   const [viewLibraryEx, setViewLibraryEx]     = useState<LibraryExercise | null>(null);
   const [noRoutineDismissed, setNoRoutineDismissed] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
@@ -980,7 +983,10 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
         </div>
       </div>
 
-      {/* No routines exist yet — invite the user to create one */}
+      {/* Onboarding card. A routine is a group of exercises, so with none on
+          file "Create a routine" leads straight into a dead end — the builder
+          can only tell you to go make an exercise somewhere else. Ask for the
+          prerequisite first and only offer the routine once it can be filled. */}
       {routines.length === 0 && !noRoutineDismissed && (
         <div className="te-panel-dark rounded-te-md overflow-hidden">
           <div className="px-4 py-3.5 flex items-start gap-3">
@@ -988,11 +994,17 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
               <QueueListIcon className="w-4 h-4 te-t3" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[15px] font-semibold te-t1 tracking-tight">No routine yet</p>
+              <p className="text-[15px] font-semibold te-t1 tracking-tight">
+                {exercises.length === 0 ? 'Start with an exercise' : 'No routine yet'}
+              </p>
               {/* Sentence-length copy belongs in te-caption, not te-label —
                   tracked-out uppercase mono wraps to two lines here and reads
                   as a system message rather than a prompt. */}
-              <p className="text-[13px] mt-1 te-t3 leading-snug">Plan your week by creating a routine.</p>
+              <p className="text-[13px] mt-1 te-t3 leading-snug">
+                {exercises.length === 0
+                  ? 'Add the lifts you train, then group them into a routine.'
+                  : 'Plan your week by creating a routine.'}
+              </p>
             </div>
             <button
               onClick={() => setNoRoutineDismissed(true)}
@@ -1003,11 +1015,11 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
             </button>
           </div>
           <button
-            onClick={onCreateRoutine}
+            onClick={exercises.length === 0 ? onCreateExercise : onCreateRoutine}
             className="w-full py-3 text-[13px] font-semibold text-center active:bg-white/[0.04] transition-colors"
             style={{ borderTop: '1px solid var(--te-border)', color: 'var(--te-text-1)' }}
           >
-            Create a routine
+            {exercises.length === 0 ? 'Create an exercise' : 'Create a routine'}
           </button>
         </div>
       )}
