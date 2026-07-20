@@ -206,7 +206,7 @@ function CardTag({ comp }: { comp: CompetitionSummary }) {
 // Duel body: the two players face off across a hairline "vs" divider.
 // `names` adds a small name caption per side (used in the detail sheet; the
 // list cards stay avatar+value only, per Figma).
-function DuelBody({ track, me, them, volFmt, names, avatarPx = AVATAR_PX }: {
+function DuelBody({ track, me, them, volFmt, names, avatarPx = AVATAR_PX, ruleGapPx = DUEL_RULE_GAP_PX }: {
   track: CompetitionTrack;
   me: CompetitionStanding;
   them: CompetitionStanding;
@@ -214,6 +214,8 @@ function DuelBody({ track, me, them, volFmt, names, avatarPx = AVATAR_PX }: {
   names?: boolean;
   /** Overridable so the detail sheet can run a smaller pair than the card. */
   avatarPx?: number;
+  /** Clearance between each avatar and the start of the vs rule. */
+  ruleGapPx?: number;
 }) {
   const a = scoreValue(me);
   const b = scoreValue(them);
@@ -248,8 +250,8 @@ function DuelBody({ track, me, them, volFmt, names, avatarPx = AVATAR_PX }: {
         className="absolute inset-x-0 top-0 flex items-center gap-2.5 pointer-events-none"
         style={{
           height: avatarPx,
-          paddingLeft: avatarPx + DUEL_RULE_GAP_PX,
-          paddingRight: avatarPx + DUEL_RULE_GAP_PX,
+          paddingLeft: avatarPx + ruleGapPx,
+          paddingRight: avatarPx + ruleGapPx,
         }}
       >
         <span className="flex-1 h-px" style={{ background: 'var(--te-border-strong)' }} />
@@ -503,14 +505,21 @@ function duelStatusLine(me: CompetitionStanding, them: CompetitionStanding, done
 // the sheet already establishes whose competition this is in its title, so the
 // avatars are identification, not the headline they are on a card in a list.
 const SHEET_AVATAR_PX = 44;
+// A touch more air between each face and the vs rule than the card runs, so
+// the rules don't appear to grow out of the pictures.
+const SHEET_RULE_GAP_PX = 16;
 
-function DuelFaceOff({ track, me, them, volFmt, done, avatarPx }: {
+function DuelFaceOff({ track, me, them, volFmt, done, avatarPx, ruleGapPx, bar = true }: {
   track: CompetitionTrack;
   me: CompetitionStanding;
   them: CompetitionStanding;
   volFmt: VolFmt;
   done: boolean;
   avatarPx?: number;
+  ruleGapPx?: number;
+  /** Tug-of-war bar. Off in the detail sheet, where the two totals are
+      already side by side and the bar restates them a third time. */
+  bar?: boolean;
 }) {
   const a = scoreValue(me);
   const b = scoreValue(them);
@@ -519,21 +528,26 @@ function DuelFaceOff({ track, me, them, volFmt, done, avatarPx }: {
 
   return (
     <div>
-      <DuelBody track={track} me={me} them={them} volFmt={volFmt} names avatarPx={avatarPx} />
+      <DuelBody
+        track={track} me={me} them={them} volFmt={volFmt} names
+        avatarPx={avatarPx} ruleGapPx={ruleGapPx}
+      />
 
-      {/* Tug-of-war bar — your side fills from the left. */}
-      <div className="mt-4 rounded-full overflow-hidden flex" style={{ height: 5, background: 'var(--te-border)' }}>
-        <div
-          style={{
-            width: `${share * 100}%`,
-            background: iLead ? 'var(--te-pr)' : 'rgba(244,241,236,0.55)',
-            borderRadius: 9999,
-            transition: 'width 0.5s cubic-bezier(0.22,1,0.36,1)',
-          }}
-        />
-      </div>
+      {bar && (
+        /* Tug-of-war bar — your side fills from the left. */
+        <div className="mt-4 rounded-full overflow-hidden flex" style={{ height: 5, background: 'var(--te-border)' }}>
+          <div
+            style={{
+              width: `${share * 100}%`,
+              background: iLead ? 'var(--te-pr)' : 'rgba(244,241,236,0.55)',
+              borderRadius: 9999,
+              transition: 'width 0.5s cubic-bezier(0.22,1,0.36,1)',
+            }}
+          />
+        </div>
+      )}
 
-      <p className="te-label mt-2.5" style={{ color: 'var(--te-text-3)' }}>
+      <p className={`te-label ${bar ? 'mt-2.5' : 'mt-4'}`} style={{ color: 'var(--te-text-3)' }}>
         {duelStatusLine(me, them, done)}
       </p>
     </div>
@@ -648,6 +662,11 @@ function CancelVote({
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Cancelling ends the competition for everyone once the others agree, and
+  // there is no undoing that from here — so the button asks once before it
+  // casts the vote. Casting is destructive; withdrawing a vote is not, and
+  // goes through immediately.
+  const [confirming, setConfirming] = useState(false);
   const accepted = rows.filter(r => r.status === 'accepted');
   const me = rows.find(r => r.is_self);
   if (!me || me.status !== 'accepted' || accepted.length === 0) return null;
@@ -660,6 +679,7 @@ function CancelVote({
     if (!comp || busy) return;
     setBusy(true);
     setError(null);
+    setConfirming(false);
     feedback.skip();
     try {
       // The RPC resolves with { ok: false } rather than throwing when the
@@ -675,27 +695,42 @@ function CancelVote({
     }
   }
 
-  const suffix = needed > 1 ? ` · ${votes}/${needed} agreed` : '';
+  const tally = needed > 1 ? `${votes}/${needed}` : '';
+
+  // Three states, one line of text each — no parenthetical tallies stapled to
+  // a sentence. The vote count moves to its own caption underneath.
+  const label = confirming ? 'Tap again to confirm' : iVoted ? 'Undo cancel' : 'Cancel';
+  const caption = confirming
+    ? 'This ends the competition once everyone agrees.'
+    : iVoted && tally
+    ? `${tally} agreed to cancel`
+    : null;
 
   return (
     <div>
       {/* A real button rather than a 10px mono caption: cancelling is the one
           action this sheet offers on a live competition, and at caption size
-          it read as a footnote people didn't find. Danger-tinted but outlined,
-          not filled — it should be findable, not the first thing you hit. */}
+          it read as a footnote people didn't find. Danger-tinted but outlined
+          until it's armed — findable, not the first thing you hit. */}
       <button
-        onClick={toggle}
+        onClick={() => (iVoted || confirming ? toggle() : setConfirming(true))}
+        onBlur={() => setConfirming(false)}
         disabled={busy}
         className="w-full rounded-te-md font-semibold text-[15px] active:opacity-70 transition-opacity disabled:opacity-40"
         style={{
           height: 48,
-          background: 'color-mix(in srgb, var(--te-danger) 10%, transparent)',
-          border: '1px solid color-mix(in srgb, var(--te-danger) 30%, transparent)',
-          color: 'var(--te-danger)',
+          background: confirming
+            ? 'var(--te-danger)'
+            : 'color-mix(in srgb, var(--te-danger) 10%, transparent)',
+          border: `1px solid ${confirming ? 'var(--te-danger)' : 'color-mix(in srgb, var(--te-danger) 30%, transparent)'}`,
+          color: confirming ? '#ffffff' : 'var(--te-danger)',
         }}
       >
-        {iVoted ? `Voted to cancel${suffix} · Undo` : `Cancel competition${suffix}`}
+        {label}
       </button>
+      {caption && (
+        <p className="te-label text-center mt-2" style={{ color: 'var(--te-text-4)' }}>{caption}</p>
+      )}
       {error && (
         <p className="te-label text-center mt-1" style={{ color: 'var(--te-danger)' }}>{error}</p>
       )}
@@ -765,15 +800,16 @@ function CompetitionSheet({
       <div className="space-y-4">
         <div className="flex items-center justify-between px-0.5">
           <div>
-            {/* Track and player count are dropped here — the standings below
-                show both, and repeating them above the card just padded the
-                sheet's head with facts already on screen. */}
-            <p className="te-label">Started {fmtStarted(comp.start_at)}</p>
+            <p className="te-label">
+              {trackLabel(comp.track)} · {playersLabel(comp.participant_count)}
+            </p>
           </div>
           {comp.status === 'active' && (
             <div className="flex items-center gap-1.5 shrink-0">
               <ClockIcon className="w-3.5 h-3.5 te-t4" />
-              <span className="te-label" style={{ color: 'var(--te-text-2)' }}>{fmtLeft(comp.end_at, '')}</span>
+              <span className="te-label" style={{ color: 'var(--te-text-2)' }}>
+                ends in {fmtLeft(comp.end_at, '')}
+              </span>
             </div>
           )}
         </div>
@@ -806,7 +842,9 @@ function CompetitionSheet({
                     <div className="te-panel rounded-te-md px-4 py-4">
                       <DuelFaceOff
                         track={comp.track} me={pair.me} them={pair.them}
-                        volFmt={volFmt} done={done} avatarPx={SHEET_AVATAR_PX}
+                        volFmt={volFmt} done={done}
+                        avatarPx={SHEET_AVATAR_PX} ruleGapPx={SHEET_RULE_GAP_PX}
+                        bar={false}
                       />
                     </div>
                   )
