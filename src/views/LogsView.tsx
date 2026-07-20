@@ -1021,9 +1021,8 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
             subtitle="Go to Exercises first and create an exercise to start logging."
           />
         ) : isFuture ? (
-          // Future day — nothing can be logged here yet. A day with no
-          // routine on it is a rest day, so it gets the cup rather than the
-          // list glyph: there is nothing to list.
+          // Future day — nothing can be logged here yet. The cup is reserved
+          // for a planned rest day; every other state keeps the list glyph.
           <EmptyState
             icon={selectedRoutine
               ? <QueueListIcon className="w-7 h-7 te-t4" />
@@ -1039,9 +1038,9 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
             subtitle={isToday ? 'Swipe up to log a workout.' : 'Nothing was recorded on this day.'}
           />
         ) : (
-          // Day has no routine scheduled — a rest day
+          // Day has no routine scheduled
           <EmptyState
-            icon={<CoffeeIcon className="w-8 h-8" style={REST_ICON} />}
+            icon={<QueueListIcon className="w-7 h-7 te-t4" />}
             title="Your logs will appear here"
             subtitle="No routine is scheduled for this day."
           />
