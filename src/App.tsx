@@ -69,10 +69,16 @@ const SESSION_CAP_MINS = 4 * 60;
 // this height so they can never drift apart — they sit side by side, so any
 // drift reads immediately as a misaligned dock.
 const NAV_PILL_H = 63;
-// Ring shown around the avatar while the Profile tab is open. Drawn inside the
-// avatar's own footprint (see the button below) so it never affects layout.
-const NAV_ACTIVE_RING_PX = 2;
-const NAV_ACTIVE_RING_COLOR = '#282828';
+// A circle at the pill's exact height reads as the larger of the two — the
+// pill's mass is broken up by its rounded ends, the disc's is not. Trimming
+// the avatar by a few px is the optical overshoot correction that makes them
+// look the same size. The button keeps the full NAV_PILL_H as its tap target.
+const NAV_AVATAR_OVERSHOOT_PX = 4;
+const NAV_AVATAR_BOX = NAV_PILL_H - NAV_AVATAR_OVERSHOOT_PX;
+// Open-state ring, matching the tab pill's own border exactly (same token,
+// same 1px) so the two elements are edged the same way. Held at a constant
+// width with only its colour changing, so toggling it can never shift layout.
+const NAV_ACTIVE_RING_PX = 1;
 
 function formatSessionAge(dateStr: string): string {
   const mins = Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000);
@@ -969,26 +975,25 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
                     padding: 0,
                   }}
                 >
-                  {/* The ring is drawn inside the button's own footprint rather
-                      than around it, so turning it on cannot change the dock's
-                      height — the avatar shrinks by the ring instead. */}
+                  {/* The ring sits inside the avatar's own footprint and is
+                      always present — only its colour changes — so turning it
+                      on cannot shift the avatar or the dock's height. */}
                   <span
                     style={{
                       display: 'inline-flex',
-                      width: NAV_PILL_H,
-                      height: NAV_PILL_H,
+                      width: NAV_AVATAR_BOX,
+                      height: NAV_AVATAR_BOX,
                       boxSizing: 'border-box',
                       borderRadius: 9999,
-                      padding: tab === 'profile' ? NAV_ACTIVE_RING_PX : 0,
-                      background: tab === 'profile' ? NAV_ACTIVE_RING_COLOR : 'transparent',
+                      border: `${NAV_ACTIVE_RING_PX}px solid ${tab === 'profile' ? 'var(--te-border)' : 'transparent'}`,
                       opacity: tab === 'profile' ? 1 : 0.55,
-                      transition: 'background-color 0.2s ease, opacity 0.2s ease',
+                      transition: 'border-color 0.2s ease, opacity 0.2s ease',
                     }}
                   >
                     <Avatar
                       name={profileName}
                       avatarUrl={profileRow?.avatar_url}
-                      size={NAV_PILL_H - (tab === 'profile' ? NAV_ACTIVE_RING_PX * 2 : 0)}
+                      size={NAV_AVATAR_BOX - NAV_ACTIVE_RING_PX * 2}
                       ring={false}
                     />
                   </span>
