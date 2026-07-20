@@ -132,8 +132,8 @@ const MiniMuscleCard = React.memo(function MiniMuscleCard({ filter, active, onTo
         flexShrink: 0, width: 56, height: 65, borderRadius: 'var(--te-radius-md)',
         position: 'relative', overflow: 'hidden', cursor: 'pointer',
         background: active ? 'var(--te-border)' : MINI_BG,
-        border: `1px solid ${active ? '#ffffff' : HAIRLINE}`,
-        boxShadow: active ? '0 0 0 1px #ffffff' : 'none',
+        border: `1px solid ${active ? 'var(--te-text-1)' : HAIRLINE}`,
+        boxShadow: active ? '0 0 0 1px var(--te-text-1)' : 'none',
       }}
     >
       <div style={{
@@ -360,7 +360,7 @@ function SwipeableHeroCard({ selected }: { selected: LibraryExercise }) {
             <button key={label} onClick={() => setSlide(i)} className="te-label" style={{
               padding: '3px 9px', borderRadius: 9999, border: 'none', cursor: 'pointer',
               color: i === slide ? 'var(--te-surface-1)' : 'rgba(255,255,255,0.4)',
-              background: i === slide ? ACCENT : 'var(--te-border)',
+              background: i === slide ? 'var(--te-text-1)' : 'var(--te-border)',
               transition: 'all 0.2s ease',
             }}>
               {label}
@@ -493,7 +493,7 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, onQuickA
               {selected.instructions.map((step, i) => (
                 <div key={i} style={{ display: 'flex', gap: 13, padding: '3px 0' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <span style={{ width: 26, height: 26, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Geist Mono', monospace", fontSize: 10, fontWeight: 600, color: ACCENT, background: ACCENT + '1c', border: `1px solid ${ACCENT}44` }}>{i + 1}</span>
+                    <span style={{ width: 26, height: 26, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Geist Mono', monospace", fontSize: 10, fontWeight: 600, color: 'var(--te-text-1)', background: 'color-mix(in srgb, var(--te-text-1) 11%, transparent)', border: '1px solid color-mix(in srgb, var(--te-text-1) 27%, transparent)' }}>{i + 1}</span>
                     {i < selected.instructions.length - 1 && <span style={{ flex: 1, width: 1.5, background: 'var(--te-border)', margin: '4px 0' }} />}
                   </div>
                   <p className="text-[13px] leading-relaxed" style={{ color: 'var(--te-text-2)', paddingBottom: 11 }}>{step}</p>
@@ -563,7 +563,7 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, onQuickA
             className="active:opacity-70 transition-opacity"
             style={{ flexShrink: 0, width: 40, height: 65, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}
           >
-            <SvgBookmark c={muscleCat === SAVED ? '#ffffff' : 'rgba(255,255,255,0.32)'} />
+            <SvgBookmark c={muscleCat === SAVED ? 'var(--te-text-1)' : 'var(--te-text-4)'} />
           </button>
           {/* Divider — centred between the bookmark and the previews */}
           <div style={{ flexShrink: 0, width: 1, height: 38, background: 'rgba(255,255,255,0.18)', marginLeft: 2, marginRight: 11 }} />

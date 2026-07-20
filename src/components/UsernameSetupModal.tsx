@@ -70,7 +70,7 @@ export default function UsernameSetupModal({
           style={{
             height: 52,
             background: valid ? '#f4f1ec' : 'var(--te-border-strong)',
-            color: valid ? 'var(--te-ink)' : 'rgba(255,255,255,0.3)',
+            color: valid ? 'var(--te-ink)' : 'var(--te-text-4)',
           }}
         >
           {saving ? 'Saving…' : 'Continue'}

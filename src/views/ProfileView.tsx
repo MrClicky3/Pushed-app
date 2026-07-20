@@ -213,8 +213,8 @@ function StreakRows({ rows, onSelect }: { rows: LeaderboardRow[]; onSelect: (r: 
             </p>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
-            <FireIcon className="w-4 h-4" style={{ color: r.current_streak > 0 ? 'var(--te-danger)' : 'rgba(255,255,255,0.2)' }} />
-            <span className="te-digit text-[20px] font-bold tabular-nums" style={{ color: r.current_streak > 0 ? '#f4f1ec' : 'rgba(255,255,255,0.3)' }}>
+            <FireIcon className="w-4 h-4" style={{ color: r.current_streak > 0 ? 'var(--te-danger)' : 'var(--te-text-4)' }} />
+            <span className="te-digit text-[20px] font-bold tabular-nums" style={{ color: r.current_streak > 0 ? 'var(--te-text-1)' : 'var(--te-text-4)' }}>
               {r.current_streak}
             </span>
           </div>

@@ -537,7 +537,7 @@ export default function ScheduleModal({
                         key={d}
                         onClick={() => onSetWeekStartDay(d)}
                         className={`${active ? 'te-toggle-on te-toggle-mono' : 'te-toggle-off'} rounded-te-sm select-none te-mono text-[13px] font-semibold`}
-                        style={{ width: 42, height: 34, color: active ? 'var(--te-ink)' : 'rgba(255,255,255,0.4)' }}
+                        style={{ width: 42, height: 34, color: active ? 'var(--te-ink)' : 'var(--te-text-4)' }}
                       >
                         {label}
                       </button>
@@ -997,7 +997,7 @@ export default function ScheduleModal({
                               type="button"
                               onClick={() => toggleExercise(ex.id)}
                               className={`${on ? 'te-toggle-on te-toggle-mono' : 'te-toggle-off'} px-3 py-1.5 rounded-te-sm text-[13px] font-semibold select-none`}
-                              style={{ color: on ? 'var(--te-ink)' : 'rgba(255,255,255,0.45)' }}
+                              style={{ color: on ? 'var(--te-ink)' : 'var(--te-text-4)' }}
                             >
                               {ex.name}
                             </button>

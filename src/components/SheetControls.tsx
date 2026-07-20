@@ -28,7 +28,7 @@ export function ToggleButton({
       type="button"
       onClick={onClick}
       className={`${active ? 'te-toggle-on te-toggle-mono' : 'te-toggle-off'} rounded-te-md flex items-center justify-center text-[13px] font-semibold capitalize select-none ${className}`}
-      style={{ color: active ? 'var(--te-ink)' : 'rgba(255,255,255,0.4)', height: heightPx }}
+      style={{ color: active ? 'var(--te-ink)' : 'var(--te-text-4)', height: heightPx }}
     >
       {label}
     </button>

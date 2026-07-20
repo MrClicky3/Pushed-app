@@ -1038,7 +1038,7 @@ function CreateSheet({
                     </span>
                     <CheckCircle2
                       className="w-5 h-5 shrink-0"
-                      style={{ color: on ? 'var(--te-pr)' : 'rgba(255,255,255,0.15)' }}
+                      style={{ color: on ? 'var(--te-pr)' : 'var(--te-text-4)' }}
                       strokeWidth={2}
                     />
                   </button>
