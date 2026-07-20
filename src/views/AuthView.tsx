@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 interface Props {
   onSignIn: (email: string, password: string) => Promise<string | null>;
@@ -127,13 +127,27 @@ export default function AuthView({ onSignIn, onSignUp, onResend, onVerifyOtp, on
   const [honeypot, setHoneypot] = useState('');
   const formLoadedAt = useRef(Date.now());
   const lastSubmitAt = useRef(0);
+  const resendInFlight = useRef(false);
+  const cooldownTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   function startCooldown() {
+    if (cooldownTimer.current) clearInterval(cooldownTimer.current);
     setResendCooldown(60);
-    const t = setInterval(() => {
-      setResendCooldown(c => { if (c <= 1) { clearInterval(t); return 0; } return c - 1; });
+    cooldownTimer.current = setInterval(() => {
+      setResendCooldown(c => {
+        if (c <= 1) {
+          if (cooldownTimer.current) clearInterval(cooldownTimer.current);
+          cooldownTimer.current = null;
+          return 0;
+        }
+        return c - 1;
+      });
     }, 1000);
   }
+
+  useEffect(() => () => {
+    if (cooldownTimer.current) clearInterval(cooldownTimer.current);
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -166,11 +180,28 @@ export default function AuthView({ onSignIn, onSignUp, onResend, onVerifyOtp, on
   }
 
   async function handleResend() {
-    if (resendCooldown > 0) return;
+    // Two guards, both needed: the cooldown blocks a second attempt a moment
+    // later, the in-flight ref blocks a double-tap firing two requests at once
+    // (neither has resolved yet, so the cooldown alone would let both past).
+    if (resendCooldown > 0 || resendInFlight.current) return;
+    resendInFlight.current = true;
     setResendMsg(null);
+
     const err = await onResend(email.trim());
-    if (err) { setResendMsg('Could not resend.'); }
-    else { setOtp(''); setError(null); setResendMsg('Sent!'); startCooldown(); }
+    resendInFlight.current = false;
+
+    // Start the cooldown either way. Only starting it on success meant a
+    // rate-limited request left the button live, so the user retried
+    // immediately and dug themselves further into the rate limit.
+    startCooldown();
+
+    if (err) {
+      setResendMsg(/rate|429|too many|security purposes/i.test(err)
+        ? 'Too many requests — wait a minute and try again.'
+        : 'Could not resend.');
+    } else {
+      setOtp(''); setError(null); setResendMsg('Sent!');
+    }
   }
 
   async function handleForgot(e: React.FormEvent) {
