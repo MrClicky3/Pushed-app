@@ -134,8 +134,8 @@ export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, 
             nothing else on it says so. Tinted to the accent like the title
             rather than the usual grey, so it belongs to the wash. */}
         <ChevronRightIcon
-          className="w-[17px] h-[17px]"
-          style={{ position: 'absolute', top: 21, right: 18, color: 'var(--te-accent)' }}
+          className="w-[13px] h-[13px]"
+          style={{ position: 'absolute', top: 23, right: 18, color: 'var(--te-accent)', opacity: 0.6 }}
         />
 
         <div style={{ position: 'absolute', top: 20, left: 20 }}>
