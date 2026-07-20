@@ -926,7 +926,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
               >
                 <path
                   d="M1.6 7.4L7.5 1.6l5.9 5.8"
-                  stroke="rgba(255,255,255,0.45)"
+                  stroke="rgba(255,255,255,0.35)"
                   strokeWidth="2.1"
                   strokeLinecap="round"
                   strokeLinejoin="round"
