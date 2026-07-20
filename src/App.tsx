@@ -68,25 +68,30 @@ const SESSION_CAP_MINS = 4 * 60;
 // Bottom dock geometry. The tab pill and the profile avatar are both pinned to
 // this height so they can never drift apart — they sit side by side, so any
 // drift reads immediately as a misaligned dock.
-const NAV_PILL_H = 67;
+const NAV_PILL_H = 63;
 // One spacing value for the whole dock: the gap between the pill and the
 // avatar, and the pill's own inner padding. Using the same number for both is
 // what makes the row read as evenly spaced — a smaller inner padding pinches
 // the outer tabs against the pill's ends.
 const NAV_GAP_PX = 10;
 // Total height the dock occupies over the page: the grabber row (6px top pad +
-// 4px line + 2px bottom pad), the tab row's own 4px/2px padding, and the pill.
-const NAV_DOCK_H = 12 + 6 + NAV_PILL_H;
+// 4px line + 10px bottom pad), the tab row's own 4px/2px padding, and the pill.
+const NAV_DOCK_H = 20 + 6 + NAV_PILL_H;
 // A circle at the pill's exact height reads as the larger of the two — the
 // pill's mass is broken up by its rounded ends, the disc's is not. Trimming
 // the avatar by a few px is the optical overshoot correction that makes them
 // look the same size. The button keeps the full NAV_PILL_H as its tap target.
 const NAV_AVATAR_OVERSHOOT_PX = 4;
 const NAV_AVATAR_BOX = NAV_PILL_H - NAV_AVATAR_OVERSHOOT_PX;
-// Open-state ring, matching the tab pill's own border exactly (same token,
-// same 1px) so the two elements are edged the same way. Held at a constant
-// width with only its colour changing, so toggling it can never shift layout.
+// Open-state ring, edged like the tab pill beside it. Held at a constant width
+// with only its colour changing, so toggling it can never shift layout.
 const NAV_ACTIVE_RING_PX = 1;
+// Clear air between the ring and the picture. Without it the avatar's circle
+// is exactly inscribed in the ring's, the two are tangent the whole way round,
+// and the 1px border disappears into the image everywhere except the top —
+// which reads as a ring that only drew half of itself.
+const NAV_ACTIVE_RING_GAP_PX = 2;
+const NAV_AVATAR_IMG = NAV_AVATAR_BOX - 2 * (NAV_ACTIVE_RING_PX + NAV_ACTIVE_RING_GAP_PX);
 
 function formatSessionAge(dateStr: string): string {
   const mins = Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000);
@@ -941,7 +946,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
 
           {/* Tabs — hidden in focus mode */}
           {/* Swipe-up line — the grabber you drag up on to add. */}
-          <div className="flex justify-center" style={{ paddingTop: 6, paddingBottom: 2 }}>
+          <div className="flex justify-center" style={{ paddingTop: 6, paddingBottom: 10 }}>
             <div style={{ width: 68, height: 4, borderRadius: 9999, background: 'rgba(255,255,255,0.16)' }} />
           </div>
 
@@ -970,8 +975,8 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
                         onClick={() => switchTab(key)}
                         className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-full active:opacity-60 transition-opacity select-none"
                       >
-                        <Icon className="w-[26px] h-[26px]" style={{ color }} />
-                        <span className="text-[11px] font-medium tracking-tight" style={{ color }}>
+                        <Icon className="w-[24px] h-[24px]" style={{ color }} />
+                        <span className="text-[10px] font-medium tracking-tight" style={{ color }}>
                           {label}
                         </span>
                       </button>
@@ -997,22 +1002,27 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
                   {/* The ring sits inside the avatar's own footprint and is
                       always present — only its colour changes — so turning it
                       on cannot shift the avatar or the dock's height. */}
+                  {/* Only the ring's colour changes between states — the
+                      avatar itself stays at full opacity either way. Dimming
+                      it made the user's own face look disabled, which is not
+                      what "this tab isn't open" should mean. */}
                   <span
                     style={{
                       display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                       width: NAV_AVATAR_BOX,
                       height: NAV_AVATAR_BOX,
                       boxSizing: 'border-box',
                       borderRadius: 9999,
-                      border: `${NAV_ACTIVE_RING_PX}px solid ${tab === 'profile' ? 'var(--te-border)' : 'transparent'}`,
-                      opacity: tab === 'profile' ? 1 : 0.55,
-                      transition: 'border-color 0.2s ease, opacity 0.2s ease',
+                      border: `${NAV_ACTIVE_RING_PX}px solid ${tab === 'profile' ? 'var(--te-border-strong)' : 'transparent'}`,
+                      transition: 'border-color 0.2s ease',
                     }}
                   >
                     <Avatar
                       name={profileName}
                       avatarUrl={profileRow?.avatar_url}
-                      size={NAV_AVATAR_BOX - NAV_ACTIVE_RING_PX * 2}
+                      size={NAV_AVATAR_IMG}
                       ring={false}
                     />
                   </span>

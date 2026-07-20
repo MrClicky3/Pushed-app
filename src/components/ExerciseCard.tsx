@@ -49,15 +49,8 @@ export default function ExerciseCard({ exercise, lastLog, onEdit, unit, toDispla
   return (
     <button
       onClick={onEdit}
-      className="relative w-full h-[70px] flex items-center gap-4 px-[18px] text-left active:opacity-80 transition-opacity min-w-0"
+      className="w-full h-[70px] flex items-center gap-4 px-[18px] text-left active:opacity-80 transition-opacity min-w-0"
     >
-      {/* Affordance chevron, pinned to the card's top-right corner rather than
-          riding the vertical centre — the row's centre line already carries
-          the name and the load, and a third element there crowded them. */}
-      <ChevronRightIcon
-        className="w-[13px] h-[13px] te-t4 absolute pointer-events-none"
-        style={{ top: 10, right: 12 }}
-      />
       <div className="w-[3px] h-[38px] rounded-full shrink-0" style={{ background: lineColor }} />
       <div className="flex-1 min-w-0">
         <p className="text-[17px] font-semibold te-t1 truncate" style={{ letterSpacing: '-0.17px' }}>
@@ -78,6 +71,7 @@ export default function ExerciseCard({ exercise, lastLog, onEdit, unit, toDispla
       >
         {loadLabel(exercise, unit, toDisplay)}
       </span>
+      <ChevronRightIcon className="w-[15px] h-[15px] te-t4 shrink-0" />
     </button>
   );
 }

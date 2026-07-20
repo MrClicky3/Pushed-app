@@ -1,5 +1,5 @@
 import { useEffect, useRef, useMemo } from 'react';
-import { FireIcon } from '@heroicons/react/24/outline';
+import { FireIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import Model from '@phelian/react-body-highlighter';
 import ExerciseCard from '../components/ExerciseCard';
 import { accentHex } from '../lib/accent';
@@ -129,6 +129,14 @@ export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, 
             color-mix(in srgb, var(--te-accent) 9%, transparent) 45%,
             transparent 72%)`,
         }} />
+
+        {/* Affordance chevron — the card is a doorway into the library, but
+            nothing else on it says so. Tinted to the accent like the title
+            rather than the usual grey, so it belongs to the wash. */}
+        <ChevronRightIcon
+          className="w-[17px] h-[17px]"
+          style={{ position: 'absolute', top: 21, right: 18, color: 'var(--te-accent)' }}
+        />
 
         <div style={{ position: 'absolute', top: 20, left: 20 }}>
           <p style={{ fontFamily: "'Geist Mono', monospace", fontSize: 21, fontWeight: 600, letterSpacing: '-0.3px', textTransform: 'uppercase', color: 'var(--te-accent)', lineHeight: 1 }}>
