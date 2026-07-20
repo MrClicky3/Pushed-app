@@ -83,15 +83,13 @@ const NAV_DOCK_H = 20 + 6 + NAV_PILL_H;
 // look the same size. The button keeps the full NAV_PILL_H as its tap target.
 const NAV_AVATAR_OVERSHOOT_PX = 4;
 const NAV_AVATAR_BOX = NAV_PILL_H - NAV_AVATAR_OVERSHOOT_PX;
-// Open-state ring, edged like the tab pill beside it. Held at a constant width
-// with only its colour changing, so toggling it can never shift layout.
-const NAV_ACTIVE_RING_PX = 1;
-// Clear air between the ring and the picture. Without it the avatar's circle
-// is exactly inscribed in the ring's, the two are tangent the whole way round,
-// and the 1px border disappears into the image everywhere except the top —
-// which reads as a ring that only drew half of itself.
-const NAV_ACTIVE_RING_GAP_PX = 2;
-const NAV_AVATAR_IMG = NAV_AVATAR_BOX - 2 * (NAV_ACTIVE_RING_PX + NAV_ACTIVE_RING_GAP_PX);
+// Open-state ring. Drawn as a box-shadow sitting just outside the avatar
+// rather than a border inside it: a border would be overlapped by the picture
+// (their circles are concentric and tangent, so it only survived at the top),
+// and insetting the picture to make room would leave a visible margin. A
+// shadow hugs the edge exactly and, taking no layout box, can never shift the
+// dock when it toggles. The button's 2px of slack absorbs it.
+const NAV_ACTIVE_RING_PX = 1.5;
 
 function formatSessionAge(dateStr: string): string {
   const mins = Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000);
@@ -1009,20 +1007,17 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
                   <span
                     style={{
                       display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      width: NAV_AVATAR_BOX,
-                      height: NAV_AVATAR_BOX,
-                      boxSizing: 'border-box',
                       borderRadius: 9999,
-                      border: `${NAV_ACTIVE_RING_PX}px solid ${tab === 'profile' ? 'var(--te-border-strong)' : 'transparent'}`,
-                      transition: 'border-color 0.2s ease',
+                      boxShadow: tab === 'profile'
+                        ? `0 0 0 ${NAV_ACTIVE_RING_PX}px var(--te-border-strong)`
+                        : `0 0 0 ${NAV_ACTIVE_RING_PX}px transparent`,
+                      transition: 'box-shadow 0.2s ease',
                     }}
                   >
                     <Avatar
                       name={profileName}
                       avatarUrl={profileRow?.avatar_url}
-                      size={NAV_AVATAR_IMG}
+                      size={NAV_AVATAR_BOX}
                       ring={false}
                     />
                   </span>

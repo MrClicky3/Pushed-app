@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { QueueListIcon, PlusIcon, CheckIcon, ChevronDownIcon, ForwardIcon, XMarkIcon, TrophyIcon } from '@heroicons/react/24/outline';
 import { BookOpenIcon, StarIcon } from '@heroicons/react/24/solid';
 import EmptyState from '../components/EmptyState';
+import { CoffeeIcon } from '../components/Icons';
 import ExerciseLibraryModal from '../components/ExerciseLibraryModal';
 import { EXERCISE_LIBRARY } from '../data/exerciseLibrary';
 import type { LibraryExercise } from '../data/exerciseLibrary';
@@ -1014,9 +1015,13 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
             subtitle="Go to Exercises first and create an exercise to start logging."
           />
         ) : isFuture ? (
-          // Future day — nothing can be logged here yet
+          // Future day — nothing can be logged here yet. A day with no
+          // routine on it is a rest day, so it gets the cup rather than the
+          // list glyph: there is nothing to list.
           <EmptyState
-            icon={<QueueListIcon className="w-7 h-7 te-t4" />}
+            icon={selectedRoutine
+              ? <QueueListIcon className="w-7 h-7 te-t4" />
+              : <CoffeeIcon className="w-7 h-7 te-t4" />}
             title={selectedRoutine ? `${selectedRoutine.name} is planned` : 'Rest day planned'}
             subtitle="This day hasn't happened yet."
           />
@@ -1028,9 +1033,9 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
             subtitle={isToday ? 'Swipe up to log a workout.' : 'Nothing was recorded on this day.'}
           />
         ) : (
-          // Day has no routine scheduled
+          // Day has no routine scheduled — a rest day
           <EmptyState
-            icon={<QueueListIcon className="w-7 h-7 te-t4" />}
+            icon={<CoffeeIcon className="w-7 h-7 te-t4" />}
             title="Your logs will appear here"
             subtitle="No routine is scheduled for this day."
           />
