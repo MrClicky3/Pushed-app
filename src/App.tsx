@@ -922,7 +922,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
 
           {/* Tabs — hidden in focus mode */}
           {/* Swipe-up line — the grabber you drag up on to add. */}
-          <div className="flex justify-center" style={{ paddingTop: 8, paddingBottom: 0 }}>
+          <div className="flex justify-center" style={{ paddingTop: 6, paddingBottom: 2 }}>
             <div style={{ width: 68, height: 4, borderRadius: 9999, background: 'rgba(255,255,255,0.16)' }} />
           </div>
 
@@ -932,7 +932,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
             style={{ gridTemplateRows: focusMode ? '0fr' : '1fr', transition: 'grid-template-rows 0.36s cubic-bezier(0.22,1,0.36,1)' }}
           >
             <div style={{ overflow: 'hidden', opacity: focusMode ? 0 : 1, transition: `opacity ${focusMode ? '0.15s ease' : '0.3s ease 0.08s'}` }}>
-              <div className="flex justify-center items-center gap-2.5 pt-0 pb-0.5">
+              <div className="flex justify-center items-center gap-2.5 pt-1 pb-0.5">
                 <div
                   className="grid grid-cols-3 items-center rounded-full"
                   style={{
