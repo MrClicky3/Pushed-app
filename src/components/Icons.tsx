@@ -24,13 +24,14 @@ export function ClipboardIcon({ className }: { className?: string }) {
 // Rest day. Traced from the Hugeicons "coffee-02" stroke-rounded glyph the
 // user supplied; kept at its original 24-unit grid so it lines up with the
 // heroicons used beside it.
-// Tipped 35° so the cup reads as set down and idle rather than squared up to
-// the grid — the rest-day equivalent of the mug being pushed aside.
+// Tipped just enough to read as set down and idle rather than squared up to
+// the grid. Kept shallow — past ~20° the cup stops looking rested and starts
+// looking like it's about to go over.
 export function CoffeeIcon({ className, style }: { className?: string; style?: React.CSSProperties }) {
   return (
     <svg
       className={className}
-      style={{ transform: 'rotate(35deg)', ...style }}
+      style={{ transform: 'rotate(15deg)', ...style }}
       viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round"
     >
       <path d="M18.2505 10.5H19.6403C21.4918 10.5 22.0421 10.7655 21.9975 12.0838C21.9237 14.2674 20.939 16.8047 17 17.5" />
