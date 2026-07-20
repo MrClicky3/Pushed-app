@@ -3,7 +3,6 @@ import { supabase } from '../lib/supabase';
 import { resizeImage } from '../lib/image';
 import type { Profile } from '../types';
 
-const SITE_URL = 'https://progressive-overloadtracker.vercel.app';
 const MAX_UPLOAD_BYTES = 8 * 1024 * 1024; // raw input cap; client resizes before upload
 const ALLOWED_UPLOAD_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
 
@@ -125,7 +124,7 @@ export function useProfile(userId: string, displayNameSeed: string) {
   }
 
   const inviteCode = profile?.invite_code ?? '';
-  const inviteUrl = inviteCode ? `${SITE_URL}/invite/${inviteCode}` : '';
+  const inviteUrl = inviteCode ? `${window.location.origin}/invite/${inviteCode}` : '';
 
   return {
     profile,
