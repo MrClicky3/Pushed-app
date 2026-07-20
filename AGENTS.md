@@ -54,6 +54,33 @@ it must never be committed or sent to the browser.
 `api/` holds Vercel serverless functions. They do not run in Bolt's WebContainer, so
 bug reporting is inert in a Bolt preview. That is expected — do not try to "fix" it.
 
+## Environments — two stages, two databases
+
+| Stage | Branch | Vercel | Supabase project |
+|---|---|---|---|
+| Production (what the public sees) | `main` | betatest-overload.vercel.app | `overload` (prod) |
+| Staging / dev | `dev` | branch preview URL | `overload-dev` |
+
+**Work happens on `dev`. `main` is release-only** — merge `dev` → `main` when a change
+is ready for real users. Pushing to `main` deploys to the public site immediately;
+there is no gate in front of it.
+
+The two stages point at **separate Supabase projects**. This is the whole point: it is
+what stops an experimental migration from hitting real users' training data. Never
+point a preview build at the production database to "just test something."
+
+Env vars are set per-environment in the Vercel dashboard, not in the repo:
+`VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` differ between Production and Preview.
+`RESEND_API_KEY` is Production-only; bug reporting simply returns 503 on staging,
+which is correct behaviour, not a bug to fix.
+
+Auth redirects and invite links use `window.location.origin`, so they follow whatever
+domain the build is served from. Each Supabase project must allowlist its own stage's
+URLs under Auth → URL Configuration, wildcards included, or sign-in bounces.
+
+A migration must be run against **both** projects — staging first, production once it
+is proven. Committing it still applies it nowhere.
+
 ## Persistence — this split is deliberate
 
 **Supabase:** exercises, workout logs, auth, profiles, friends/leaderboards.
@@ -65,8 +92,9 @@ Do not "helpfully" migrate routines or the schedule into Supabase. If a change s
 require it, ask first.
 
 Schema changes go in `supabase/migrations/`. Committing a migration does **not** apply
-it — someone must run it against the hosted project. Both assistants point at the same
-live database, so a destructive migration hits real data immediately.
+it — someone must run it against the hosted project, staging first (see Environments).
+Both assistants share these projects, so a destructive migration hits real data
+immediately.
 
 ## Design system
 
