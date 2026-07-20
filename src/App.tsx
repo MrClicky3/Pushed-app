@@ -34,7 +34,7 @@ import { calcStreak, calcConsistency } from './lib/streak';
 import { loadWorkoutDoneAt, skipDayKey } from './lib/skips';
 import { feedback } from './lib/feedback';
 import type { LibraryExercise } from './data/exerciseLibrary';
-import type { Exercise, WorkoutLog, SetType } from './types';
+import type { Exercise, WorkoutLog, SetType, LoadType } from './types';
 
 // Deep-link: capture an /invite/{code} path on load, stash it, and clean the
 // URL. Applied after the user is authenticated + has a profile (see MainApp).
@@ -81,7 +81,7 @@ const NAV_DOCK_H = 20 + 6 + NAV_PILL_H;
 // pill's mass is broken up by its rounded ends, the disc's is not. Trimming
 // the avatar by a few px is the optical overshoot correction that makes them
 // look the same size. The button keeps the full NAV_PILL_H as its tap target.
-const NAV_AVATAR_OVERSHOOT_PX = 9;
+const NAV_AVATAR_OVERSHOOT_PX = 17;
 const NAV_AVATAR_BOX = NAV_PILL_H - NAV_AVATAR_OVERSHOOT_PX;
 // Open-state ring. Drawn as a box-shadow sitting just outside the avatar
 // rather than a border inside it: a border would be overlapped by the picture
@@ -487,6 +487,21 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
     setLibraryOpen(false);
     setExercisePrefill({ name: ex.name, muscle_group: ex.muscleGroup });
     setExerciseModal({ open: true, exercise: null });
+  }
+
+  // The library "+" — create the exercise straight away with defaults, no
+  // editor, no closing the library. Bodyweight-equipment moves default to the
+  // bodyweight load type; everything else is a standard weighted lift.
+  function handleLibraryQuickAdd(ex: LibraryExercise) {
+    const load_type: LoadType = ex.equipment === 'bodyweight' ? 'bodyweight' : 'weighted';
+    void addExercise({
+      name: ex.name,
+      muscle_group: ex.muscleGroup,
+      target_reps: 12,
+      sets: 3,
+      weight: 0,
+      load_type,
+    });
   }
 
   // Swipe-up-to-add: dragging up on the nav dock lifts a faint "+" stack and
@@ -921,8 +936,10 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
 
           {/* First-run hint — a minimal "^ swipe to log" above the grabber,
               gone for good once the gesture has been used twice. Hidden
-              mid-swipe so it never overlaps the real affordance. */}
-          {tab === 'log' && swipeUses < 2 && !focusMode && (
+              mid-swipe so it never overlaps the real affordance. Shown on
+              every tab: the grabber swipes to add from anywhere, so the hint
+              belongs anywhere the gesture is live. */}
+          {swipeUses < 2 && !focusMode && (
             <div
               aria-hidden
               className="flex flex-col items-center"
@@ -953,7 +970,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
                 letterSpacing: '0.12em', textTransform: 'uppercase',
                 color: 'rgba(255,255,255,0.35)',
               }}>
-                swipe to log
+                {tab === 'exercises' ? 'swipe to add' : 'swipe to log'}
               </span>
             </div>
           )}
@@ -1041,7 +1058,12 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
                     <span
                       aria-hidden
                       style={{
-                        position: 'absolute', top: 6, right: 6,
+                        // Pinned to the smaller avatar's top-right edge, not the
+                        // button's corner — the button keeps the full tap-target
+                        // height while the avatar is inset by the overshoot.
+                        position: 'absolute',
+                        top: NAV_AVATAR_OVERSHOOT_PX / 2 + 1,
+                        right: NAV_AVATAR_OVERSHOOT_PX / 2 + 1,
                         width: 7, height: 7, borderRadius: 9999,
                         background: 'var(--te-accent)',
                         // te.bg is a Tailwind colour, not a CSS variable —
@@ -1074,6 +1096,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
         open={libraryOpen}
         onClose={() => setLibraryOpen(false)}
         onSelect={handleLibrarySelect}
+        onQuickAdd={handleLibraryQuickAdd}
         existingNames={new Set(exercises.map(e => e.name.toLowerCase()))}
       />
       <LogModal

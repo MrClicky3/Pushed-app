@@ -17,6 +17,12 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onSelect: (exercise: LibraryExercise) => void;
+  /** The "+" on a card: adds the exercise straight to the user's list with
+      sensible defaults, without opening the editor or closing the library, so
+      several can be added in one pass. onSelect stays the "customise first"
+      path from the detail popup. Optional — when absent (read-only detail
+      viewer) the "+" falls back to onSelect. */
+  onQuickAdd?: (exercise: LibraryExercise) => void;
   existingNames: Set<string>;
   initialSelected?: LibraryExercise;
 }
@@ -238,11 +244,11 @@ const CarouselCard = React.memo(function CarouselCard({ exercise, onTap, onToggl
 });
 
 // ── Flat A–Z grid of exercise cards ──────────────────────────
-function ExerciseGrid({ exercises, onTap, isAdded, onToggleAdd }: {
+function ExerciseGrid({ exercises, onTap, isAdded, onAdd }: {
   exercises: LibraryExercise[];
   onTap: (ex: LibraryExercise) => void;
   isAdded: (ex: LibraryExercise) => boolean;
-  onToggleAdd: (id: string) => void;
+  onAdd: (ex: LibraryExercise) => void;
 }) {
   return (
     <div style={{
@@ -254,7 +260,7 @@ function ExerciseGrid({ exercises, onTap, isAdded, onToggleAdd }: {
           key={ex.id}
           exercise={ex}
           onTap={() => onTap(ex)}
-          onToggleAdd={() => onToggleAdd(ex.id)}
+          onToggleAdd={() => onAdd(ex)}
           added={isAdded(ex)}
         />
       ))}
@@ -367,7 +373,7 @@ function SwipeableHeroCard({ selected }: { selected: LibraryExercise }) {
 }
 
 // ── Main component ────────────────────────────────────────────
-export default function ExerciseLibraryModal({ open, onClose, onSelect, existingNames, initialSelected }: Props) {
+export default function ExerciseLibraryModal({ open, onClose, onSelect, onQuickAdd, existingNames, initialSelected }: Props) {
   const [muscleCat, setMuscleCat] = useState<string | null>(null);
   const [search, setSearch]       = useState('');
   const [selected, setSelected]   = useState<LibraryExercise | null>(initialSelected ?? null);
@@ -382,10 +388,21 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, existing
     }
   }, [open]);
 
-  const toggleAdd = (id: string) =>
-    setAddedIds(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const isAdded = (ex: LibraryExercise) =>
     addedIds.has(ex.id) || existingNames.has(ex.name.toLowerCase());
+  // The "+" now creates a real exercise in the user's list. It is one-way:
+  // once added, tapping again does nothing (removing could destroy an exercise
+  // that already has logs). addedIds gives instant feedback before the parent
+  // round-trips and existingNames catches up.
+  const quickAdd = (ex: LibraryExercise) => {
+    if (isAdded(ex)) return;
+    if (!onQuickAdd) { onSelect(ex); return; }
+    setAddedIds(s => new Set(s).add(ex.id));
+    onQuickAdd(ex);
+  };
+  // The detail popup still routes through onSelect (the editor); keep marking
+  // it added locally so its button flips to the checked state.
+  const markAdded = (id: string) => setAddedIds(s => new Set(s).add(id));
 
   const filtered = useMemo(() => {
     let list = EXERCISE_LIBRARY;
@@ -508,7 +525,7 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, existing
           {/* Sticky CTA — same button as "Complete workout" / "Log set" */}
           <div style={{ position: 'sticky', bottom: 0, margin: '0 -19px', padding: '12px 19px calc(14px + env(safe-area-inset-bottom, 0px))', background: 'var(--te-surface-3)' }}>
             <button
-              onClick={() => { if (!added) { onSelect(selected); toggleAdd(selected.id); closeDetail(); } }}
+              onClick={() => { if (!added) { onSelect(selected); markAdded(selected.id); closeDetail(); } }}
               disabled={added}
               className="te-white-btn w-full h-[55px] rounded-te-md flex items-center justify-center gap-1.5 disabled:opacity-60"
             >
@@ -572,7 +589,7 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, existing
               exercises={filtered}
               onTap={setSelected}
               isAdded={isAdded}
-              onToggleAdd={toggleAdd}
+              onAdd={quickAdd}
             />
           </div>
         )}
