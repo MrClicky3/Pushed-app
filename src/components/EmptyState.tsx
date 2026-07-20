@@ -5,18 +5,15 @@ interface Props {
   action?: React.ReactNode;
 }
 
-// Always vertically centered in the remaining page area — an empty page's
-// message belongs in the middle of it, not hanging off the header.
+// Sits in the upper part of the remaining page area rather than dead centre —
+// centred, the message drifted so far down an empty page that it read as
+// unrelated to the header above it.
 export default function EmptyState({ icon, title, subtitle, action }: Props) {
   return (
-    <div className="flex flex-col items-center justify-center text-center min-h-[min(360px,42vh)]">
-      {/* A tighter radius than the card scale: at 56px square, the card's 16px
-          corner rounds the tile most of the way to a circle and reads as a
-          different shape from the icon tiles elsewhere. */}
-      <div
-        className="w-14 h-14 te-panel flex items-center justify-center mb-3"
-        style={{ borderRadius: 12 }}
-      >
+    <div className="flex flex-col items-center justify-start text-center min-h-[min(360px,42vh)] pt-14">
+      {/* No plate behind the icon — the glyph carries it on its own, the same
+          way the Leaderboard's section mark does. */}
+      <div className="flex items-center justify-center mb-3.5">
         {icon}
       </div>
       <p className="te-t1 font-semibold text-[17px] leading-tight tracking-tight">{title}</p>

@@ -40,6 +40,12 @@ interface Props {
   fistBumps?: ReturnType<typeof useFistBumps>;
 }
 
+// Rest-day cup. An opaque grey rather than the translucent --te-text-4 the
+// other empty-state glyphs use: this one is a line drawing with overlapping
+// strokes, and at 36% alpha every crossing showed through as a brighter
+// patch. Roughly where te-t4 lands over the page black, a shade deeper.
+const REST_ICON: React.CSSProperties = { color: '#46443f' };
+
 // Small inline chip on a set row: warmup / drop / PR
 function SetBadge({ kind }: { kind: 'warmup' | 'drop' | 'pr' }) {
   const style: Record<string, { text: string; color: string; bg: string }> = {
@@ -1021,7 +1027,7 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
           <EmptyState
             icon={selectedRoutine
               ? <QueueListIcon className="w-7 h-7 te-t4" />
-              : <CoffeeIcon className="w-7 h-7 te-t4" />}
+              : <CoffeeIcon className="w-8 h-8" style={REST_ICON} />}
             title={selectedRoutine ? `${selectedRoutine.name} is planned` : 'Rest day planned'}
             subtitle="This day hasn't happened yet."
           />
@@ -1035,7 +1041,7 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
         ) : (
           // Day has no routine scheduled — a rest day
           <EmptyState
-            icon={<CoffeeIcon className="w-7 h-7 te-t4" />}
+            icon={<CoffeeIcon className="w-8 h-8" style={REST_ICON} />}
             title="Your logs will appear here"
             subtitle="No routine is scheduled for this day."
           />
