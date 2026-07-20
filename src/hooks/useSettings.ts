@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { isSoundEnabled, setSoundEnabled as applySound, isHapticsEnabled, setHapticsEnabled as applyHaptics } from '../lib/feedback';
 import { applyAccent, loadAccent, type AccentKey } from '../lib/accent';
+import { applyTheme, loadTheme, type ThemeMode } from '../lib/theme';
 import { applyCategoryColors, loadCategoryColors, type CategoryColors, type CategoryKey } from '../lib/categoryColors';
 
 export type WeightUnit = 'kg' | 'lbs';
@@ -64,6 +65,7 @@ export function useSettings() {
   const [soundEnabled, setSoundEnabledState] = useState<boolean>(isSoundEnabled);
   const [hapticsEnabled, setHapticsEnabledState] = useState<boolean>(isHapticsEnabled);
   const [accent, setAccentState] = useState<AccentKey>(loadAccent);
+  const [theme, setThemeState] = useState<ThemeMode>(loadTheme);
   const [categoryColors, setCategoryColorsState] = useState<CategoryColors>(loadCategoryColors);
 
   const setUnit = useCallback((u: WeightUnit) => {
@@ -103,6 +105,11 @@ export function useSettings() {
     setHapticsEnabledState(on);
   }, []);
 
+  const setTheme = useCallback((mode: ThemeMode) => {
+    applyTheme(mode); // persists + flips the data-theme attribute live
+    setThemeState(mode);
+  }, []);
+
   const setAccent = useCallback((key: AccentKey) => {
     applyAccent(key); // persists + updates CSS variables live
     setAccentState(key);
@@ -135,6 +142,7 @@ export function useSettings() {
     soundEnabled, setSoundEnabled,
     hapticsEnabled, setHapticsEnabled,
     accent, setAccent,
+    theme, setTheme,
     categoryColors, setCategoryColor,
   };
 }

@@ -332,6 +332,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
     soundEnabled, setSoundEnabled,
     hapticsEnabled, setHapticsEnabled,
     accent, setAccent,
+    theme, setTheme,
     categoryColors, setCategoryColor,
     weekStartDay, setWeekStartDay,
   } = useSettings();
@@ -866,7 +867,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
         style={{
           position: 'fixed', left: 0, right: 0, bottom: 0,
           height: '42vh', zIndex: 39, pointerEvents: 'none',
-          background: 'linear-gradient(to top, #010101 0%, rgba(1,1,1,0.92) 20%, rgba(1,1,1,0.5) 50%, transparent 100%)',
+          background: 'linear-gradient(to top, var(--te-bg) 0%, color-mix(in srgb, var(--te-bg) 92%, transparent) 20%, color-mix(in srgb, var(--te-bg) 50%, transparent) 50%, transparent 100%)',
           opacity: swipeDrag > 2 ? Math.min(1, swipeDrag / (SWIPE_THRESHOLD * 0.85)) : 0,
           transform: `scaleY(${swiping ? 0.55 + Math.min(swipeDrag / SWIPE_THRESHOLD, 1) * 0.45 : 0.55})`,
           transformOrigin: 'bottom center',
@@ -876,7 +877,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
       <div
         className="absolute bottom-0 left-0 right-0 z-40"
         style={{
-          background: 'linear-gradient(to bottom, rgba(1,1,1,0) 0%, rgba(1,1,1,0.92) 32%, #010101 58%)',
+          background: 'linear-gradient(to bottom, transparent 0%, color-mix(in srgb, var(--te-bg) 92%, transparent) 32%, var(--te-bg) 58%)',
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
         onTouchStart={onDockTouchStart}
@@ -894,7 +895,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
             const full = p >= 1;
             const R = 13;
             const C = 2 * Math.PI * R;
-            const gray = full ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.38)';
+            const gray = full ? 'var(--te-text-2)' : 'var(--te-text-4)';
             return (
               <div
                 aria-hidden
@@ -959,7 +960,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
               >
                 <path
                   d="M1.6 7.4L7.5 1.6l5.9 5.8"
-                  stroke="rgba(255,255,255,0.35)"
+                  stroke="var(--te-text-4)"
                   strokeWidth="2.1"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -968,7 +969,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
               <span style={{
                 fontFamily: "'Geist Mono', monospace", fontSize: 9, fontWeight: 600,
                 letterSpacing: '0.12em', textTransform: 'uppercase',
-                color: 'rgba(255,255,255,0.35)',
+                color: 'var(--te-text-4)',
               }}>
                 {tab === 'exercises' ? 'swipe to add' : 'swipe to log'}
               </span>
@@ -978,7 +979,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
           {/* Tabs — hidden in focus mode */}
           {/* Swipe-up line — the grabber you drag up on to add. */}
           <div className="flex justify-center" style={{ paddingTop: 6, paddingBottom: 10 }}>
-            <div style={{ width: 68, height: 4, borderRadius: 9999, background: 'rgba(255,255,255,0.16)' }} />
+            <div style={{ width: 68, height: 4, borderRadius: 9999, background: 'var(--te-border-strong)' }} />
           </div>
 
           {/* Tabs — plain flat bar (no skeuomorphic panel), hidden in focus mode. */}
@@ -999,7 +1000,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
                 >
                   {mainTabs.map(({ key, label, icon: Icon }) => {
                     const isActive = tab === key;
-                    const color = isActive ? '#fff' : 'rgba(255,255,255,0.4)';
+                    const color = isActive ? 'var(--te-text-1)' : 'var(--te-text-4)';
                     return (
                       <button
                         key={key}
@@ -1066,10 +1067,9 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
                         right: NAV_AVATAR_OVERSHOOT_PX / 2 + 1,
                         width: 7, height: 7, borderRadius: 9999,
                         background: 'var(--te-accent)',
-                        // te.bg is a Tailwind colour, not a CSS variable —
-                        // var(--te-bg) resolved to nothing and the dot lost
-                        // its cut-out ring against the avatar.
-                        boxShadow: '0 0 0 2px #010101',
+                        // Cut-out ring in the page colour so the dot reads as
+                        // lifted off the avatar in either theme.
+                        boxShadow: '0 0 0 2px var(--te-bg)',
                       }}
                     />
                   )}
@@ -1263,6 +1263,8 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
         onSetHapticsEnabled={setHapticsEnabled}
         accent={accent}
         onSetAccent={setAccent}
+        theme={theme}
+        onSetTheme={setTheme}
         categoryColors={categoryColors}
         onSetCategoryColor={setCategoryColor}
         bio={profileRow?.bio ?? null}

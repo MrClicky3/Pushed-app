@@ -36,11 +36,32 @@
        surface-1  deep bento cards (te-panel-dark)
        surface-2  default card/panel (te-panel)
        surface-3  raised cards, modals and sheets */
+  --te-bg:        #010101;   /* the page itself, behind every surface */
   --te-well:      #0b0b0b;
   --te-surface-1: #0c0c0c;
   --te-surface-2: #101010;
   --te-card:      #101010;   /* content-list cards (exercise rows) — matches te-panel */
   --te-surface-3: #161616;
+  /* Skeuomorphic control tokens. The insets/fields/toggles/buttons were tuned
+     with baked-in hex; these pull the theme-varying parts out so the light
+     override below can restate them without duplicating every rule. */
+  --te-inset-bg:      #050503;
+  --te-field-bg:      #0b0b0b;
+  --te-toggle-off-bg: #171719;
+  --te-toggle-off-edge: #060606;
+  --te-nav-top:       #242424;
+  --te-nav-bottom:    #1a1a1a;
+  --te-btn-top:       #242426;
+  --te-btn-bottom:    #1a1a1c;
+  /* Emphasis button ("white" primary action). Light-on-dark here; the light
+     theme inverts it to dark-on-light so it stays the loudest thing on screen. */
+  --te-emph-bg:       #d0d0d2;
+  --te-emph-bg-active:#c4c4c7;
+  --te-emph-edge:     #b6b6b9;
+  --te-emph-shadow:   #9d9da0;
+  --te-emph-text:     #0a0908;
+  /* Neutral skeuomorphic shadow — dark drop under raised controls. */
+  --te-drop: rgba(0,0,0,0.45);
 
   /* Text/iconography sitting on a light surface (white buttons, active pills) */
   --te-ink: #0a0908;
@@ -62,6 +83,49 @@
   --te-radius-lg: 36px;   /* overlays, sheet corners */
 }
 
+/* ─── Light theme ───────────────────────────────────────────────────────────
+   A warm paper light mode, not clinical white — it keeps the app's warm cast
+   (the dark theme's off-white text becomes a warm near-black here). Surfaces
+   run light→lighter the way the dark ones run dark→lighter: the page is the
+   base, cards sit just above it, modals are pure white. The skeuomorphic
+   controls are re-tuned: their heavy black drop shadows would look like dirt on
+   a light background, so they become soft grey lifts, and the emphasis button
+   inverts to dark-on-light so it stays the loudest control on screen. */
+:root[data-theme="light"] {
+  --te-border:        rgba(0, 0, 0, 0.10);
+  --te-border-strong: rgba(0, 0, 0, 0.17);
+  --te-fill-subtle:   rgba(0, 0, 0, 0.045);
+
+  --te-text-1: #201e1b;                    /* warm near-black */
+  --te-text-2: rgba(32, 30, 27, 0.66);
+  --te-text-3: rgba(32, 30, 27, 0.50);
+  --te-text-4: rgba(32, 30, 27, 0.38);
+
+  --te-bg:        #e6e2da;                 /* warm light page */
+  --te-well:      #dedad1;                 /* recessed field interior */
+  --te-surface-1: #efece5;
+  --te-surface-2: #f5f2ec;
+  --te-card:      #f5f2ec;
+  --te-surface-3: #fbf9f5;                 /* modals / sheets — near white */
+
+  --te-ink: #201e1b;
+
+  --te-inset-bg:      #ddd9d0;
+  --te-field-bg:      #eae6de;
+  --te-toggle-off-bg: #e7e3da;
+  --te-toggle-off-edge: #c9c4b8;
+  --te-nav-top:       #ffffff;
+  --te-nav-bottom:    #f0ede6;
+  --te-btn-top:       #ffffff;
+  --te-btn-bottom:    #efece5;
+  --te-emph-bg:       #201e1b;             /* inverted: dark button on light */
+  --te-emph-bg-active:#100f0d;
+  --te-emph-edge:     #000000;
+  --te-emph-shadow:   rgba(0,0,0,0.28);
+  --te-emph-text:     #f4f1ec;
+  --te-drop: rgba(60, 55, 45, 0.16);       /* soft warm lift, not black */
+}
+
 html, body {
   height: 100dvh;
   overflow: hidden;
@@ -73,8 +137,8 @@ body {
     system-ui, 'Helvetica Neue', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #010101;
-  color: #f4f1ec;
+  background: var(--te-bg);
+  color: var(--te-text-1);
   letter-spacing: -0.01em;
 }
 
@@ -170,11 +234,11 @@ body {
     border-radius: var(--te-radius-md);
   }
 
-  /* ─── TE Inset: recessed black well ─── */
+  /* ─── TE Inset: recessed well ─── */
   .te-inset {
-    background: #050503;
+    background: var(--te-inset-bg);
     box-shadow: inset 0 2px 4px rgba(0,0,0,0.8);
-    border: 1px solid #000;
+    border: 1px solid var(--te-border-strong);
     border-radius: var(--te-radius-sm);
   }
 
@@ -186,17 +250,17 @@ body {
 
   /* ─── TE Nav Row: raised physical button panel for bottom nav ─── */
   .te-nav-row {
-    background: linear-gradient(180deg, #242424 0%, #1a1a1a 100%);
-    border: 1px solid rgba(255,255,255,0.055);
+    background: linear-gradient(180deg, var(--te-nav-top) 0%, var(--te-nav-bottom) 100%);
+    border: 1px solid var(--te-border-strong);
     box-shadow:
-      0 4px 16px rgba(0,0,0,0.55),
+      0 4px 16px var(--te-drop),
       0 1px 3px rgba(0,0,0,0.4),
       inset 0 1px 0 rgba(255,255,255,0.05);
   }
 
   /* ─── TE Field: recessed cutout for inputs ─── */
   .te-field {
-    background: #0b0b0b;
+    background: var(--te-field-bg);
     border: 1px solid var(--te-border);
     box-shadow:
       inset 0 2px 4px rgba(0,0,0,0.65),
@@ -210,22 +274,22 @@ body {
      one pressed key among raised ones. Raised-vs-pressed is now carried
      entirely by the shadows (and the press itself still moves). */
   .te-toggle-off {
-    background: #171719;
+    background: var(--te-toggle-off-bg);
     box-shadow:
-      0 2px 0 #060606,
-      0 3px 7px rgba(0,0,0,0.55),
+      0 2px 0 var(--te-toggle-off-edge),
+      0 3px 7px var(--te-drop),
       inset 0 1px 0 rgba(255,255,255,0.06);
-    border: 1px solid #0e0e10;
+    border: 1px solid var(--te-toggle-off-edge);
     transition: transform 80ms ease, box-shadow 80ms ease, background 80ms ease;
     transform: translateY(0);
   }
   .te-toggle-off:active {
     transform: translateY(1px);
     box-shadow:
-      0 0 0 #060606,
+      0 0 0 var(--te-toggle-off-edge),
       0 1px 2px rgba(0,0,0,0.4),
       inset 0 1px 3px rgba(0,0,0,0.5);
-    background: #171719;
+    background: var(--te-toggle-off-bg);
   }
 
   /* ─── TE Toggle On: pressed in (active) — physically depressed, accent-tinted ─── */
@@ -262,19 +326,19 @@ body {
      surface sinks in and the shadows invert so it reads as pushed down like a
      real button. ─── */
   .te-white-btn {
-    background: #d0d0d2;
-    color: #0a0908;
-    border: 1px solid #b6b6b9;
+    background: var(--te-emph-bg);
+    color: var(--te-emph-text);
+    border: 1px solid var(--te-emph-edge);
     box-shadow:
-      0 2px 0 #9d9da0,
-      0 4px 9px rgba(0,0,0,0.45),
+      0 2px 0 var(--te-emph-shadow),
+      0 4px 9px var(--te-drop),
       inset 0 1px 0 rgba(255,255,255,0.75);
     transition: transform 90ms ease, box-shadow 90ms ease, background 90ms ease;
     transform: translateY(-1px);
   }
   .te-white-btn:active {
     transform: translateY(1px);
-    background: #c4c4c7;
+    background: var(--te-emph-bg-active);
     box-shadow:
       inset 0 2px 6px rgba(0,0,0,0.34),
       inset 0 1px 2px rgba(0,0,0,0.22),
@@ -287,12 +351,12 @@ body {
   /* ─── TE OP-1 style button (raised pad with circle inset) ─── */
   .te-btn {
     position: relative;
-    background: linear-gradient(175deg, #242426 0%, #1a1a1c 100%);
+    background: linear-gradient(175deg, var(--te-btn-top) 0%, var(--te-btn-bottom) 100%);
     box-shadow:
-      0 3px 0 #060606,
-      0 4px 8px rgba(0,0,0,0.6),
+      0 3px 0 var(--te-toggle-off-edge),
+      0 4px 8px var(--te-drop),
       inset 0 1px 0 rgba(255,255,255,0.07);
-    border: 1px solid rgba(255,255,255,0.04);
+    border: 1px solid var(--te-border-strong);
     transition: transform 60ms ease, box-shadow 60ms ease;
   }
   .te-btn:active {
@@ -312,10 +376,10 @@ body {
 
   /* ─── TE FAB: raised physical key, neutral dark surface ─── */
   .te-fab {
-    background: linear-gradient(180deg, #2a2a2c 0%, #1c1c1e 100%);
+    background: linear-gradient(180deg, var(--te-btn-top) 0%, var(--te-btn-bottom) 100%);
     box-shadow:
-      0 4px 0 #050505,
-      0 6px 18px rgba(0,0,0,0.7),
+      0 4px 0 var(--te-toggle-off-edge),
+      0 6px 18px var(--te-drop),
       inset 0 1px 0 rgba(255,255,255,0.08);
     border: 1px solid var(--te-border-strong);
     transition: transform 80ms ease, box-shadow 80ms ease, background 80ms ease;
@@ -324,10 +388,10 @@ body {
   .te-fab:active {
     transform: translateY(3px);
     box-shadow:
-      0 0 0 #050505,
-      0 2px 6px rgba(0,0,0,0.55),
+      0 0 0 var(--te-toggle-off-edge),
+      0 2px 6px var(--te-drop),
       inset 0 2px 8px rgba(0,0,0,0.6);
-    background: linear-gradient(180deg, #202022 0%, #161618 100%);
+    background: linear-gradient(180deg, var(--te-btn-bottom) 0%, var(--te-btn-top) 100%);
   }
   .te-btn-dot-green {
     background: linear-gradient(180deg, #34c759 0%, #248a3d 100%);
@@ -340,6 +404,50 @@ body {
     box-shadow:
       inset 0 2px 3px rgba(0,0,0,0.25),
       0 1px 0 rgba(255,255,255,0.1);
+  }
+
+  /* ── Light-theme shadow re-tuning ──────────────────────────────────────────
+     The recessed wells and inner-glow highlights above are tuned with near-
+     black insets and white top edges that read correctly on a dark surface.
+     On the light theme those same shadows read as dirty holes and blown-out
+     rims, so restate just the shadow/edge parts here — colours already flip via
+     the variables. */
+  :root[data-theme="light"] .te-inset {
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.10);
+  }
+  :root[data-theme="light"] .te-field {
+    box-shadow:
+      inset 0 2px 4px rgba(0,0,0,0.08),
+      inset 0 1px 0 rgba(0,0,0,0.05);
+  }
+  :root[data-theme="light"] .te-nav-row,
+  :root[data-theme="light"] .te-btn,
+  :root[data-theme="light"] .te-fab,
+  :root[data-theme="light"] .te-toggle-off {
+    /* Kill the inner white top-edge highlight (invisible-to-ugly on light) by
+       letting the softer --te-drop lift and lighter edges carry the relief. */
+    box-shadow:
+      0 2px 0 var(--te-toggle-off-edge),
+      0 4px 12px var(--te-drop);
+  }
+  :root[data-theme="light"] .te-fab {
+    box-shadow:
+      0 3px 0 var(--te-toggle-off-edge),
+      0 6px 16px var(--te-drop);
+  }
+  :root[data-theme="light"] .te-white-btn {
+    box-shadow:
+      0 2px 0 var(--te-emph-shadow),
+      0 4px 12px var(--te-drop);
+  }
+  :root[data-theme="light"] .te-toggle-on {
+    /* On light, the accent key keeps its pressed-in look but with a lighter
+       ambient drop so it doesn't sit in a black trench. */
+    box-shadow:
+      inset 0 2px 5px rgba(0,0,0,0.22),
+      inset 0 1px 2px rgba(0,0,0,0.14),
+      0 0 0 1px rgba(0,0,0,0.06),
+      0 2px 0 var(--te-drop);
   }
 
   /* ─── TE Label ─── */
