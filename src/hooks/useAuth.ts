@@ -49,7 +49,7 @@ export function useAuth() {
       email,
       password,
       options: {
-        emailRedirectTo: 'https://progressive-overloadtracker.vercel.app',
+        emailRedirectTo: window.location.origin,
         ...(name?.trim() ? { data: { name: name.trim() } } : {}),
       },
     });
@@ -60,7 +60,7 @@ export function useAuth() {
     const { error } = await supabase.auth.resend({
       type: 'signup',
       email,
-      options: { emailRedirectTo: 'https://progressive-overloadtracker.vercel.app' },
+      options: { emailRedirectTo: window.location.origin },
     });
     return error?.message ?? null;
   }
@@ -72,7 +72,7 @@ export function useAuth() {
 
   async function resetPassword(email: string): Promise<string | null> {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: 'https://progressive-overloadtracker.vercel.app',
+      redirectTo: window.location.origin,
     });
     return error?.message ?? null;
   }
