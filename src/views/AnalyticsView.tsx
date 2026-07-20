@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useRef, useId, useEffect } from 'react';
-import { ChevronDownIcon, ChartBarSquareIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
-import EmptyState from '../components/EmptyState';
 import Modal from '../components/Modal';
 import { CompetitionMiniWidget } from '../components/Competitions';
 import type { Exercise, WorkoutLog, Routine, ScheduleDay } from '../types';
@@ -37,6 +36,11 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 const MONO = "'Geist Mono', 'SF Mono', ui-monospace, monospace";
+
+// Stand-in for a reading there is no data for yet. The page keeps its full
+// shape when empty — every card, meter and chart frame still renders — so a
+// new user sees what the page will tell them rather than a blank slate.
+const DASH = '–';
 
 // Resolved hex (not a var) because the chart paints SVG gradient stops.
 // Matches --te-text-1, the app's primary off-white.
@@ -104,7 +108,12 @@ const C_PT = 10;
 const C_XH = 32;
 const C_CH = 174;
 const LABEL_PLATE_Y = C_PT + C_CH;
-const LINE_BOTTOM = LABEL_PLATE_Y - 2;
+// The line is stroked at 3.5 with round caps, so a point sitting on the very
+// bottom of the domain paints 1.75px either side of its centre. At a 2px
+// clearance that lower half lands on the label plate's edge and the line reads
+// as shaved off; 4px clears the full stroke with a hairline to spare, and
+// costs no extra chart height (the plate and viewBox are unchanged).
+const LINE_BOTTOM = LABEL_PLATE_Y - 4;
 
 // Points span the chart's full width edge-to-edge (no reserved left/right
 // margin) so that when two windows are tiled side by side for swiping, a
@@ -967,16 +976,21 @@ const SEGMENT_COLOR: Record<WeekSegmentState, string> = {
   idle: 'var(--te-border-strong)',
 };
 
-function ThisWeekCard({ logs, schedule, routines, exercises }: {
+function ThisWeekCard({ logs, schedule, routines, exercises, noData }: {
   logs: WorkoutLog[];
   schedule: ScheduleDay[];
   routines: Routine[];
   exercises: Exercise[];
+  /** Nothing logged yet — keep the card's shape, dash out its readings. */
+  noData?: boolean;
 }) {
-  const { segments, headline, subline, chip } = useMemo(
+  const summary = useMemo(
     () => buildWeekSummary(logs, schedule, routines, exercises),
     [logs, schedule, routines, exercises],
   );
+  const { segments, headline, subline, chip } = noData
+    ? { segments: [], headline: DASH, subline: DASH, chip: null }
+    : summary;
 
   return (
     <div className="px-4 pt-3 pb-3.5 te-bento" >
@@ -1030,20 +1044,22 @@ function ThisWeekCard({ logs, schedule, routines, exercises }: {
   );
 }
 
-function StreakCard({ logs, schedule, routines, exercises }: {
+function StreakCard({ logs, schedule, routines, exercises, noData }: {
   logs: WorkoutLog[];
   schedule: ScheduleDay[];
   routines: Routine[];
   exercises: Exercise[];
+  /** Nothing logged yet — keep the card's shape, dash out its readings. */
+  noData?: boolean;
 }) {
   const { current, longest, totalDays } = useMemo(
     () => calcStreak(logs, schedule, routines, exercises),
     [logs, schedule, routines, exercises],
   );
   const items = [
-    { value: `${current}d`, label: 'streak' },
-    { value: `${longest}d`, label: 'best' },
-    { value: String(totalDays), label: 'total' },
+    { value: noData ? DASH : `${current}d`, label: 'streak' },
+    { value: noData ? DASH : `${longest}d`, label: 'best' },
+    { value: noData ? DASH : String(totalDays), label: 'total' },
   ];
   return (
     <div className="flex gap-[7px]">
@@ -1191,9 +1207,18 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
   // Weight-progress chart + its stat cards, driven by the weight range filter.
   // current/prev/next are the three panels the swipeable chart pages through.
   const weightAnalytics = useMemo(() => {
-    if (!selected) return null;
     const rangeLabel = rangeSuffix(weightRangeDays).replace(/^\w/, c => c.toUpperCase());
     const maxLabels = weightRangeDays <= 7 ? 7 : weightRangeDays <= 30 ? 6 : 5;
+    // No exercise to chart yet: keep the frame (a flat baseline over the same
+    // window) and dash the stat cards, rather than dropping the section.
+    if (!selected) {
+      const blank = {
+        points: buildContinuousChart(buildAllDaysInRange(weightRangeDays), new Map(), weightRangeDays),
+        e1rm: { value: DASH, sub: 'No data yet', has: false },
+        heaviest: { value: DASH, sub: 'No data yet', has: false },
+      };
+      return { rangeLabel, maxLabels, current: blank, prev: blank, next: null };
+    }
     const current = buildWeightWindow(selected, workingLogs, weightRangeDays, windowEndDate(weightRangeDays, weightWindowOffset), toDisplay, unit);
     const prev = buildWeightWindow(selected, workingLogs, weightRangeDays, windowEndDate(weightRangeDays, weightWindowOffset + 1), toDisplay, unit);
     const next = weightWindowOffset === 0 ? null : buildWeightWindow(selected, workingLogs, weightRangeDays, windowEndDate(weightRangeDays, weightWindowOffset - 1), toDisplay, unit);
@@ -1202,9 +1227,15 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
 
   // Daily-completion chart (this exercise only) + its stat card.
   const dailyAnalytics = useMemo(() => {
-    if (!selected) return null;
     const rangeLabel = rangeSuffix(dailyRangeDays).replace(/^\w/, c => c.toUpperCase());
     const maxLabels = dailyRangeDays <= 7 ? 7 : dailyRangeDays <= 30 ? 6 : 5;
+    if (!selected) {
+      const blank = {
+        points: buildContinuousChart(buildAllDaysInRange(dailyRangeDays), new Map(), dailyRangeDays),
+        avg: 0,
+      };
+      return { rangeLabel, maxLabels, current: blank, prev: blank, next: null };
+    }
     const current = buildDailyWindow(selected, workingLogs, dailyRangeDays, windowEndDate(dailyRangeDays, dailyWindowOffset), schedule, routines);
     const prev = buildDailyWindow(selected, workingLogs, dailyRangeDays, windowEndDate(dailyRangeDays, dailyWindowOffset + 1), schedule, routines);
     const next = dailyWindowOffset === 0 ? null : buildDailyWindow(selected, workingLogs, dailyRangeDays, windowEndDate(dailyRangeDays, dailyWindowOffset - 1), schedule, routines);
@@ -1221,33 +1252,17 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
     return { rangeLabel, maxLabels, current, prev, next };
   }, [overallRangeDays, overallWindowOffset, logs, schedule, routines, exercises]);
 
-  if (!logs.length) {
-    return (
-      <EmptyState
-        icon={<ChartBarSquareIcon className="w-8 h-8 te-t4" />}
-        title="Your progress will appear here"
-        subtitle="Log some workouts to see your progress."
-      />
-    );
-  }
+  // With nothing logged the page keeps its full layout and dashes the numbers
+  // out — there is no empty state here on purpose. Seeing the real cards and
+  // chart frames tells a new user what logging will get them; a single
+  // "your progress will appear here" panel tells them nothing.
+  const noData = !selected;
 
-  if (!withLogs.length || !selected) {
-    return (
-      <EmptyState
-        icon={<ChartBarSquareIcon className="w-8 h-8 te-t4" />}
-        title="Your progress will appear here"
-        subtitle="Log some workouts to see per-exercise analytics."
-      />
-    );
-  }
-
-  const dotColor = selected.muscle_group === 'upper'
+  const dotColor = selected?.muscle_group === 'upper'
     ? 'var(--te-upper)'
-    : selected.muscle_group === 'lower'
+    : selected?.muscle_group === 'lower'
     ? 'var(--te-lower)'
     : 'var(--te-text-4)';
-
-  if (!weightAnalytics || !dailyAnalytics) return null;
 
   const weightDef: PageDef = {
     key: 'weight',
@@ -1273,7 +1288,7 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
     idleCounter: (
       <p className="text-[26px] font-bold te-t1 tabular-nums leading-none tracking-tight te-digit">
         <span className="text-[17px] font-semibold align-middle mr-1" style={{ color: 'var(--te-text-3)' }}>avg</span>
-        {dailyAnalytics.current.avg}%
+        {noData ? DASH : `${dailyAnalytics.current.avg}%`}
       </p>
     ),
     rangeLabel: dailyAnalytics.rangeLabel,
@@ -1296,7 +1311,7 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
     idleCounter: (
       <p className="text-[26px] font-bold te-t1 tabular-nums leading-none tracking-tight te-digit">
         <span className="text-[17px] font-semibold align-middle mr-1" style={{ color: 'var(--te-text-3)' }}>avg</span>
-        {overallAnalytics.current.avg}%
+        {noData ? DASH : `${overallAnalytics.current.avg}%`}
       </p>
     ),
     rangeLabel: overallAnalytics.rangeLabel,
@@ -1372,7 +1387,7 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
         <div>
           {/* This week — the page's headline: effort vs plan, not raw % */}
           <div className="mb-4">
-            <ThisWeekCard logs={logs} schedule={schedule} routines={routines} exercises={exercises} />
+            <ThisWeekCard logs={logs} schedule={schedule} routines={routines} exercises={exercises} noData={noData} />
           </div>
 
           {/* Daily completion (aggregate across every exercise) */}
@@ -1391,7 +1406,7 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
           </div>
 
           <div className="mt-8">
-            <StreakCard logs={logs} schedule={schedule} routines={routines} exercises={exercises} />
+            <StreakCard logs={logs} schedule={schedule} routines={routines} exercises={exercises} noData={noData} />
           </div>
 
           <div className="mt-3">
@@ -1412,16 +1427,20 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
                   className="text-[10px] font-semibold uppercase truncate"
                   style={{ fontFamily: MONO, letterSpacing: '0.08em', color: 'var(--te-text-1)' }}
                 >
-                  {selected.name}
+                  {selected ? selected.name : DASH}
                 </span>
               </div>
             }
           >
-            <GroupedExercisePicker
-              exercises={withLogs}
-              activeId={selected.id}
-              onSelect={id => { setSelectedId(id); setExerciseOpen(false); }}
-            />
+            {withLogs.length === 0 ? (
+              <div className="px-4 py-6 text-center te-label te-bento">No exercises logged yet</div>
+            ) : (
+              <GroupedExercisePicker
+                exercises={withLogs}
+                activeId={selected!.id}
+                onSelect={id => { setSelectedId(id); setExerciseOpen(false); }}
+              />
+            )}
           </CollapsibleSection>
 
           {/* Weight progress — its own time filter */}

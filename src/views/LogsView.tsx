@@ -32,8 +32,9 @@ interface Props {
   onCreateRoutine: () => void;
   /** Fired when the day's workout is marked complete (epoch ms). */
   onWorkoutComplete?: (at: number) => void;
-  /** Reports whether the selected calendar day is in the future (blocks adds). */
-  onFutureSelectedChange?: (future: boolean) => void;
+  /** Reports whether the selected calendar day is anything other than today.
+      Logging is only allowed on today, so this blocks adds. */
+  onNonTodaySelectedChange?: (nonToday: boolean) => void;
   competitions?: ReturnType<typeof useCompetitions>;
   fistBumps?: ReturnType<typeof useFistBumps>;
 }
@@ -122,7 +123,7 @@ function DayRing({
   hasSchedule: boolean;  // a routine is scheduled for this day-of-week
   onSelect: (d: Date) => void;
 }) {
-  const size = 34;
+  const size = 36;
   const stroke = 3;
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
@@ -633,7 +634,7 @@ function SessionRecapCard({
 // ── Main log view ─────────────────────────────────────────────
 type DisplayEntry = { exerciseId: string; exercise: Exercise | undefined; logs: WorkoutLog[] };
 
-export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExercise, onEdit, onDelete: _onDelete, unit, toDisplay, routines, schedule, focusMode = false, weekStartDay = 'monday', onCreateRoutine, onWorkoutComplete, onFutureSelectedChange, competitions, fistBumps }: Props) {
+export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExercise, onEdit, onDelete: _onDelete, unit, toDisplay, routines, schedule, focusMode = false, weekStartDay = 'monday', onCreateRoutine, onWorkoutComplete, onNonTodaySelectedChange, competitions, fistBumps }: Props) {
   const [viewLibraryEx, setViewLibraryEx]     = useState<LibraryExercise | null>(null);
   const [noRoutineDismissed, setNoRoutineDismissed] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
@@ -708,11 +709,12 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
   const isToday = isSameDay(selectedDate, today);
   const isFuture = selectedDate > today && !isToday;
 
-  // Let the shell know when a future day is selected so the global swipe-add
-  // can refuse (you can't log days that haven't happened).
-  useEffect(() => { onFutureSelectedChange?.(isFuture); }, [isFuture, onFutureSelectedChange]);
+  // Let the shell know when the calendar is parked on any day but today, so
+  // the global swipe-add can refuse. A log always lands on "now", so writing
+  // one while looking at another day would silently file it somewhere else.
+  useEffect(() => { onNonTodaySelectedChange?.(!isToday); }, [isToday, onNonTodaySelectedChange]);
   // Reset on unmount (tab switch) so the block doesn't leak to other tabs.
-  useEffect(() => () => onFutureSelectedChange?.(false), [onFutureSelectedChange]);
+  useEffect(() => () => onNonTodaySelectedChange?.(false), [onNonTodaySelectedChange]);
 
   const libraryByName = useMemo(() =>
     new Map(EXERCISE_LIBRARY.map(e => [e.name.toLowerCase(), e])),
@@ -1007,7 +1009,6 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
       {displayEntries.length === 0 ? (
         isToday && exercises.length === 0 ? (
           <EmptyState
-            page
             icon={<QueueListIcon className="w-7 h-7 te-t4" />}
             title="Your exercises will appear here"
             subtitle="Go to Exercises first and create an exercise to start logging."
@@ -1015,7 +1016,6 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
         ) : isFuture ? (
           // Future day — nothing can be logged here yet
           <EmptyState
-            page
             icon={<QueueListIcon className="w-7 h-7 te-t4" />}
             title={selectedRoutine ? `${selectedRoutine.name} is planned` : 'Rest day planned'}
             subtitle="This day hasn't happened yet."
@@ -1023,7 +1023,6 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
         ) : selectedRoutine ? (
           // Day has a planned routine but nothing was recorded
           <EmptyState
-            page
             icon={<QueueListIcon className="w-7 h-7 te-t4" />}
             title="No workout logged"
             subtitle={isToday ? 'Swipe up to log a workout.' : 'Nothing was recorded on this day.'}
@@ -1031,7 +1030,6 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
         ) : (
           // Day has no routine scheduled
           <EmptyState
-            page
             icon={<QueueListIcon className="w-7 h-7 te-t4" />}
             title="Your logs will appear here"
             subtitle="No routine is scheduled for this day."

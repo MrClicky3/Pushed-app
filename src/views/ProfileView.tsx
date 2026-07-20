@@ -314,7 +314,6 @@ function Leaderboard({
 
       {friendCount === 0 ? (
         <div className="te-panel rounded-te-md px-5 py-8 text-center">
-          <FireIcon className="w-8 h-8 mx-auto mb-2.5" style={{ color: 'var(--te-danger)' }} />
           <p className="text-[17px] font-semibold te-t1 tracking-tight">Compete with friends</p>
           <p className="text-[13px] te-t3 mt-1 leading-snug">
             Add a friend below to see who keeps the longest streak.
@@ -336,19 +335,23 @@ function FriendsSection({ friends, inviteUrl }: { friends: FriendsApi; inviteUrl
   const { incoming, outgoing, relationFor, searchUsers, sendRequest, acceptRequest, declineRequest } = friends;
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<ProfileLite[]>([]);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [searching, setSearching] = useState(false);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const term = query.trim();
-    if (term.length < 2) { setResults([]); setSearching(false); return; }
+    if (term.length < 2) { setResults([]); setSearchError(null); setSearching(false); return; }
     setSearching(true);
+    let alive = true;
     const h = setTimeout(async () => {
       const r = await searchUsers(term);
-      setResults(r);
+      if (!alive) return;
+      setResults(r.users);
+      setSearchError(r.error ?? null);
       setSearching(false);
     }, 300);
-    return () => clearTimeout(h);
+    return () => { alive = false; clearTimeout(h); };
   }, [query, searchUsers]);
 
   const incomingFor = useCallback(
@@ -429,6 +432,13 @@ function FriendsSection({ friends, inviteUrl }: { friends: FriendsApi; inviteUrl
             {showResults ? (
               searching ? (
                 <p className="te-label px-4 py-3.5">Searching…</p>
+              ) : searchError ? (
+                // A failed query and an empty result set look identical
+                // otherwise, which is how "search finds nobody" hides a
+                // server-side problem.
+                <p className="te-label px-4 py-3.5" style={{ color: 'var(--te-danger)' }}>
+                  Search failed: {searchError}
+                </p>
               ) : results.length === 0 ? (
                 <p className="te-label px-4 py-3.5">No users found.</p>
               ) : (
@@ -548,11 +558,22 @@ export default function ProfileView({
           aria-label="Change profile photo"
         >
           <Avatar name={name} avatarUrl={profile?.avatar_url} size={88} />
+          {/* Dark chip, not a light one: a near-white disc here was the only
+              light-on-dark surface on the page and read as a sticker on top of
+              the avatar. The cut-out ring is the page background, so the badge
+              stays legible over a photo without a bright fill. */}
           <span
             className="absolute flex items-center justify-center rounded-full"
-            style={{ width: 24, height: 24, right: -2, bottom: -2, background: '#f4f1ec', border: '2.5px solid var(--te-ink)' }}
+            style={{
+              width: 24, height: 24, right: -2, bottom: -2,
+              background: 'var(--te-surface-3)',
+              border: '1px solid var(--te-border-strong)',
+              // The page background is a Tailwind colour (te.bg), not a CSS
+              // variable, so it has to be written out here.
+              boxShadow: '0 0 0 2.5px #010101',
+            }}
           >
-            <CameraIcon className="w-3.5 h-3.5" style={{ color: 'var(--te-ink)' }} strokeWidth={1.5} />
+            <CameraIcon className="w-3.5 h-3.5" style={{ color: 'var(--te-text-1)' }} strokeWidth={1.5} />
           </span>
         </button>
 

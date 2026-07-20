@@ -68,7 +68,15 @@ const SESSION_CAP_MINS = 4 * 60;
 // Bottom dock geometry. The tab pill and the profile avatar are both pinned to
 // this height so they can never drift apart — they sit side by side, so any
 // drift reads immediately as a misaligned dock.
-const NAV_PILL_H = 63;
+const NAV_PILL_H = 67;
+// One spacing value for the whole dock: the gap between the pill and the
+// avatar, and the pill's own inner padding. Using the same number for both is
+// what makes the row read as evenly spaced — a smaller inner padding pinches
+// the outer tabs against the pill's ends.
+const NAV_GAP_PX = 10;
+// Total height the dock occupies over the page: the grabber row (6px top pad +
+// 4px line + 2px bottom pad), the tab row's own 4px/2px padding, and the pill.
+const NAV_DOCK_H = 12 + 6 + NAV_PILL_H;
 // A circle at the pill's exact height reads as the larger of the two — the
 // pill's mass is broken up by its rounded ends, the disc's is not. Trimming
 // the avatar by a few px is the optical overshoot correction that makes them
@@ -489,7 +497,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
 
   // Swipe hint + future-date guard state
   const [swipeUses, setSwipeUses] = useState<number>(loadSwipeUses);
-  const [logDateInFuture, setLogDateInFuture] = useState(false);
+  const [logDateNotToday, setLogDateNotToday] = useState(false);
   const [addError, setAddError] = useState<{ key: number; text: string } | null>(null);
   const addErrorTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   function flashAddError(text: string) {
@@ -499,9 +507,12 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
   }
 
   function triggerAdd(viaGesture = false) {
-    if (tab === 'log' && logDateInFuture) {
+    // A new log is always stamped "now", so it can only belong to today. If
+    // the calendar is parked on another day, refuse rather than quietly
+    // filing the set under a day the user isn't looking at.
+    if (tab === 'log' && logDateNotToday) {
       feedback.skip();
-      flashAddError("Can't log in future dates");
+      flashAddError('Go to today to log');
       return;
     }
     if (viaGesture && swipeUses < 2) {
@@ -710,7 +721,15 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
           // scroll all the way up into the iPod-style scroll-depth effect's
           // (Log/Exercises pages) full-opacity zone, rather than being stuck
           // half-faded once it hits the end of the scrollable content.
-          paddingBottom: focusMode ? 'calc(40px + 10vh + env(safe-area-inset-bottom, 0px))' : 'calc(80px + 17vh + env(safe-area-inset-bottom, 0px))',
+          //
+          // Profile is exempt: it has no scroll-depth effect, so that headroom
+          // is just dead space you can scroll into. It gets the dock clearance
+          // plus 50px and stops there.
+          paddingBottom: focusMode
+            ? 'calc(40px + 10vh + env(safe-area-inset-bottom, 0px))'
+            : tab === 'profile'
+            ? `calc(${NAV_DOCK_H}px + 50px + env(safe-area-inset-bottom, 0px))`
+            : 'calc(80px + 17vh + env(safe-area-inset-bottom, 0px))',
           transition: 'padding-bottom 0.36s cubic-bezier(0.22,1,0.36,1)',
         }}
       >
@@ -754,7 +773,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
         ) : tab === 'log' ? (
           <LogsView
             onWorkoutComplete={setWorkoutDoneAt}
-            onFutureSelectedChange={setLogDateInFuture}
+            onNonTodaySelectedChange={setLogDateNotToday}
             competitions={competitions}
             fistBumps={fistBumps}
             logs={logs}
@@ -932,14 +951,14 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
             style={{ gridTemplateRows: focusMode ? '0fr' : '1fr', transition: 'grid-template-rows 0.36s cubic-bezier(0.22,1,0.36,1)' }}
           >
             <div style={{ overflow: 'hidden', opacity: focusMode ? 0 : 1, transition: `opacity ${focusMode ? '0.15s ease' : '0.3s ease 0.08s'}` }}>
-              <div className="flex justify-center items-center gap-2.5 pt-1 pb-0.5">
+              <div className="flex justify-center items-center pt-1 pb-0.5" style={{ gap: NAV_GAP_PX }}>
                 <div
                   className="grid grid-cols-3 items-center rounded-full"
                   style={{
                     height: NAV_PILL_H,
                     background: 'var(--te-border)',
                     border: '1px solid var(--te-border)',
-                    padding: '0 6px',
+                    padding: `0 ${NAV_GAP_PX}px`,
                   }}
                 >
                   {mainTabs.map(({ key, label, icon: Icon }) => {
@@ -951,8 +970,8 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
                         onClick={() => switchTab(key)}
                         className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-full active:opacity-60 transition-opacity select-none"
                       >
-                        <Icon className="w-[24px] h-[24px]" style={{ color }} />
-                        <span className="text-[10px] font-medium tracking-tight" style={{ color }}>
+                        <Icon className="w-[26px] h-[26px]" style={{ color }} />
+                        <span className="text-[11px] font-medium tracking-tight" style={{ color }}>
                           {label}
                         </span>
                       </button>
@@ -1004,7 +1023,10 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
                         position: 'absolute', top: 6, right: 6,
                         width: 7, height: 7, borderRadius: 9999,
                         background: 'var(--te-accent)',
-                        boxShadow: '0 0 0 2px var(--te-bg)',
+                        // te.bg is a Tailwind colour, not a CSS variable —
+                        // var(--te-bg) resolved to nothing and the dot lost
+                        // its cut-out ring against the avatar.
+                        boxShadow: '0 0 0 2px #010101',
                       }}
                     />
                   )}
@@ -1172,6 +1194,13 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
         onUpdateRoutine={updateRoutine}
         onDeleteRoutine={deleteRoutine}
         onAssignDay={assignDay}
+        onCreateExercise={() => {
+          setScheduleOpen(false);
+          setScheduleInitialView(undefined);
+          switchTab('exercises');
+          setExercisePrefill(undefined);
+          setExerciseModal({ open: true, exercise: null });
+        }}
         onSignOut={onSignOut}
         userName={userName}
         onUpdateName={onUpdateName}
