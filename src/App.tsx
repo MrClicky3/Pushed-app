@@ -65,6 +65,15 @@ function fmtTimer(s: number) {
 // stops pretending to know the duration.
 const SESSION_CAP_MINS = 4 * 60;
 
+// Bottom dock geometry. The tab pill and the profile avatar are both pinned to
+// this height so they can never drift apart — they sit side by side, so any
+// drift reads immediately as a misaligned dock.
+const NAV_PILL_H = 63;
+// Ring shown around the avatar while the Profile tab is open. Drawn inside the
+// avatar's own footprint (see the button below) so it never affects layout.
+const NAV_ACTIVE_RING_PX = 2;
+const NAV_ACTIVE_RING_COLOR = '#282828';
+
 function formatSessionAge(dateStr: string): string {
   const mins = Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000);
   if (mins < 1) return 'Started just now';
@@ -655,6 +664,10 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
   // The Profile tab's "icon" is the user's own avatar rather than a glyph —
   // it's the one tab that represents a person, and it doubles as the identity
   // affordance the header's corner button used to provide.
+  //
+  // The tab pill and the profile button are both pinned to NAV_PILL_H rather
+  // than letting the pill size itself off its contents: they sit side by side,
+  // so any drift between them is immediately visible as a misaligned dock.
   const mainTabs: { key: Tab; label: string; icon: React.FC<{ className?: string; style?: React.CSSProperties }> }[] = [
     { key: 'exercises', label: 'Exercises', icon: RectangleStackIcon },
     { key: 'log', label: 'Log', icon: QueueListIcon },
@@ -916,7 +929,12 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
               <div className="flex justify-center items-center gap-2.5 pt-0 pb-0.5">
                 <div
                   className="grid grid-cols-3 items-center rounded-full"
-                  style={{ background: 'var(--te-border)', border: '1px solid var(--te-border)', padding: '5px 6px' }}
+                  style={{
+                    height: NAV_PILL_H,
+                    background: 'var(--te-border)',
+                    border: '1px solid var(--te-border)',
+                    padding: '0 6px',
+                  }}
                 >
                   {mainTabs.map(({ key, label, icon: Icon }) => {
                     const isActive = tab === key;
@@ -935,55 +953,57 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
                     );
                   })}
                 </div>
+                {/* Sized off the same constants as the tab pill so the two sit
+                    on one line and share a silhouette. Active state is a real
+                    border rather than an outer ring, so it reads as the same
+                    kind of surface as the pill beside it. */}
                 <button
-  onClick={() => switchTab('profile')}
-  aria-label="Profile"
-  className="relative flex items-center justify-center active:opacity-60 transition-opacity select-none shrink-0"
-  style={{
-    width: 57,
-    height: 57,
-    marginTop: -1, // adjust if needed
-    marginBottom: -1,
-    background: 'transparent',
-    border: 'none',
-    padding: 0,
-  }}
->
-  <div
-  style={{
-    width: 57,
-    height: 57,
-    borderRadius: '9999px',
-    padding: tab === 'profile' ? 2 : 0,
-    boxSizing: 'border-box',
-    background: tab === 'profile' ? '#282828' : 'transparent',
-    overflow: 'hidden',
-  }}
->
-  <Avatar
-    name={profileName}
-    avatarUrl={profileRow?.avatar_url}
-    size={57}
-    ring={false}
-  />
-</div>
-
-  {competeAttention && tab !== 'profile' && (
-    <span
-      aria-hidden
-      style={{
-        position: 'absolute',
-        top: 3,
-        right: 3,
-        width: 7,
-        height: 7,
-        borderRadius: 9999,
-        background: 'var(--te-accent)',
-        boxShadow: '0 0 0 2px var(--te-bg)',
-      }}
-    />
-  )}
-</button>
+                  onClick={() => switchTab('profile')}
+                  aria-label="Profile"
+                  className="relative flex items-center justify-center rounded-full active:opacity-60 transition-opacity select-none shrink-0"
+                  style={{
+                    width: NAV_PILL_H,
+                    height: NAV_PILL_H,
+                    background: 'transparent',
+                    border: 'none',
+                    padding: 0,
+                  }}
+                >
+                  {/* The ring is drawn inside the button's own footprint rather
+                      than around it, so turning it on cannot change the dock's
+                      height — the avatar shrinks by the ring instead. */}
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      width: NAV_PILL_H,
+                      height: NAV_PILL_H,
+                      boxSizing: 'border-box',
+                      borderRadius: 9999,
+                      padding: tab === 'profile' ? NAV_ACTIVE_RING_PX : 0,
+                      background: tab === 'profile' ? NAV_ACTIVE_RING_COLOR : 'transparent',
+                      opacity: tab === 'profile' ? 1 : 0.55,
+                      transition: 'background-color 0.2s ease, opacity 0.2s ease',
+                    }}
+                  >
+                    <Avatar
+                      name={profileName}
+                      avatarUrl={profileRow?.avatar_url}
+                      size={NAV_PILL_H - (tab === 'profile' ? NAV_ACTIVE_RING_PX * 2 : 0)}
+                      ring={false}
+                    />
+                  </span>
+                  {competeAttention && tab !== 'profile' && (
+                    <span
+                      aria-hidden
+                      style={{
+                        position: 'absolute', top: 6, right: 6,
+                        width: 7, height: 7, borderRadius: 9999,
+                        background: 'var(--te-accent)',
+                        boxShadow: '0 0 0 2px var(--te-bg)',
+                      }}
+                    />
+                  )}
+                </button>
               </div>
             </div>
           </div>

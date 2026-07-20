@@ -50,7 +50,7 @@ function fitFontSize(text: string, base: number, avail: number): number {
 const AVATAR_PX = 50;
 const RANK_BADGE_PX = 22;
 const DUEL_DIVIDER_PX = 90;
-const DUEL_RULE_GAP_PX = 16;
+const DUEL_RULE_GAP_PX = 10;
 const DUEL_SIDE_PX = 102;
 const GRID_CELL_PX = 92;
 
