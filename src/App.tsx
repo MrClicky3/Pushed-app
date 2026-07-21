@@ -292,14 +292,14 @@ function FocusModeSwitch({ active, onToggle }: { active: boolean; onToggle: () =
     <button
       type="button"
       onClick={onToggle}
-      className="flex items-center gap-2 select-none rounded-full transition-colors"
+      className="flex items-center gap-2.5 select-none rounded-full transition-colors"
       style={{ padding: '5px 9px 5px 5px', background: 'transparent' }}
       aria-label="Focus mode"
     >
-      <div className="te-unit-track">
+      <div className="te-unit-track" style={{ transform: 'scale(1.2)', transformOrigin: 'center' }}>
         <div className={`te-unit-lever ${active ? 'te-unit-lever-right' : ''}`} />
       </div>
-      <ViewfinderCircleIcon className="w-3.5 h-3.5 transition-opacity" style={{ color: 'var(--te-text-1)', opacity: active ? 1 : 0.25 }} />
+      <ViewfinderCircleIcon className="w-4 h-4 transition-opacity" style={{ color: 'var(--te-text-1)', opacity: active ? 1 : 0.25 }} />
     </button>
   );
 }

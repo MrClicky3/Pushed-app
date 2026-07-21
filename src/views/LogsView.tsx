@@ -133,7 +133,7 @@ function DayRing({
   hasSchedule: boolean;  // a routine is scheduled for this day-of-week
   onSelect: (d: Date) => void;
 }) {
-  const size = 36;
+  const size = 40;
   const stroke = 3;
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;

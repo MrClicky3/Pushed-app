@@ -1421,15 +1421,24 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
             open={exerciseOpen}
             onToggle={() => setExerciseOpen(o => !o)}
             header={
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="w-[6px] h-[6px] rounded-full shrink-0" style={{ background: dotColor }} />
+              selected ? (
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="w-[6px] h-[6px] rounded-full shrink-0" style={{ background: dotColor }} />
+                  <span
+                    className="text-[10px] font-semibold uppercase truncate"
+                    style={{ fontFamily: MONO, letterSpacing: '0.08em', color: 'var(--te-text-1)' }}
+                  >
+                    {selected.name}
+                  </span>
+                </div>
+              ) : (
                 <span
-                  className="text-[10px] font-semibold uppercase truncate"
-                  style={{ fontFamily: MONO, letterSpacing: '0.08em', color: 'var(--te-text-1)' }}
+                  className="text-[10px] font-semibold uppercase"
+                  style={{ fontFamily: MONO, letterSpacing: '0.08em', color: 'var(--te-text-3)' }}
                 >
-                  {selected ? selected.name : DASH}
+                  Log a set to track an exercise
                 </span>
-              </div>
+              )
             }
           >
             {withLogs.length === 0 ? (

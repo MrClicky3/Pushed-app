@@ -9,7 +9,7 @@
   --te-warn:  #ff6b5e;   /* was orange; unified with the app's red */
   /* Single source of truth for every bento/card border — keep card borders on
      this token so they stay uniform in opacity and thickness. */
-  --te-border: rgba(255, 255, 255, 0.06);
+  --te-border: rgba(255, 255, 255, 0.085);
   --te-border-strong: rgba(255, 255, 255, 0.10);
   /* Faintest tint used for pressed/hover washes and inner fills — below border
      strength, so it reads as a surface change rather than an edge. */
@@ -101,7 +101,7 @@
    a light background, so they become soft grey lifts, and the emphasis button
    inverts to dark-on-light so it stays the loudest control on screen. */
 :root[data-theme="light"] {
-  --te-border:        rgba(35, 30, 22, 0.10);
+  --te-border:        rgba(35, 30, 22, 0.13);
   --te-border-strong: rgba(35, 30, 22, 0.16);
   --te-fill-subtle:   rgba(35, 30, 22, 0.04);
 
