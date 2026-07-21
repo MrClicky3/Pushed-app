@@ -93,7 +93,7 @@ function scoreValue(s: CompetitionStanding): number | null {
 
 // A participant's headline value as text ("8,923KG" / "25d").
 function valueText(track: CompetitionTrack, s: CompetitionStanding, volFmt: VolFmt): string {
-  if (s.score === null || s.score === undefined) return '—';
+  if (s.score === null || s.score === undefined) return '–';
   if (track === 'streak') return `${Math.round(s.score)}d`;
   return volFmt(s.score);
 }
@@ -491,14 +491,14 @@ function duelStatusLine(me: CompetitionStanding, them: CompetitionStanding, done
   const a = scoreValue(me);
   const b = scoreValue(them);
   if (a === null && b === null) {
-    return done ? 'No workouts were logged.' : 'No scores yet — first workouts count soon.';
+    return done ? 'No workouts were logged.' : 'No scores yet – first workouts count soon.';
   }
   const theirName = them.display_name || them.username;
-  if (!done && b === null && a !== null) return `${theirName} hasn't scored yet — you're ahead.`;
+  if (!done && b === null && a !== null) return `${theirName} hasn't scored yet – you're ahead.`;
   if (!done && a === null && b !== null) return `${theirName} is on the board — you're not yet.`;
-  if ((a ?? -Infinity) > (b ?? -Infinity)) return done ? 'You won this one.' : "You're in the lead — keep it.";
-  if ((b ?? -Infinity) > (a ?? -Infinity)) return done ? `${theirName} took this one.` : `${theirName} leads — your next workout closes the gap.`;
-  return done ? 'Dead even — it ends in a tie.' : 'Dead even right now.';
+  if ((a ?? -Infinity) > (b ?? -Infinity)) return done ? 'You won this one.' : "You're in the lead – keep it.";
+  if ((b ?? -Infinity) > (a ?? -Infinity)) return done ? `${theirName} took this one.` : `${theirName} leads – your next workout closes the gap.`;
+  return done ? 'Dead even – it ends in a tie.' : 'Dead even right now.';
 }
 
 // The detail sheet runs the pair a touch smaller than the Profile card does:
@@ -686,10 +686,10 @@ function CancelVote({
       // server rejects it (or the function is missing), so check the result —
       // otherwise a failed vote looks identical to a successful one.
       const res = iVoted ? await comps.unvoteCancel(comp.id) : await comps.voteCancel(comp.id);
-      if (!res?.ok) setError("Couldn't register your vote — try again.");
+      if (!res?.ok) setError("Couldn't register your vote – try again.");
       onVoted();
     } catch {
-      setError("Couldn't register your vote — try again.");
+      setError("Couldn't register your vote – try again.");
     } finally {
       setBusy(false);
     }
@@ -958,7 +958,7 @@ function CreateSheet({
       setError(
         res.reason === 'no_participants' ? 'Those friends could not be invited.'
         : res.reason === 'too_many_players' ? `Competitions cap out at ${MAX_PLAYERS} players.`
-        : 'Could not create — try again.',
+        : 'Could not create – try again.',
       );
       return;
     }
@@ -990,7 +990,7 @@ function CreateSheet({
           </div>
           <p className="te-label mt-2 px-0.5 leading-relaxed" style={{ color: 'var(--te-text-4)' }}>
             {track === 'volume'
-              ? 'Who lifts the most — total working-set volume while the competition runs.'
+              ? 'Who lifts the most – total working-set volume while the competition runs.'
               : 'Who keeps the longest workout streak alive by the finish.'}
           </p>
         </div>
@@ -1280,7 +1280,7 @@ export function CompetitionsSection({ comps, friendsList, unit, toDisplay }: {
           <div className="mb-2.5"><FriendStack friends={friendsList} /></div>
           <p className="text-[17px] font-semibold te-t1 tracking-tight">Start a competition</p>
           <p className="text-[13px] te-t3 mt-1 leading-snug">
-            Challenge friends to a volume or streak battle — up to {MAX_PLAYERS} players.
+            Challenge friends to a volume or streak battle – up to {MAX_PLAYERS} players.
           </p>
         </button>
       ) : (

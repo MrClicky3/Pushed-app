@@ -28,7 +28,7 @@ function friendlyError(msg: string): string {
   if (msg.includes('Email not confirmed'))          return 'Please verify your email first.';
   if (msg.includes('User already registered'))      return 'An account with this email already exists.';
   if (msg.includes('Password should be'))           return 'Password must be at least 6 characters.';
-  if (msg.includes('Token has expired') || msg.includes('expired')) return 'Code expired — request a new one.';
+  if (msg.includes('Token has expired') || msg.includes('expired')) return 'Code expired – request a new one.';
   if (msg.toLowerCase().includes('invalid') || msg.toLowerCase().includes('otp')) return 'Wrong code. Check your email and try again.';
   return msg;
 }
@@ -197,7 +197,7 @@ export default function AuthView({ onSignIn, onSignUp, onResend, onVerifyOtp, on
 
     if (err) {
       setResendMsg(/rate|429|too many|security purposes/i.test(err)
-        ? 'Too many requests — wait a minute and try again.'
+        ? 'Too many requests – wait a minute and try again.'
         : 'Could not resend.');
     } else {
       setOtp(''); setError(null); setResendMsg('Sent!');

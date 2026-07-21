@@ -851,7 +851,7 @@ function buildWeightWindow(
   })();
 
   const heaviest = (() => {
-    if (!rangeExLogs.length) return { value: `0${unit}`, sub: '—', has: false };
+    if (!rangeExLogs.length) return { value: `0${unit}`, sub: '–', has: false };
     const heaviestWeight = Math.max(...rangeExLogs.map(l => l.weight));
     const atHeaviest = rangeExLogs.filter(l => l.weight === heaviestWeight);
     const prLog = atHeaviest.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];

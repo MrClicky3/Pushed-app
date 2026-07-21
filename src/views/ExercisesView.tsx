@@ -44,13 +44,17 @@ export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, 
       const sRect = scrollEl!.getBoundingClientRect();
       const centerY = sRect.top + sRect.height * 0.44;
       const halfH = sRect.height * 0.52;
+      const maxScroll = Math.max(1, scrollEl!.scrollHeight - scrollEl!.clientHeight);
       const scrollFactor = Math.min(scrollEl!.scrollTop / 80, 1);
+      // Mirror of the top release: the last cards come to full size as you
+      // reach the bottom, so the page needs no tall bottom margin to get there.
+      const bottomFactor = Math.min((maxScroll - scrollEl!.scrollTop) / 80, 1);
 
       container.querySelectorAll<HTMLElement>('[data-card]').forEach(card => {
         const r = card.getBoundingClientRect();
         const cardMid = r.top + r.height / 2;
         const raw = cardMid - centerY;
-        const dist = raw < 0 ? Math.abs(raw) * scrollFactor : raw;
+        const dist = raw < 0 ? Math.abs(raw) * scrollFactor : raw * bottomFactor;
         const norm = Math.min(dist / halfH, 1);
         const ease = norm * norm;
         card.style.transform = `scale(${(1 - ease * 0.09).toFixed(4)})`;

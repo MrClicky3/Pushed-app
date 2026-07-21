@@ -133,7 +133,7 @@ function DayRing({
   hasSchedule: boolean;  // a routine is scheduled for this day-of-week
   onSelect: (d: Date) => void;
 }) {
-  const size = 40;
+  const size = 38;
   const stroke = 3;
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
@@ -786,9 +786,18 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
       const sRect = scrollEl!.getBoundingClientRect();
       const centerY = sRect.top + sRect.height * 0.44;
       const halfH   = sRect.height * 0.52;
+      // Release the fade at the scroll extremes: cards above centre stop
+      // fading as you reach the top, cards below stop as you reach the bottom.
+      // This is what lets the bottom margin be small — the last card comes to
+      // full size when you hit the end instead of needing headroom to scroll
+      // itself up to the centre.
+      const maxScroll = Math.max(1, scrollEl!.scrollHeight - scrollEl!.clientHeight);
+      const topFactor    = Math.min(scrollEl!.scrollTop / 80, 1);
+      const bottomFactor = Math.min((maxScroll - scrollEl!.scrollTop) / 80, 1);
       container.querySelectorAll<HTMLElement>('[data-card]').forEach(card => {
         const r    = card.getBoundingClientRect();
-        const dist = Math.abs(r.top + r.height / 2 - centerY);
+        const raw  = r.top + r.height / 2 - centerY;
+        const dist = raw < 0 ? Math.abs(raw) * topFactor : raw * bottomFactor;
         const norm = Math.min(dist / halfH, 1);
         const ease = norm * norm;
         card.style.transform = `scale(${(1 - ease * 0.09).toFixed(4)})`;

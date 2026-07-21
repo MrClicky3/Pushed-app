@@ -296,10 +296,10 @@ function FocusModeSwitch({ active, onToggle }: { active: boolean; onToggle: () =
       style={{ padding: '5px 9px 5px 5px', background: 'transparent' }}
       aria-label="Focus mode"
     >
-      <div className="te-unit-track" style={{ transform: 'scale(1.2)', transformOrigin: 'center' }}>
+      <div className="te-unit-track" style={{ transform: 'scale(1.08)', transformOrigin: 'center' }}>
         <div className={`te-unit-lever ${active ? 'te-unit-lever-right' : ''}`} />
       </div>
-      <ViewfinderCircleIcon className="w-4 h-4 transition-opacity" style={{ color: 'var(--te-text-1)', opacity: active ? 1 : 0.25 }} />
+      <ViewfinderCircleIcon className="w-[15px] h-[15px] transition-opacity" style={{ color: 'var(--te-text-1)', opacity: active ? 1 : 0.25 }} />
     </button>
   );
 }
@@ -747,19 +747,13 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
         className="max-w-lg mx-auto pl-[max(16px,env(safe-area-inset-left))] pr-[max(16px,env(safe-area-inset-right))]"
         style={{
           paddingTop: 'max(28px, env(safe-area-inset-top, 0px) + 8px)',
-          // The extra vh past the nav-bar clearance gives the last card room to
-          // scroll all the way up into the iPod-style scroll-depth effect's
-          // (Log/Exercises pages) full-opacity zone, rather than being stuck
-          // half-faded once it hits the end of the scrollable content.
-          //
-          // Profile is exempt: it has no scroll-depth effect, so that headroom
-          // is just dead space you can scroll into. It gets the dock clearance
-          // plus 50px and stops there.
+          // Just enough to clear the nav dock plus a small breathing gap. The
+          // Log/Exercises scroll-depth effect now releases the fade at the
+          // bottom (see those views), so the last card reaches full size when
+          // you hit the end without needing a tall headroom margin here.
           paddingBottom: focusMode
             ? 'calc(40px + 10vh + env(safe-area-inset-bottom, 0px))'
-            : tab === 'profile'
-            ? `calc(${NAV_DOCK_H}px + 50px + env(safe-area-inset-bottom, 0px))`
-            : 'calc(80px + 17vh + env(safe-area-inset-bottom, 0px))',
+            : `calc(${NAV_DOCK_H}px + 18px + env(safe-area-inset-bottom, 0px))`,
           transition: 'padding-bottom 0.36s cubic-bezier(0.22,1,0.36,1)',
         }}
       >
@@ -845,7 +839,10 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
             unit={unit}
             toDisplay={toDisplay}
             inviteUrl={inviteUrl}
-            onOpenSettings={() => setScheduleOpen(true)}
+            routines={routines}
+            schedule={schedule}
+            onManageRoutines={() => { setScheduleInitialView('routine'); setScheduleOpen(true); }}
+            onOpenSettings={() => { setScheduleInitialView(undefined); setScheduleOpen(true); }}
             setAvatar={setAvatar}
             uploadAvatarFile={uploadAvatarFile}
             updateBio={updateBio}
