@@ -116,17 +116,17 @@ export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, 
       <div style={{
         height: 164,
         background: `linear-gradient(124.9deg,
-          color-mix(in srgb, var(--te-accent) 6%, var(--te-surface-1)) 8%,
-          color-mix(in srgb, var(--te-accent) 16%, var(--te-surface-1)) 52%,
-          color-mix(in srgb, var(--te-accent) 32%, var(--te-surface-1)) 92%,
-          color-mix(in srgb, var(--te-accent) 20%, var(--te-surface-1)) 120%)`,
+          color-mix(in srgb, var(--te-accent) var(--te-lib-1), var(--te-surface-1)) 8%,
+          color-mix(in srgb, var(--te-accent) var(--te-lib-2), var(--te-surface-1)) 52%,
+          color-mix(in srgb, var(--te-accent) var(--te-lib-3), var(--te-surface-1)) 92%,
+          color-mix(in srgb, var(--te-accent) var(--te-lib-4), var(--te-surface-1)) 120%)`,
         position: 'relative', overflow: 'hidden',
       }}>
         <div style={{
           position: 'absolute', inset: 0, pointerEvents: 'none',
           background: `radial-gradient(ellipse 62% 88% at 78% 60%,
-            color-mix(in srgb, var(--te-accent) 26%, transparent) 0%,
-            color-mix(in srgb, var(--te-accent) 9%, transparent) 45%,
+            color-mix(in srgb, var(--te-accent) var(--te-lib-r1), transparent) 0%,
+            color-mix(in srgb, var(--te-accent) var(--te-lib-r2), transparent) 45%,
             transparent 72%)`,
         }} />
 

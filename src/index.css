@@ -60,6 +60,15 @@
   --te-emph-edge:     #b6b6b9;
   --te-emph-shadow:   #9d9da0;
   --te-emph-text:     #0a0908;
+  /* Neutral "selected" pill (te-toggle-mono) and the unit-switch track. */
+  --te-mono-bg:       #d0d0d2;
+  --te-mono-text:     #0a0908;
+  --te-switch-track:  #1c1c1e;
+  /* Exercise Library card accent-wash strengths (mixed with the surface). Kept
+     as tokens so light can dial them right down — full strength reads as a loud
+     pink on near-white. */
+  --te-lib-1: 6%;  --te-lib-2: 16%; --te-lib-3: 32%; --te-lib-4: 20%;
+  --te-lib-r1: 26%; --te-lib-r2: 9%;
   /* Neutral skeuomorphic shadow — dark drop under raised controls. */
   --te-drop: rgba(0,0,0,0.45);
 
@@ -92,38 +101,50 @@
    a light background, so they become soft grey lifts, and the emphasis button
    inverts to dark-on-light so it stays the loudest control on screen. */
 :root[data-theme="light"] {
-  --te-border:        rgba(0, 0, 0, 0.10);
-  --te-border-strong: rgba(0, 0, 0, 0.17);
-  --te-fill-subtle:   rgba(0, 0, 0, 0.045);
+  --te-border:        rgba(35, 30, 22, 0.10);
+  --te-border-strong: rgba(35, 30, 22, 0.16);
+  --te-fill-subtle:   rgba(35, 30, 22, 0.04);
 
-  --te-text-1: #201e1b;                    /* warm near-black */
-  --te-text-2: rgba(32, 30, 27, 0.66);
-  --te-text-3: rgba(32, 30, 27, 0.50);
-  --te-text-4: rgba(32, 30, 27, 0.38);
+  /* Stronger than a straight inversion — the first pass read faint. */
+  --te-text-1: #1c1a17;                    /* warm near-black */
+  --te-text-2: rgba(28, 26, 23, 0.72);
+  --te-text-3: rgba(28, 26, 23, 0.56);
+  --te-text-4: rgba(28, 26, 23, 0.44);
 
-  --te-bg:        #e6e2da;                 /* warm light page */
-  --te-well:      #dedad1;                 /* recessed field interior */
-  --te-surface-1: #efece5;
-  --te-surface-2: #f5f2ec;
-  --te-card:      #f5f2ec;
-  --te-surface-3: #fbf9f5;                 /* modals / sheets — near white */
+  /* Clean warm paper, brighter and less grey than the first attempt. The page
+     is a hair below its cards; cards are near-white; modals are pure white. */
+  --te-bg:        #efece6;                 /* page */
+  --te-well:      #e7e3db;                 /* recessed field interior */
+  --te-surface-1: #f7f5f0;
+  --te-surface-2: #fbfaf6;
+  --te-card:      #fbfaf6;
+  --te-surface-3: #ffffff;                 /* modals / sheets — pure white */
 
-  --te-ink: #201e1b;
+  --te-ink: #1c1a17;
 
-  --te-inset-bg:      #ddd9d0;
-  --te-field-bg:      #eae6de;
-  --te-toggle-off-bg: #e7e3da;
-  --te-toggle-off-edge: #c9c4b8;
+  --te-inset-bg:      #e7e3db;
+  --te-field-bg:      #f1eee8;
+  --te-toggle-off-bg: #ece8e1;             /* warm, so idle pills don't read cool */
+  --te-toggle-off-edge: #d8d3c9;
   --te-nav-top:       #ffffff;
-  --te-nav-bottom:    #f0ede6;
+  --te-nav-bottom:    #f4f1eb;
   --te-btn-top:       #ffffff;
-  --te-btn-bottom:    #efece5;
-  --te-emph-bg:       #201e1b;             /* inverted: dark button on light */
-  --te-emph-bg-active:#100f0d;
-  --te-emph-edge:     #000000;
-  --te-emph-shadow:   rgba(0,0,0,0.28);
-  --te-emph-text:     #f4f1ec;
-  --te-drop: rgba(60, 55, 45, 0.16);       /* soft warm lift, not black */
+  --te-btn-bottom:    #f2efe9;
+  --te-emph-bg:       #201e1a;             /* inverted: dark button on light */
+  --te-emph-bg-active:#100f0c;
+  --te-emph-edge:     rgba(0,0,0,0.9);
+  --te-emph-shadow:   rgba(40,35,25,0.22);
+  --te-emph-text:     #f6f3ee;
+  /* Much softer than the first pass (was 0.16) — the shadows read as heavy. */
+  --te-drop: rgba(60, 52, 38, 0.09);
+  /* Selected neutral pill: clean white, not the cool #d0d0d2 that read blue
+     against warm paper. The unit switch track goes light too. */
+  --te-mono-bg:       #ffffff;
+  --te-mono-text:     #1c1a17;
+  --te-switch-track:  #d9d4ca;
+  /* A restrained blush on white rather than a saturated pink. */
+  --te-lib-1: 4%;  --te-lib-2: 7%;  --te-lib-3: 12%; --te-lib-4: 8%;
+  --te-lib-r1: 10%; --te-lib-r2: 4%;
 }
 
 html, body {
@@ -317,8 +338,8 @@ body {
   /* ─── TE Toggle Mono: forces the neutral white look (e.g. bottom nav),
      overriding the accent-tinted te-toggle-on it sits alongside ─── */
   .te-toggle-mono {
-    background: #d0d0d2;
-    color: #0a0908;
+    background: var(--te-mono-bg);
+    color: var(--te-mono-text);
   }
 
   /* ─── TE White Button: primary action pill with a two-stage physical press.
@@ -422,32 +443,33 @@ body {
   }
   :root[data-theme="light"] .te-nav-row,
   :root[data-theme="light"] .te-btn,
-  :root[data-theme="light"] .te-fab,
   :root[data-theme="light"] .te-toggle-off {
-    /* Kill the inner white top-edge highlight (invisible-to-ugly on light) by
-       letting the softer --te-drop lift and lighter edges carry the relief. */
-    box-shadow:
-      0 2px 0 var(--te-toggle-off-edge),
-      0 4px 12px var(--te-drop);
+    /* Flat, soft lift — no hard bottom-edge step, which read as heavy. A single
+       diffuse drop plus a hairline border carries the raise. */
+    box-shadow: 0 1px 2px var(--te-drop);
+    border: 1px solid var(--te-border);
   }
   :root[data-theme="light"] .te-fab {
-    box-shadow:
-      0 3px 0 var(--te-toggle-off-edge),
-      0 6px 16px var(--te-drop);
+    box-shadow: 0 2px 6px var(--te-drop);
+    border: 1px solid var(--te-border);
   }
   :root[data-theme="light"] .te-white-btn {
-    box-shadow:
-      0 2px 0 var(--te-emph-shadow),
-      0 4px 12px var(--te-drop);
+    /* The one deliberately-prominent control — a touch more lift than the rest,
+       still soft. */
+    box-shadow: 0 2px 8px var(--te-emph-shadow);
+  }
+  :root[data-theme="light"] .te-white-btn:active {
+    box-shadow: 0 1px 3px var(--te-emph-shadow);
   }
   :root[data-theme="light"] .te-toggle-on {
-    /* On light, the accent key keeps its pressed-in look but with a lighter
-       ambient drop so it doesn't sit in a black trench. */
+    /* The accent-tinted pressed key: a quiet inset so it reads pressed, without
+       the black trench of the dark theme. */
     box-shadow:
-      inset 0 2px 5px rgba(0,0,0,0.22),
-      inset 0 1px 2px rgba(0,0,0,0.14),
-      0 0 0 1px rgba(0,0,0,0.06),
-      0 2px 0 var(--te-drop);
+      inset 0 1px 3px rgba(0,0,0,0.18),
+      0 0 0 1px rgba(0,0,0,0.05);
+  }
+  :root[data-theme="light"] .te-toggle-off:active {
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.10);
   }
 
   /* ─── TE Label ─── */
@@ -477,11 +499,17 @@ body {
     width: 40px;
     height: 20px;
     border-radius: 10px;
-    background: #1c1c1e;
+    background: var(--te-switch-track);
     box-shadow:
       inset 0 2px 4px rgba(0,0,0,0.8),
       0 0.5px 0 rgba(255,255,255,0.06);
     border: 1px solid rgba(255,255,255,0.04);
+  }
+  :root[data-theme="light"] .te-unit-track {
+    box-shadow:
+      inset 0 2px 4px rgba(0,0,0,0.14),
+      0 0.5px 0 rgba(255,255,255,0.5);
+    border: 1px solid var(--te-border);
   }
 
   .te-unit-lever {
