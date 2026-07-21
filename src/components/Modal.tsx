@@ -187,7 +187,12 @@ export default function Modal({ open, onClose, title, children, onBack, noPadTop
         ref={sheetRef}
         className={`relative w-full max-w-lg rounded-t-te-lg z-10 flex flex-col ${!dismissing && !isDragging ? 'animate-slide-up' : ''}`}
         style={{
-          maxHeight: '90dvh',
+          // svh (small viewport height) is the height with the mobile browser's
+          // toolbar *shown*, so the sheet can never grow tall enough for its
+          // bottom rows to sit behind that toolbar — the cause of the "last of
+          // the content is cut off" reports. dvh alone measured the toolbar-
+          // hidden height and overshot.
+          maxHeight: 'min(90dvh, 90svh)',
           transform: sheetTransform,
           transition: isDragging ? 'none' : 'transform 0.32s cubic-bezier(0.32, 0.72, 0, 1)',
           willChange: 'transform',
@@ -214,7 +219,7 @@ export default function Modal({ open, onClose, title, children, onBack, noPadTop
           // with it: on a device with a home indicator the inset is entirely
           // consumed by that indicator, so max() left the last row sitting
           // under it with no visual clearance at all.
-          className={`flex-1 min-h-0 pl-[max(16px,env(safe-area-inset-left))] pr-[max(16px,env(safe-area-inset-right))] ${noPadTop ? 'pt-0' : 'pt-2.5'} ${noPadBottom ? 'pb-[env(safe-area-inset-bottom)]' : 'pb-[calc(env(safe-area-inset-bottom,0px)+22px)]'} overflow-y-auto overscroll-contain`}
+          className={`flex-1 min-h-0 pl-[max(16px,env(safe-area-inset-left))] pr-[max(16px,env(safe-area-inset-right))] ${noPadTop ? 'pt-0' : 'pt-2.5'} ${noPadBottom ? 'pb-[env(safe-area-inset-bottom)]' : 'pb-[calc(env(safe-area-inset-bottom,0px)+34px)]'} overflow-y-auto overscroll-contain`}
           style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
         >
           {children}

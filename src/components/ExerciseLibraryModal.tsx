@@ -244,11 +244,10 @@ const CarouselCard = React.memo(function CarouselCard({ exercise, onTap, onToggl
 });
 
 // ── Flat A–Z grid of exercise cards ──────────────────────────
-function ExerciseGrid({ exercises, onTap, isAdded, onAdd }: {
+function ExerciseGrid({ exercises, onTap, isAdded }: {
   exercises: LibraryExercise[];
   onTap: (ex: LibraryExercise) => void;
   isAdded: (ex: LibraryExercise) => boolean;
-  onAdd: (ex: LibraryExercise) => void;
 }) {
   return (
     <div style={{
@@ -260,7 +259,9 @@ function ExerciseGrid({ exercises, onTap, isAdded, onAdd }: {
           key={ex.id}
           exercise={ex}
           onTap={() => onTap(ex)}
-          onToggleAdd={() => onAdd(ex)}
+          // The "+" opens the exercise's detail popup rather than adding
+          // silently — you preview it, add from there, and land back here.
+          onToggleAdd={() => onTap(ex)}
           added={isAdded(ex)}
         />
       ))}
@@ -400,9 +401,6 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, onQuickA
     setAddedIds(s => new Set(s).add(ex.id));
     onQuickAdd(ex);
   };
-  // The detail popup still routes through onSelect (the editor); keep marking
-  // it added locally so its button flips to the checked state.
-  const markAdded = (id: string) => setAddedIds(s => new Set(s).add(id));
 
   const filtered = useMemo(() => {
     let list = EXERCISE_LIBRARY;
@@ -525,7 +523,7 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, onQuickA
           {/* Sticky CTA — same button as "Complete workout" / "Log set" */}
           <div style={{ position: 'sticky', bottom: 0, margin: '0 -19px', padding: '12px 19px calc(14px + env(safe-area-inset-bottom, 0px))', background: 'var(--te-surface-3)' }}>
             <button
-              onClick={() => { if (!added) { onSelect(selected); markAdded(selected.id); closeDetail(); } }}
+              onClick={() => { if (!added) { quickAdd(selected); closeDetail(); } }}
               disabled={added}
               className="te-white-btn w-full h-[55px] rounded-te-md flex items-center justify-center gap-1.5 disabled:opacity-60"
             >
@@ -589,7 +587,6 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, onQuickA
               exercises={filtered}
               onTap={setSelected}
               isAdded={isAdded}
-              onAdd={quickAdd}
             />
           </div>
         )}

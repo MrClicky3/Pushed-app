@@ -8,7 +8,6 @@ import {
   Cog6ToothIcon, ChevronRightIcon, CameraIcon, PhotoIcon,
 } from '@heroicons/react/24/outline';
 import { FireIcon } from '@heroicons/react/24/solid';
-import { Trophy } from 'lucide-react';
 import Avatar, { AVATAR_PRESETS, presetKeyOf } from '../components/Avatar';
 import Modal from '../components/Modal';
 import ReportBugSheet from '../components/ReportBugSheet';
@@ -190,15 +189,15 @@ function AvatarPickerSheet({
 // ── Leaderboard rows ────────────────────────────────────────────
 function StreakRows({ rows, onSelect }: { rows: LeaderboardRow[]; onSelect: (r: FriendProfileTarget) => void }) {
   return (
-    <div className="-mx-4 border-t border-[color:var(--te-border)] divide-y divide-white/[0.05]">
+    <div className="te-panel rounded-te-md overflow-hidden divide-y divide-[color:var(--te-border)]">
       {rows.map((r, i) => (
         <button
           type="button"
           key={r.user_id}
           disabled={r.is_self}
           onClick={() => onSelect(r)}
-          className="w-full text-left flex items-center px-4 py-[18px] gap-3.5 enabled:active:bg-white/[0.03] transition-colors"
-          style={r.is_self ? { background: 'rgba(244,241,236,0.06)' } : undefined}
+          className="w-full text-left flex items-center px-4 py-[18px] gap-3.5 enabled:active:bg-[color:var(--te-fill-subtle)] transition-colors"
+          style={r.is_self ? { background: 'var(--te-fill-subtle)' } : undefined}
         >
           <span className="te-mono text-[15px] tabular-nums w-5 shrink-0" style={{ color: 'var(--te-text-4)' }}>
             {i + 1}
@@ -226,15 +225,15 @@ function StreakRows({ rows, onSelect }: { rows: LeaderboardRow[]; onSelect: (r: 
 
 function VolumeRows({ rows, unit, toDisplay, onSelect }: { rows: VolumeRow[]; unit: WeightUnit; toDisplay: (kg: number) => number; onSelect: (r: FriendProfileTarget) => void }) {
   return (
-    <div className="-mx-4 border-t border-[color:var(--te-border)] divide-y divide-white/[0.05]">
+    <div className="te-panel rounded-te-md overflow-hidden divide-y divide-[color:var(--te-border)]">
       {rows.map((r, i) => (
         <button
           type="button"
           key={r.user_id}
           disabled={r.is_self}
           onClick={() => onSelect(r)}
-          className="w-full text-left flex items-center px-4 py-[18px] gap-3.5 enabled:active:bg-white/[0.03] transition-colors"
-          style={r.is_self ? { background: 'rgba(244,241,236,0.06)' } : undefined}
+          className="w-full text-left flex items-center px-4 py-[18px] gap-3.5 enabled:active:bg-[color:var(--te-fill-subtle)] transition-colors"
+          style={r.is_self ? { background: 'var(--te-fill-subtle)' } : undefined}
         >
           <span className="te-mono text-[15px] tabular-nums w-5 shrink-0" style={{ color: 'var(--te-text-4)' }}>
             {i + 1}
@@ -285,27 +284,19 @@ function Leaderboard({
   }, [loadStreakBoard, loadVolumeBoard, reloadKey]);
 
   return (
-    <div
-      className="rounded-te-lg p-4 overflow-hidden"
-      style={{
-        background: 'linear-gradient(180deg, var(--te-fill-subtle) 0%, var(--te-fill-subtle) 100%), var(--te-surface-1)',
-        border: '1px solid var(--te-border)',
-        boxShadow: '0 8px 28px rgba(0,0,0,0.4)',
-      }}
-    >
-      <div className="flex items-center gap-2.5 mb-3.5 px-0.5">
-        {/* No plate behind it — the trophy carries the section on its own. */}
-        <Trophy className="w-[22px] h-[22px] shrink-0" style={{ color: 'var(--te-gold)' }} strokeWidth={2} />
-        <div className="min-w-0">
-          <p className="text-[17px] font-bold te-t1 tracking-tight leading-none" style={{ letterSpacing: '-0.03em' }}>
-            Leaderboard
-          </p>
-          <p className="te-label mt-1">Last 30 days</p>
-        </div>
+    <div>
+      {/* Same shape as the Competitions section above: a bare section header
+          (no boxed container, no heavy shadow) with the content in flat panels,
+          so the two read as one family and align to the same edge margin. */}
+      <div className="flex items-center justify-between mb-3 px-0.5">
+        <p className="text-[17px] font-bold te-t1 tracking-tight" style={{ letterSpacing: '-0.02em' }}>
+          Leaderboard
+        </p>
+        <span className="te-label" style={{ color: 'var(--te-text-3)' }}>Last 30 days</span>
       </div>
 
       {friendCount > 0 && (
-        <div className="grid grid-cols-2 gap-2.5 mb-3">
+        <div className="grid grid-cols-2 gap-2.5 mb-2.5">
           {(['streak', 'volume'] as const).map(t => (
             <ToggleButton key={t} active={tab === t} onClick={() => setTab(t)} label={t} heightPx={38} />
           ))}
