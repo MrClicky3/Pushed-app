@@ -13,9 +13,10 @@ interface Props {
 const DISMISS_THRESHOLD = 160;
 const VELOCITY_THRESHOLD = 900;
 const START_THRESHOLD = 6;
-// Height of the floating bottom nav dock the sheet must clear, matching the
-// clearance the routine-complete prompt already uses in LogsView.
-const NAV_CLEARANCE = 96;
+// Height of the bottom nav dock (NAV_DOCK_H in App.tsx). The sheet still runs
+// to the very bottom of the screen — behind the dock — so only its *content*
+// needs this much bottom padding for the last row to clear the nav.
+const NAV_DOCK_H = 89;
 
 export default function Modal({ open, onClose, title, children, onBack, noPadTop, noPadBottom }: Props) {
   const sheetRef = useRef<HTMLDivElement>(null);
@@ -171,22 +172,14 @@ export default function Modal({ open, onClose, title, children, onBack, noPadTop
       : 1;
 
   const isDragging = offsetY > 0;
-  // The sheet is lifted clear of the bottom nav bar (see NAV_CLEARANCE below), so
-  // a plain translateY(100%) would leave it hanging above the nav on dismiss —
-  // the extra offset slides it fully past the screen edge.
-  const sheetTransform = dismissing
-    ? `translateY(calc(100% + ${NAV_CLEARANCE}px + env(safe-area-inset-bottom, 0px)))`
-    : `translateY(${offsetY}px)`;
+  const sheetTransform = dismissing ? 'translateY(100%)' : `translateY(${offsetY}px)`;
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center"
       style={{
-        paddingLeft: 'max(10px, env(safe-area-inset-left))',
-        paddingRight: 'max(10px, env(safe-area-inset-right))',
-        // Float the sheet above the floating nav dock rather than letting it sit
-        // behind it — small popups were reading as "cut off by the nav bar".
-        paddingBottom: `calc(${NAV_CLEARANCE}px + env(safe-area-inset-bottom, 0px))`,
+        paddingLeft: 'max(2px, env(safe-area-inset-left))',
+        paddingRight: 'max(2px, env(safe-area-inset-right))',
       }}
     >
       <div
@@ -196,15 +189,14 @@ export default function Modal({ open, onClose, title, children, onBack, noPadTop
       />
       <div
         ref={sheetRef}
-        className={`relative w-full max-w-lg rounded-te-lg z-10 flex flex-col ${!dismissing && !isDragging ? 'animate-slide-up' : ''}`}
+        className={`relative w-full max-w-lg rounded-t-te-lg z-10 flex flex-col ${!dismissing && !isDragging ? 'animate-slide-up' : ''}`}
         style={{
           // svh (small viewport height) is the height with the mobile browser's
           // toolbar *shown*, so the sheet can never grow tall enough for its
           // bottom rows to sit behind that toolbar — the cause of the "last of
           // the content is cut off" reports. dvh alone measured the toolbar-
-          // hidden height and overshot. The nav-clearance is subtracted so a
-          // full-height sheet still ends above the nav dock it now floats over.
-          maxHeight: `calc(min(90dvh, 90svh) - ${NAV_CLEARANCE}px)`,
+          // hidden height and overshot.
+          maxHeight: 'min(90dvh, 90svh)',
           transform: sheetTransform,
           transition: isDragging ? 'none' : 'transform 0.32s cubic-bezier(0.32, 0.72, 0, 1)',
           willChange: 'transform',
@@ -227,12 +219,20 @@ export default function Modal({ open, onClose, title, children, onBack, noPadTop
         )}
         <div
           ref={contentRef}
-          // The sheet now floats above the nav dock and the home indicator
-          // (both cleared by the wrapper's paddingBottom), so the content only
-          // needs a small, even breathing gap above its rounded bottom edge —
-          // no safe-area inset here, which would otherwise double-count.
-          className={`flex-1 min-h-0 pl-[max(16px,env(safe-area-inset-left))] pr-[max(16px,env(safe-area-inset-right))] ${noPadTop ? 'pt-0' : 'pt-2.5'} ${noPadBottom ? 'pb-0' : 'pb-4'} overflow-y-auto overscroll-contain`}
-          style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
+          // The sheet runs to the very bottom of the screen, passing behind the
+          // nav dock, so the last row needs exactly the dock's height (plus the
+          // home-indicator inset) of padding to sit clear of it — no more, so
+          // short sheets don't trail an empty gap.
+          className={`flex-1 min-h-0 pl-[max(16px,env(safe-area-inset-left))] pr-[max(16px,env(safe-area-inset-right))] ${noPadTop ? 'pt-0' : 'pt-2.5'} overflow-y-auto overscroll-contain`}
+          style={{
+            WebkitOverflowScrolling: 'touch',
+            // Set inline rather than as a Tailwind class: the dock height is a
+            // JS constant, and Tailwind only generates classes it can see as
+            // literal strings when it scans the source.
+            paddingBottom: noPadBottom
+              ? 'env(safe-area-inset-bottom, 0px)'
+              : `calc(${NAV_DOCK_H}px + env(safe-area-inset-bottom, 0px))`,
+          } as React.CSSProperties}
         >
           {children}
         </div>
