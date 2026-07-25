@@ -9,7 +9,7 @@ export default {
           lower: '#f2c08c',
           pr:    '#7fd57f',
           warn:  '#e8a657',
-          bg:    '#010101',
+          bg:    'var(--te-bg)',
           surface: '#181614',
         },
         // The `apple-*` palette that used to live here has been removed. It was

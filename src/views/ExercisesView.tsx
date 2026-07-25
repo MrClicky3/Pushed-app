@@ -44,13 +44,17 @@ export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, 
       const sRect = scrollEl!.getBoundingClientRect();
       const centerY = sRect.top + sRect.height * 0.44;
       const halfH = sRect.height * 0.52;
+      const maxScroll = Math.max(1, scrollEl!.scrollHeight - scrollEl!.clientHeight);
       const scrollFactor = Math.min(scrollEl!.scrollTop / 80, 1);
+      // Mirror of the top release: the last cards come to full size as you
+      // reach the bottom, so the page needs no tall bottom margin to get there.
+      const bottomFactor = Math.min((maxScroll - scrollEl!.scrollTop) / 80, 1);
 
       container.querySelectorAll<HTMLElement>('[data-card]').forEach(card => {
         const r = card.getBoundingClientRect();
         const cardMid = r.top + r.height / 2;
         const raw = cardMid - centerY;
-        const dist = raw < 0 ? Math.abs(raw) * scrollFactor : raw;
+        const dist = raw < 0 ? Math.abs(raw) * scrollFactor : raw * bottomFactor;
         const norm = Math.min(dist / halfH, 1);
         const ease = norm * norm;
         card.style.transform = `scale(${(1 - ease * 0.09).toFixed(4)})`;
@@ -116,17 +120,17 @@ export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, 
       <div style={{
         height: 164,
         background: `linear-gradient(124.9deg,
-          color-mix(in srgb, var(--te-accent) 6%, var(--te-surface-1)) 8%,
-          color-mix(in srgb, var(--te-accent) 16%, var(--te-surface-1)) 52%,
-          color-mix(in srgb, var(--te-accent) 32%, var(--te-surface-1)) 92%,
-          color-mix(in srgb, var(--te-accent) 20%, var(--te-surface-1)) 120%)`,
+          color-mix(in srgb, var(--te-accent) var(--te-lib-1), var(--te-surface-1)) 8%,
+          color-mix(in srgb, var(--te-accent) var(--te-lib-2), var(--te-surface-1)) 52%,
+          color-mix(in srgb, var(--te-accent) var(--te-lib-3), var(--te-surface-1)) 92%,
+          color-mix(in srgb, var(--te-accent) var(--te-lib-4), var(--te-surface-1)) 120%)`,
         position: 'relative', overflow: 'hidden',
       }}>
         <div style={{
           position: 'absolute', inset: 0, pointerEvents: 'none',
           background: `radial-gradient(ellipse 62% 88% at 78% 60%,
-            color-mix(in srgb, var(--te-accent) 26%, transparent) 0%,
-            color-mix(in srgb, var(--te-accent) 9%, transparent) 45%,
+            color-mix(in srgb, var(--te-accent) var(--te-lib-r1), transparent) 0%,
+            color-mix(in srgb, var(--te-accent) var(--te-lib-r2), transparent) 45%,
             transparent 72%)`,
         }} />
 
@@ -197,7 +201,7 @@ export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, 
   }
 
   return (
-    <div ref={containerRef} className="space-y-5">
+    <div ref={containerRef} className="space-y-5 soft-borders">
 
       {libraryCard}
 
@@ -215,7 +219,7 @@ export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, 
                   key={ex.id}
                   data-card
                   className="rounded-te-md overflow-hidden"
-                  style={{ background: 'var(--te-card)', border: '1px solid var(--te-border)', boxShadow: '0 0 7.5px rgba(0,0,0,0.25)', transformOrigin: 'center center', willChange: 'transform, opacity' }}
+                  style={{ background: 'var(--te-card)', border: '1px solid var(--te-border)', boxShadow: '0 0 6px rgba(0,0,0,0.15)', transformOrigin: 'center center', willChange: 'transform, opacity' }}
                 >
                   <ExerciseCard
                     exercise={ex}

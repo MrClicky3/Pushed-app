@@ -8,19 +8,19 @@ import {
   Cog6ToothIcon, ChevronRightIcon, CameraIcon, PhotoIcon,
 } from '@heroicons/react/24/outline';
 import { FireIcon } from '@heroicons/react/24/solid';
-import { Trophy } from 'lucide-react';
 import Avatar, { AVATAR_PRESETS, presetKeyOf } from '../components/Avatar';
 import Modal from '../components/Modal';
 import ReportBugSheet from '../components/ReportBugSheet';
+import RoutinesSection from '../components/Routines';
 import { CompetitionsSection, BadgeShelf } from '../components/Competitions';
 import FriendProfile, { type FriendProfileTarget } from '../components/FriendProfile';
 import { ToggleButton } from '../components/SheetControls';
-import type { Profile, LeaderboardRow, VolumeRow, Badge } from '../types';
+import type { Profile, LeaderboardRow, VolumeRow, Badge, Routine, ScheduleDay, Exercise } from '../types';
 import type { useFriends, ProfileLite } from '../hooks/useFriends';
 import type { useCompetitions } from '../hooks/useCompetitions';
 import type { useFistBumps } from '../hooks/useFistBumps';
 import type { useProfile } from '../hooks/useProfile';
-import type { WeightUnit } from '../hooks/useSettings';
+import type { WeightUnit, WeekStartDay } from '../hooks/useSettings';
 
 type FriendsApi = ReturnType<typeof useFriends>;
 type CompetitionsApi = ReturnType<typeof useCompetitions>;
@@ -35,6 +35,17 @@ interface Props {
   unit: WeightUnit;
   toDisplay: (kg: number) => number;
   inviteUrl: string;
+  routines: Routine[];
+  schedule: ScheduleDay[];
+  exercises: Exercise[];
+  onAddRoutine: (name: string, exercise_ids: string[]) => Routine | Promise<Routine>;
+  onUpdateRoutine: (id: string, name: string, exercise_ids: string[]) => void;
+  onDeleteRoutine: (id: string) => void;
+  onAssignDay: (day_of_week: number, routine_id: string | null) => void;
+  onCreateExercise: () => void;
+  weekStartDay: WeekStartDay;
+  pendingEditorOpen: boolean;
+  onPendingEditorConsumed: () => void;
   onOpenSettings: () => void;
   setAvatar: ProfileApi['setAvatar'];
   uploadAvatarFile: ProfileApi['uploadAvatarFile'];
@@ -190,15 +201,15 @@ function AvatarPickerSheet({
 // ── Leaderboard rows ────────────────────────────────────────────
 function StreakRows({ rows, onSelect }: { rows: LeaderboardRow[]; onSelect: (r: FriendProfileTarget) => void }) {
   return (
-    <div className="-mx-4 border-t border-[color:var(--te-border)] divide-y divide-white/[0.05]">
+    <div className="te-panel rounded-te-md overflow-hidden divide-y divide-[color:var(--te-border)]">
       {rows.map((r, i) => (
         <button
           type="button"
           key={r.user_id}
           disabled={r.is_self}
           onClick={() => onSelect(r)}
-          className="w-full text-left flex items-center px-4 py-[18px] gap-3.5 enabled:active:bg-white/[0.03] transition-colors"
-          style={r.is_self ? { background: 'rgba(244,241,236,0.06)' } : undefined}
+          className="w-full text-left flex items-center px-4 py-[18px] gap-3.5 enabled:active:bg-[color:var(--te-fill-subtle)] transition-colors"
+          style={r.is_self ? { background: 'var(--te-fill-subtle)' } : undefined}
         >
           <span className="te-mono text-[15px] tabular-nums w-5 shrink-0" style={{ color: 'var(--te-text-4)' }}>
             {i + 1}
@@ -213,8 +224,8 @@ function StreakRows({ rows, onSelect }: { rows: LeaderboardRow[]; onSelect: (r: 
             </p>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
-            <FireIcon className="w-4 h-4" style={{ color: r.current_streak > 0 ? 'var(--te-danger)' : 'rgba(255,255,255,0.2)' }} />
-            <span className="te-digit text-[20px] font-bold tabular-nums" style={{ color: r.current_streak > 0 ? '#f4f1ec' : 'rgba(255,255,255,0.3)' }}>
+            <FireIcon className="w-4 h-4" style={{ color: r.current_streak > 0 ? 'var(--te-danger)' : 'var(--te-text-4)' }} />
+            <span className="te-digit text-[20px] font-bold tabular-nums" style={{ color: r.current_streak > 0 ? 'var(--te-text-1)' : 'var(--te-text-4)' }}>
               {r.current_streak}
             </span>
           </div>
@@ -226,15 +237,15 @@ function StreakRows({ rows, onSelect }: { rows: LeaderboardRow[]; onSelect: (r: 
 
 function VolumeRows({ rows, unit, toDisplay, onSelect }: { rows: VolumeRow[]; unit: WeightUnit; toDisplay: (kg: number) => number; onSelect: (r: FriendProfileTarget) => void }) {
   return (
-    <div className="-mx-4 border-t border-[color:var(--te-border)] divide-y divide-white/[0.05]">
+    <div className="te-panel rounded-te-md overflow-hidden divide-y divide-[color:var(--te-border)]">
       {rows.map((r, i) => (
         <button
           type="button"
           key={r.user_id}
           disabled={r.is_self}
           onClick={() => onSelect(r)}
-          className="w-full text-left flex items-center px-4 py-[18px] gap-3.5 enabled:active:bg-white/[0.03] transition-colors"
-          style={r.is_self ? { background: 'rgba(244,241,236,0.06)' } : undefined}
+          className="w-full text-left flex items-center px-4 py-[18px] gap-3.5 enabled:active:bg-[color:var(--te-fill-subtle)] transition-colors"
+          style={r.is_self ? { background: 'var(--te-fill-subtle)' } : undefined}
         >
           <span className="te-mono text-[15px] tabular-nums w-5 shrink-0" style={{ color: 'var(--te-text-4)' }}>
             {i + 1}
@@ -285,27 +296,19 @@ function Leaderboard({
   }, [loadStreakBoard, loadVolumeBoard, reloadKey]);
 
   return (
-    <div
-      className="rounded-te-lg p-4 overflow-hidden"
-      style={{
-        background: 'linear-gradient(180deg, var(--te-fill-subtle) 0%, var(--te-fill-subtle) 100%), var(--te-surface-1)',
-        border: '1px solid var(--te-border)',
-        boxShadow: '0 8px 28px rgba(0,0,0,0.4)',
-      }}
-    >
-      <div className="flex items-center gap-2.5 mb-3.5 px-0.5">
-        {/* No plate behind it — the trophy carries the section on its own. */}
-        <Trophy className="w-[22px] h-[22px] shrink-0" style={{ color: 'var(--te-gold)' }} strokeWidth={2} />
-        <div className="min-w-0">
-          <p className="text-[17px] font-bold te-t1 tracking-tight leading-none" style={{ letterSpacing: '-0.03em' }}>
-            Leaderboard
-          </p>
-          <p className="te-label mt-1">Last 30 days</p>
-        </div>
+    <div>
+      {/* Same shape as the Competitions section above: a bare section header
+          (no boxed container, no heavy shadow) with the content in flat panels,
+          so the two read as one family and align to the same edge margin. */}
+      <div className="flex items-center justify-between mb-3 px-0.5">
+        <p className="text-[17px] font-bold te-t1 tracking-tight" style={{ letterSpacing: '-0.02em' }}>
+          Leaderboard
+        </p>
+        <span className="te-label" style={{ color: 'var(--te-text-3)' }}>Last 30 days</span>
       </div>
 
       {friendCount > 0 && (
-        <div className="grid grid-cols-2 gap-2.5 mb-3">
+        <div className="grid grid-cols-2 gap-2.5 mb-2.5">
           {(['streak', 'volume'] as const).map(t => (
             <ToggleButton key={t} active={tab === t} onClick={() => setTab(t)} label={t} heightPx={38} />
           ))}
@@ -362,7 +365,7 @@ function FriendsSection({ friends, inviteUrl }: { friends: FriendsApi; inviteUrl
   async function share() {
     if (!inviteUrl) return;
     if (navigator.share) {
-      try { await navigator.share({ title: 'Add me on Overload', url: inviteUrl }); return; } catch { /* fall through */ }
+      try { await navigator.share({ title: 'Add me on Pushed', url: inviteUrl }); return; } catch { /* fall through */ }
     }
     try {
       await navigator.clipboard.writeText(inviteUrl);
@@ -409,23 +412,21 @@ function FriendsSection({ friends, inviteUrl }: { friends: FriendsApi; inviteUrl
       <div>
         <p className="te-label mb-2 px-0.5">Find friends</p>
         <div className="te-panel rounded-te-md overflow-hidden">
-          <div className="px-4 pt-4 pb-3.5">
-            <div
-              className="flex items-center rounded-te-md px-3.5 gap-2"
-              style={{ background: 'var(--te-well)', border: '1px solid var(--te-border)', height: 46 }}
-            >
-              <MagnifyingGlassIcon className="w-4 h-4 te-t4 shrink-0" />
-              <input
-                data-no-drag
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-                placeholder="Search by username"
-                autoCapitalize="none"
-                autoCorrect="off"
-                spellCheck={false}
-                className="flex-1 bg-transparent outline-none text-[15px] te-t1 placeholder-white/25 tracking-tight"
-              />
-            </div>
+          {/* Search sits as a full-width row — no inset box — so it reads as one
+              list with the invite-link / results rows below it, all sharing the
+              same px-4 icon column. */}
+          <div className="flex items-center gap-3 px-4" style={{ height: 52 }}>
+            <MagnifyingGlassIcon className="w-4 h-4 te-t4 shrink-0" />
+            <input
+              data-no-drag
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Search by username"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              className="flex-1 bg-transparent outline-none text-[15px] te-t1 placeholder-white/25 tracking-tight"
+            />
           </div>
 
           <div className="border-t border-[color:var(--te-border)]">
@@ -442,7 +443,7 @@ function FriendsSection({ friends, inviteUrl }: { friends: FriendsApi; inviteUrl
               ) : results.length === 0 ? (
                 <p className="te-label px-4 py-3.5">No users found.</p>
               ) : (
-                <div className="divide-y divide-white/[0.05]">
+                <div className="divide-y divide-[color:var(--te-border)]">
                   {results.map(u => (
                     <div key={u.id} className="flex items-center px-4 py-3 gap-3">
                       <Avatar name={u.display_name || u.username} avatarUrl={u.avatar_url} size={28} />
@@ -531,6 +532,9 @@ function FriendsSection({ friends, inviteUrl }: { friends: FriendsApi; inviteUrl
 // ── Profile tab ─────────────────────────────────────────────────
 export default function ProfileView({
   profile, friends, competitions, fistBumps, unit, toDisplay, inviteUrl,
+  routines, schedule, exercises,
+  onAddRoutine, onUpdateRoutine, onDeleteRoutine, onAssignDay, onCreateExercise,
+  weekStartDay, pendingEditorOpen, onPendingEditorConsumed,
   onOpenSettings, setAvatar, uploadAvatarFile, updateBio,
 }: Props) {
   const name = profile?.display_name || profile?.username || 'You';
@@ -612,6 +616,22 @@ export default function ProfileView({
 
       <FriendsSection friends={friends} inviteUrl={inviteUrl} />
 
+      <RoutinesSection
+        routines={routines}
+        schedule={schedule}
+        exercises={exercises}
+        onAddRoutine={onAddRoutine}
+        onUpdateRoutine={onUpdateRoutine}
+        onDeleteRoutine={onDeleteRoutine}
+        onAssignDay={onAssignDay}
+        onCreateExercise={onCreateExercise}
+        unit={unit}
+        toDisplay={toDisplay}
+        weekStartDay={weekStartDay}
+        pendingEditorOpen={pendingEditorOpen}
+        onPendingEditorConsumed={onPendingEditorConsumed}
+      />
+
       {/* Utility rows */}
       <div className="te-panel rounded-te-md overflow-hidden divide-y divide-[color:var(--te-border)]">
         <button
@@ -619,7 +639,7 @@ export default function ProfileView({
           className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-white/[0.04] transition-colors text-left"
         >
           <Cog6ToothIcon className="w-4 h-4 te-t4 shrink-0" />
-          <span className="flex-1 text-[15px] font-medium te-t1 tracking-tight">Settings & schedule</span>
+          <span className="flex-1 text-[15px] font-medium te-t1 tracking-tight">Settings</span>
           <ChevronRightIcon className="w-3.5 h-3.5 te-t4 shrink-0" />
         </button>
         <button

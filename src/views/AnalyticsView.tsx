@@ -246,19 +246,19 @@ function ScrubChart({
       </defs>
 
       <path d={areaD} fill={`url(#fill${uid})`} />
-      <path d={lineD} fill="none" stroke="#ffffff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d={lineD} fill="none" stroke="var(--te-text-1)" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
 
       {hi !== null && hx !== null && hy !== null && (
         <>
-          <line x1={hx} x2={hx} y1={C_PT - 2} y2={C_PT + C_CH} stroke="rgba(255,255,255,0.22)" strokeWidth="1.25" />
-          <circle cx={hx} cy={hy} r="8" fill="var(--te-ink)" />
-          <circle cx={hx} cy={hy} r="6" fill="#ffffff" />
+          <line x1={hx} x2={hx} y1={C_PT - 2} y2={C_PT + C_CH} stroke="var(--te-border-strong)" strokeWidth="1.25" />
+          <circle cx={hx} cy={hy} r="8" fill="var(--te-text-1)" />
+          <circle cx={hx} cy={hy} r="6" fill="var(--te-bg)" />
         </>
       )}
 
       {/* Solid backing plate behind the date row (matches the page bg) so the
           line/area is fully hidden behind the axis labels. */}
-      <rect x={0} y={LABEL_PLATE_Y} width={CW} height={C_XH} fill="#010101" />
+      <rect x={0} y={LABEL_PLATE_Y} width={CW} height={C_XH} fill="var(--te-bg)" />
 
       {labelIdxs.map((i, li) => {
         const first = li === 0;
@@ -270,7 +270,7 @@ function ScrubChart({
             y={LABEL_PLATE_Y + 22}
             textAnchor={first ? 'start' : last ? 'end' : 'middle'}
             fontSize="12.5"
-            fill={hi === i ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.4)'}
+            fill={hi === i ? 'var(--te-text-2)' : 'var(--te-text-4)'}
             fontWeight={hi === i ? '600' : '500'}
             fontFamily={MONO}
             style={{ fontVariantNumeric: 'tabular-nums' }}
@@ -303,7 +303,7 @@ function YAxisLabels({ domain, yTicks, unit }: {
       {/* Solid backing plate behind the label column (matches the page bg) so
           the chart line/area is fully hidden behind the vertical legend. No
           axis bar line — it read as a stray sliver on the far left. */}
-      <rect x={0} y={C_PT - 6} width={56} height={C_CH + 12} fill="#010101" />
+      <rect x={0} y={C_PT - 6} width={56} height={C_CH + 12} fill="var(--te-bg)" />
       {yTicks.map(tick => {
         const ty = py(tick);
         const ly = Math.max(C_PT + 9, Math.min(C_PT + C_CH + 4, ty + 4));
@@ -605,7 +605,7 @@ function RangePicker({
             key={key}
             onClick={() => onChange(key)}
             className={`${active ? 'te-toggle-on te-toggle-mono' : 'te-toggle-off'} flex-1 py-[9px] rounded-te-sm text-[12px] font-semibold select-none`}
-            style={{ color: active ? 'var(--te-ink)' : 'rgba(255,255,255,0.4)' }}
+            style={{ color: active ? 'var(--te-ink)' : 'var(--te-text-4)' }}
           >
             {label}
           </button>
@@ -632,7 +632,7 @@ function PageViewToggle({ view, onChange }: { view: ProgressPageView; onChange: 
             key={key}
             onClick={() => onChange(key)}
             className={`${active ? 'te-toggle-on te-toggle-mono' : 'te-toggle-off'} flex-1 py-[10px] rounded-te-md text-[13px] font-semibold select-none`}
-            style={{ color: active ? 'var(--te-ink)' : 'rgba(255,255,255,0.4)' }}
+            style={{ color: active ? 'var(--te-ink)' : 'var(--te-text-4)' }}
           >
             {label}
           </button>
@@ -851,7 +851,7 @@ function buildWeightWindow(
   })();
 
   const heaviest = (() => {
-    if (!rangeExLogs.length) return { value: `0${unit}`, sub: '—', has: false };
+    if (!rangeExLogs.length) return { value: `0${unit}`, sub: '–', has: false };
     const heaviestWeight = Math.max(...rangeExLogs.map(l => l.weight));
     const atHeaviest = rangeExLogs.filter(l => l.weight === heaviestWeight);
     const prLog = atHeaviest.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
@@ -949,7 +949,7 @@ function GroupedExercisePicker({
                   key={ex.id}
                   onClick={() => onSelect(ex.id)}
                   className={`${active ? 'te-toggle-on te-toggle-mono' : 'te-toggle-off'} px-2.5 py-[5px] rounded-te-sm text-[13px] font-semibold select-none`}
-                  style={{ color: active ? 'var(--te-ink)' : 'rgba(255,255,255,0.4)' }}
+                  style={{ color: active ? 'var(--te-ink)' : 'var(--te-text-4)' }}
                 >
                   {ex.name}
                 </button>
@@ -1328,7 +1328,7 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
         
       >
         <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: 'var(--te-border-strong)' }}>
-          <StarIconSolid className="w-4 h-4" style={{ color: '#ffffff' }} />
+          <StarIconSolid className="w-4 h-4" style={{ color: 'var(--te-accent)' }} />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-[15px] font-semibold te-t1 tracking-tight">Personal records</p>
@@ -1421,15 +1421,24 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
             open={exerciseOpen}
             onToggle={() => setExerciseOpen(o => !o)}
             header={
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="w-[6px] h-[6px] rounded-full shrink-0" style={{ background: dotColor }} />
+              selected ? (
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="w-[6px] h-[6px] rounded-full shrink-0" style={{ background: dotColor }} />
+                  <span
+                    className="text-[10px] font-semibold uppercase truncate"
+                    style={{ fontFamily: MONO, letterSpacing: '0.08em', color: 'var(--te-text-1)' }}
+                  >
+                    {selected.name}
+                  </span>
+                </div>
+              ) : (
                 <span
-                  className="text-[10px] font-semibold uppercase truncate"
-                  style={{ fontFamily: MONO, letterSpacing: '0.08em', color: 'var(--te-text-1)' }}
+                  className="text-[10px] font-semibold uppercase"
+                  style={{ fontFamily: MONO, letterSpacing: '0.08em', color: 'var(--te-text-3)' }}
                 >
-                  {selected ? selected.name : DASH}
+                  Log a set to track an exercise
                 </span>
-              </div>
+              )
             }
           >
             {withLogs.length === 0 ? (

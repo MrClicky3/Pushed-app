@@ -47,7 +47,7 @@ export default function ReportBugSheet({
               <path d="M20 6L9 17l-5-5" />
             </svg>
           </div>
-          <p className="text-[17px] font-semibold te-t1 tracking-tight">Thanks — sent!</p>
+          <p className="text-[17px] font-semibold te-t1 tracking-tight">Thanks – sent!</p>
           <p className="text-[13px]" style={{ color: 'var(--te-text-3)' }}>
             Every report genuinely helps make this better.
           </p>

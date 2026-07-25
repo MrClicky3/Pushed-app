@@ -139,7 +139,7 @@ export default function FriendProfile({
                   key={key}
                   onClick={() => setWin(key)}
                   className={`${active ? 'te-toggle-on te-toggle-mono' : 'te-toggle-off'} flex-1 py-[7px] rounded-te-sm text-[13px] font-semibold select-none`}
-                  style={{ color: active ? 'var(--te-ink)' : 'rgba(255,255,255,0.4)' }}
+                  style={{ color: active ? 'var(--te-ink)' : 'var(--te-text-4)' }}
                 >
                   {label}
                 </button>

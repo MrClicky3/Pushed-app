@@ -28,7 +28,7 @@ function friendlyError(msg: string): string {
   if (msg.includes('Email not confirmed'))          return 'Please verify your email first.';
   if (msg.includes('User already registered'))      return 'An account with this email already exists.';
   if (msg.includes('Password should be'))           return 'Password must be at least 6 characters.';
-  if (msg.includes('Token has expired') || msg.includes('expired')) return 'Code expired — request a new one.';
+  if (msg.includes('Token has expired') || msg.includes('expired')) return 'Code expired – request a new one.';
   if (msg.toLowerCase().includes('invalid') || msg.toLowerCase().includes('otp')) return 'Wrong code. Check your email and try again.';
   return msg;
 }
@@ -197,7 +197,7 @@ export default function AuthView({ onSignIn, onSignUp, onResend, onVerifyOtp, on
 
     if (err) {
       setResendMsg(/rate|429|too many|security purposes/i.test(err)
-        ? 'Too many requests — wait a minute and try again.'
+        ? 'Too many requests – wait a minute and try again.'
         : 'Could not resend.');
     } else {
       setOtp(''); setError(null); setResendMsg('Sent!');
@@ -242,19 +242,19 @@ export default function AuthView({ onSignIn, onSignUp, onResend, onVerifyOtp, on
     return (
       <div
         className="min-h-screen flex flex-col items-center justify-center px-5"
-        style={{ background: '#010101', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+        style={{ background: 'var(--te-bg)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
         <form onSubmit={handleSubmit} className="w-full max-w-[355px] flex flex-col items-center gap-[50px]">
 
           <div className="flex flex-col items-center gap-2.5 w-full">
             <img
               src="/logo-mark.svg"
-              alt="Overload"
-              className="w-20 h-20"
+              alt="Pushed"
+              className="h-20 w-auto"
             />
             <div className="flex flex-col items-center gap-1">
               <p className="text-[20px] font-semibold te-t1 tracking-[-0.17px] text-center inline-flex items-center gap-1.5">
-                Welcome back to Overload!
+                Welcome back to Pushed!
                 <span className="inline-flex items-center" style={{ transform: 'rotate(35deg)' }} aria-hidden><IconWave /></span>
               </p>
               <p className="text-[17px]" style={{ color: 'var(--te-text-3)' }}>
@@ -344,7 +344,7 @@ export default function AuthView({ onSignIn, onSignUp, onResend, onVerifyOtp, on
     <div
       className="min-h-screen flex flex-col items-center justify-center pl-[max(16px,env(safe-area-inset-left))] pr-[max(16px,env(safe-area-inset-right))]"
       style={{
-        background: 'radial-gradient(ellipse 100% 50% at 50% -10%, rgba(244,241,236,0.09) 0%, #010101 55%)',
+        background: 'radial-gradient(ellipse 100% 50% at 50% -10%, color-mix(in srgb, var(--te-text-1) 7%, var(--te-bg)) 0%, var(--te-bg) 55%)',
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
       }}
     >
@@ -358,13 +358,13 @@ export default function AuthView({ onSignIn, onSignUp, onResend, onVerifyOtp, on
             />
             <img
               src="/apple-touch-icon.png"
-              alt="Overload"
+              alt="Pushed"
               className="relative w-[44px] h-[44px] rounded-te-md"
               style={{ boxShadow: '0 4px 16px rgba(0,0,0,0.5)' }}
             />
           </div>
           <p className="text-[20px] font-bold te-t1" style={{ letterSpacing: '-0.03em' }}>
-            Overload
+            Pushed
           </p>
         </div>
 

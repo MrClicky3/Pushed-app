@@ -292,14 +292,14 @@ function FocusModeSwitch({ active, onToggle }: { active: boolean; onToggle: () =
     <button
       type="button"
       onClick={onToggle}
-      className="flex items-center gap-2 select-none rounded-full transition-colors"
+      className="flex items-center gap-2.5 select-none rounded-full transition-colors"
       style={{ padding: '5px 9px 5px 5px', background: 'transparent' }}
       aria-label="Focus mode"
     >
-      <div className="te-unit-track">
+      <div className="te-unit-track" style={{ transform: 'scale(0.94)', transformOrigin: 'center' }}>
         <div className={`te-unit-lever ${active ? 'te-unit-lever-right' : ''}`} />
       </div>
-      <ViewfinderCircleIcon className="w-3.5 h-3.5 transition-opacity" style={{ color: 'var(--te-text-1)', opacity: active ? 1 : 0.25 }} />
+      <ViewfinderCircleIcon className="w-[14px] h-[14px] transition-opacity" style={{ color: 'var(--te-text-1)', opacity: active ? 1 : 0.25 }} />
     </button>
   );
 }
@@ -421,12 +421,20 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
   const [extraRepsToast, setExtraRepsToast] = useState<{ exerciseName: string; extra: number } | null>(null);
   const [prToast, setPrToast] = useState<{ exerciseName: string; detail: string } | null>(null);
   const [scheduleOpen, setScheduleOpen] = useState(false);
-  // Set when the schedule sheet should jump straight to routine creation
-  // (the Logs page's no-routine prompt), instead of the main settings list.
-  const [scheduleInitialView, setScheduleInitialView] = useState<'routine' | undefined>(undefined);
+  // Set to open a fresh New-routine editor on the Profile page's Routines
+  // section — used by the Logs page's no-routine prompt and by the return trip
+  // after creating an exercise for a routine. The Routines section clears it
+  // once consumed, so it never re-fires when the Profile tab remounts.
+  const [pendingRoutineEditor, setPendingRoutineEditor] = useState(false);
   /** Set when the user leaves the routine builder to go make an exercise, so
       saving it carries them back instead of stranding them on Exercises. */
   const [returnToRoutineBuilder, setReturnToRoutineBuilder] = useState(false);
+
+  // Jump to the Profile tab and pop open a fresh routine editor.
+  function openRoutineBuilder() {
+    switchTab('profile');
+    setPendingRoutineEditor(true);
+  }
 
   const profileName = profileRow?.display_name || profileRow?.username || userName || 'You';
 
@@ -603,8 +611,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
       // rather than leaving them on a tab they did not ask for.
       if (returnToRoutineBuilder) {
         setReturnToRoutineBuilder(false);
-        setScheduleInitialView('routine');
-        setScheduleOpen(true);
+        openRoutineBuilder();
       }
     }
   }
@@ -746,19 +753,13 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
         className="max-w-lg mx-auto pl-[max(16px,env(safe-area-inset-left))] pr-[max(16px,env(safe-area-inset-right))]"
         style={{
           paddingTop: 'max(28px, env(safe-area-inset-top, 0px) + 8px)',
-          // The extra vh past the nav-bar clearance gives the last card room to
-          // scroll all the way up into the iPod-style scroll-depth effect's
-          // (Log/Exercises pages) full-opacity zone, rather than being stuck
-          // half-faded once it hits the end of the scrollable content.
-          //
-          // Profile is exempt: it has no scroll-depth effect, so that headroom
-          // is just dead space you can scroll into. It gets the dock clearance
-          // plus 50px and stops there.
+          // Just enough to clear the nav dock plus a small breathing gap. The
+          // Log/Exercises scroll-depth effect now releases the fade at the
+          // bottom (see those views), so the last card reaches full size when
+          // you hit the end without needing a tall headroom margin here.
           paddingBottom: focusMode
             ? 'calc(40px + 10vh + env(safe-area-inset-bottom, 0px))'
-            : tab === 'profile'
-            ? `calc(${NAV_DOCK_H}px + 50px + env(safe-area-inset-bottom, 0px))`
-            : 'calc(80px + 17vh + env(safe-area-inset-bottom, 0px))',
+            : `calc(${NAV_DOCK_H}px + 18px + env(safe-area-inset-bottom, 0px))`,
           transition: 'padding-bottom 0.36s cubic-bezier(0.22,1,0.36,1)',
         }}
       >
@@ -817,7 +818,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
             schedule={schedule}
             focusMode={focusMode}
             weekStartDay={weekStartDay}
-            onCreateRoutine={() => { setScheduleInitialView('routine'); setScheduleOpen(true); }}
+            onCreateRoutine={openRoutineBuilder}
             onCreateExercise={() => {
               switchTab('exercises');
               setExercisePrefill(undefined);
@@ -844,6 +845,22 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
             unit={unit}
             toDisplay={toDisplay}
             inviteUrl={inviteUrl}
+            routines={routines}
+            schedule={schedule}
+            exercises={exercises}
+            onAddRoutine={addRoutine}
+            onUpdateRoutine={updateRoutine}
+            onDeleteRoutine={deleteRoutine}
+            onAssignDay={assignDay}
+            onCreateExercise={() => {
+              setReturnToRoutineBuilder(true);
+              switchTab('exercises');
+              setExercisePrefill(undefined);
+              setExerciseModal({ open: true, exercise: null });
+            }}
+            weekStartDay={weekStartDay}
+            pendingEditorOpen={pendingRoutineEditor}
+            onPendingEditorConsumed={() => setPendingRoutineEditor(false)}
             onOpenSettings={() => setScheduleOpen(true)}
             setAvatar={setAvatar}
             uploadAvatarFile={uploadAvatarFile}
@@ -866,7 +883,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
         style={{
           position: 'fixed', left: 0, right: 0, bottom: 0,
           height: '42vh', zIndex: 39, pointerEvents: 'none',
-          background: 'linear-gradient(to top, #010101 0%, rgba(1,1,1,0.92) 20%, rgba(1,1,1,0.5) 50%, transparent 100%)',
+          background: 'linear-gradient(to top, var(--te-bg) 0%, color-mix(in srgb, var(--te-bg) 92%, transparent) 20%, color-mix(in srgb, var(--te-bg) 50%, transparent) 50%, transparent 100%)',
           opacity: swipeDrag > 2 ? Math.min(1, swipeDrag / (SWIPE_THRESHOLD * 0.85)) : 0,
           transform: `scaleY(${swiping ? 0.55 + Math.min(swipeDrag / SWIPE_THRESHOLD, 1) * 0.45 : 0.55})`,
           transformOrigin: 'bottom center',
@@ -876,7 +893,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
       <div
         className="absolute bottom-0 left-0 right-0 z-40"
         style={{
-          background: 'linear-gradient(to bottom, rgba(1,1,1,0) 0%, rgba(1,1,1,0.92) 32%, #010101 58%)',
+          background: 'linear-gradient(to bottom, transparent 0%, color-mix(in srgb, var(--te-bg) 92%, transparent) 32%, var(--te-bg) 58%)',
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
         onTouchStart={onDockTouchStart}
@@ -894,7 +911,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
             const full = p >= 1;
             const R = 13;
             const C = 2 * Math.PI * R;
-            const gray = full ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.38)';
+            const gray = full ? 'var(--te-text-2)' : 'var(--te-text-4)';
             return (
               <div
                 aria-hidden
@@ -959,7 +976,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
               >
                 <path
                   d="M1.6 7.4L7.5 1.6l5.9 5.8"
-                  stroke="rgba(255,255,255,0.35)"
+                  stroke="var(--te-text-4)"
                   strokeWidth="2.1"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -968,7 +985,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
               <span style={{
                 fontFamily: "'Geist Mono', monospace", fontSize: 9, fontWeight: 600,
                 letterSpacing: '0.12em', textTransform: 'uppercase',
-                color: 'rgba(255,255,255,0.35)',
+                color: 'var(--te-text-4)',
               }}>
                 {tab === 'exercises' ? 'swipe to add' : 'swipe to log'}
               </span>
@@ -978,7 +995,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
           {/* Tabs — hidden in focus mode */}
           {/* Swipe-up line — the grabber you drag up on to add. */}
           <div className="flex justify-center" style={{ paddingTop: 6, paddingBottom: 10 }}>
-            <div style={{ width: 68, height: 4, borderRadius: 9999, background: 'rgba(255,255,255,0.16)' }} />
+            <div style={{ width: 68, height: 4, borderRadius: 9999, background: 'var(--te-border-strong)' }} />
           </div>
 
           {/* Tabs — plain flat bar (no skeuomorphic panel), hidden in focus mode. */}
@@ -999,7 +1016,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
                 >
                   {mainTabs.map(({ key, label, icon: Icon }) => {
                     const isActive = tab === key;
-                    const color = isActive ? '#fff' : 'rgba(255,255,255,0.4)';
+                    const color = isActive ? 'var(--te-text-1)' : 'var(--te-text-4)';
                     return (
                       <button
                         key={key}
@@ -1066,10 +1083,9 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
                         right: NAV_AVATAR_OVERSHOOT_PX / 2 + 1,
                         width: 7, height: 7, borderRadius: 9999,
                         background: 'var(--te-accent)',
-                        // te.bg is a Tailwind colour, not a CSS variable —
-                        // var(--te-bg) resolved to nothing and the dot lost
-                        // its cut-out ring against the avatar.
-                        boxShadow: '0 0 0 2px #010101',
+                        // Cut-out ring in the page colour so the dot reads as
+                        // lifted off the avatar in either theme.
+                        boxShadow: '0 0 0 2px var(--te-bg)',
                       }}
                     />
                   )}
@@ -1229,23 +1245,8 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
 
       <ScheduleModal
         open={scheduleOpen}
-        onClose={() => { setScheduleOpen(false); setScheduleInitialView(undefined); }}
-        initialView={scheduleInitialView}
-        routines={routines}
-        schedule={schedule}
+        onClose={() => setScheduleOpen(false)}
         exercises={exercises}
-        onAddRoutine={addRoutine}
-        onUpdateRoutine={updateRoutine}
-        onDeleteRoutine={deleteRoutine}
-        onAssignDay={assignDay}
-        onCreateExercise={() => {
-          setReturnToRoutineBuilder(true);
-          setScheduleOpen(false);
-          setScheduleInitialView(undefined);
-          switchTab('exercises');
-          setExercisePrefill(undefined);
-          setExerciseModal({ open: true, exercise: null });
-        }}
         onSignOut={onSignOut}
         userName={userName}
         onUpdateName={onUpdateName}
@@ -1301,7 +1302,7 @@ function PasswordResetScreen({ onUpdate }: { onUpdate: (pw: string) => Promise<s
         <div className="flex flex-col items-center gap-3">
           <img src="/apple-touch-icon.png" alt="" className="w-[72px] h-[72px] rounded-te-md"
             style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.55)' }} />
-          <p className="text-[32px] font-bold te-t1" style={{ letterSpacing: '-0.035em' }}>Overload</p>
+          <p className="text-[32px] font-bold te-t1" style={{ letterSpacing: '-0.035em' }}>Pushed</p>
         </div>
         <div className="rounded-te-lg p-6 space-y-4"
           style={{ background: 'var(--te-surface-3)', border: '1px solid var(--te-border)', boxShadow: '0 24px 64px rgba(0,0,0,0.5)' }}>
