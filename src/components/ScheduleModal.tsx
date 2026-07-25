@@ -9,7 +9,6 @@ import type { WorkoutLog } from '../types';
 import type { Exercise } from '../types';
 import type { WeightUnit, WeekStartDay } from '../hooks/useSettings';
 import { ACCENTS, ACCENT_ORDER, type AccentKey } from '../lib/accent';
-import type { ThemeMode } from '../lib/theme';
 import {
   CATEGORY_LABELS, CATEGORY_PALETTE,
   type CategoryColors, type CategoryKey,
@@ -46,8 +45,6 @@ interface Props {
   onSetHapticsEnabled: (on: boolean) => void;
   accent: AccentKey;
   onSetAccent: (key: AccentKey) => void;
-  theme: ThemeMode;
-  onSetTheme: (mode: ThemeMode) => void;
   categoryColors: CategoryColors;
   onSetCategoryColor: (key: CategoryKey, paletteKey: string) => void;
   bio: string | null;
@@ -267,8 +264,6 @@ export default function ScheduleModal({
   onSetHapticsEnabled,
   accent,
   onSetAccent,
-  theme,
-  onSetTheme,
   categoryColors,
   onSetCategoryColor,
   bio,
@@ -473,28 +468,6 @@ export default function ScheduleModal({
               both write the same setting. */}
           <div className="te-panel rounded-te-md overflow-hidden mt-3 divide-y divide-[color:var(--te-border)]">
             <div className="px-4 py-3.5">
-              <p className="text-[15px] font-medium te-t1 tracking-tight">Appearance</p>
-              <p className="text-[13px] te-t3 mt-0.5 leading-snug">Light or dark, or follow your device</p>
-              <div className="grid grid-cols-3 gap-2 mt-3">
-                {(['dark', 'light', 'system'] as const).map(mode => {
-                  const selected = theme === mode;
-                  const label = mode === 'dark' ? 'Dark' : mode === 'light' ? 'Light' : 'System';
-                  return (
-                    <button
-                      key={mode}
-                      type="button"
-                      onClick={() => onSetTheme(mode)}
-                      className={`${selected ? 'te-toggle-on' : 'te-toggle-off'} rounded-te-sm py-2.5 text-[13px] font-semibold tracking-tight`}
-                      style={{ color: selected ? 'var(--te-accent-contrast)' : 'var(--te-text-2)' }}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="px-4 py-3.5">
               <p className="text-[15px] font-medium te-t1 tracking-tight">Accent color</p>
               <p className="text-[13px] te-t3 mt-0.5 leading-snug">Toggles and body models</p>
               <div className="flex items-center gap-2.5 mt-3">
@@ -618,7 +591,7 @@ export default function ScheduleModal({
       <Modal open={dataMenuOpen} onClose={() => setDataMenuOpen(false)} title="Export data">
         <div className="te-panel rounded-te-md overflow-hidden divide-y divide-white/[0.05]">
           <button
-            onClick={() => downloadFile(buildCsv(logs, exercises), 'overload-export.csv', 'text/csv')}
+            onClick={() => downloadFile(buildCsv(logs, exercises), 'pushed-export.csv', 'text/csv')}
             className="w-full flex items-center justify-between px-4 py-3.5 active:bg-white/[0.04] transition-colors text-left"
           >
             <div>
@@ -630,7 +603,7 @@ export default function ScheduleModal({
           <button
             onClick={() => downloadFile(
               JSON.stringify({ exported_at: new Date().toISOString(), exercises, logs }, null, 2),
-              'overload-export.json', 'application/json',
+              'pushed-export.json', 'application/json',
             )}
             className="w-full flex items-center justify-between px-4 py-3.5 active:bg-white/[0.04] transition-colors text-left"
           >

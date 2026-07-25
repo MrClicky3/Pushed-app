@@ -249,12 +249,12 @@ export default function AuthView({ onSignIn, onSignUp, onResend, onVerifyOtp, on
           <div className="flex flex-col items-center gap-2.5 w-full">
             <img
               src="/logo-mark.svg"
-              alt="Overload"
-              className="w-20 h-20"
+              alt="Pushed"
+              className="h-20 w-auto"
             />
             <div className="flex flex-col items-center gap-1">
               <p className="text-[20px] font-semibold te-t1 tracking-[-0.17px] text-center inline-flex items-center gap-1.5">
-                Welcome back to Overload!
+                Welcome back to Pushed!
                 <span className="inline-flex items-center" style={{ transform: 'rotate(35deg)' }} aria-hidden><IconWave /></span>
               </p>
               <p className="text-[17px]" style={{ color: 'var(--te-text-3)' }}>
@@ -358,13 +358,13 @@ export default function AuthView({ onSignIn, onSignUp, onResend, onVerifyOtp, on
             />
             <img
               src="/apple-touch-icon.png"
-              alt="Overload"
+              alt="Pushed"
               className="relative w-[44px] h-[44px] rounded-te-md"
               style={{ boxShadow: '0 4px 16px rgba(0,0,0,0.5)' }}
             />
           </div>
           <p className="text-[20px] font-bold te-t1" style={{ letterSpacing: '-0.03em' }}>
-            Overload
+            Pushed
           </p>
         </div>
 

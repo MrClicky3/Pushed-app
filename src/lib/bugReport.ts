@@ -72,6 +72,6 @@ export function buildBugReportUrl(opts?: { context?: string; error?: unknown }):
     if (e?.stack) lines.push(`Stack: ${String(e.stack).split('\n').slice(0, 5).join(' | ')}`);
   }
 
-  const subject = 'Overload — Bug report';
+  const subject = 'Pushed — Bug report';
   return `mailto:${BUG_REPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines.join('\n'))}`;
 }

@@ -8,10 +8,9 @@ export type ThemeMode = 'dark' | 'light' | 'system';
 const KEY = 'settings_theme';
 
 export function loadTheme(): ThemeMode {
-  try {
-    const v = localStorage.getItem(KEY);
-    if (v === 'dark' || v === 'light' || v === 'system') return v;
-  } catch { /* ignore */ }
+  // The light theme and its toggle are not shipped yet — the app is dark-only,
+  // so any previously stored preference (light/system) is ignored and everyone
+  // resolves to dark. Re-enable the stored lookup when the toggle returns.
   return 'dark';
 }
 

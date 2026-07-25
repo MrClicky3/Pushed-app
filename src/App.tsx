@@ -332,7 +332,6 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
     soundEnabled, setSoundEnabled,
     hapticsEnabled, setHapticsEnabled,
     accent, setAccent,
-    theme, setTheme,
     categoryColors, setCategoryColor,
     weekStartDay, setWeekStartDay,
   } = useSettings();
@@ -1265,8 +1264,6 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
         onSetHapticsEnabled={setHapticsEnabled}
         accent={accent}
         onSetAccent={setAccent}
-        theme={theme}
-        onSetTheme={setTheme}
         categoryColors={categoryColors}
         onSetCategoryColor={setCategoryColor}
         bio={profileRow?.bio ?? null}
@@ -1305,7 +1302,7 @@ function PasswordResetScreen({ onUpdate }: { onUpdate: (pw: string) => Promise<s
         <div className="flex flex-col items-center gap-3">
           <img src="/apple-touch-icon.png" alt="" className="w-[72px] h-[72px] rounded-te-md"
             style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.55)' }} />
-          <p className="text-[32px] font-bold te-t1" style={{ letterSpacing: '-0.035em' }}>Overload</p>
+          <p className="text-[32px] font-bold te-t1" style={{ letterSpacing: '-0.035em' }}>Pushed</p>
         </div>
         <div className="rounded-te-lg p-6 space-y-4"
           style={{ background: 'var(--te-surface-3)', border: '1px solid var(--te-border)', boxShadow: '0 24px 64px rgba(0,0,0,0.5)' }}>

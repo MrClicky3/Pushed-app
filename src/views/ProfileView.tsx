@@ -365,7 +365,7 @@ function FriendsSection({ friends, inviteUrl }: { friends: FriendsApi; inviteUrl
   async function share() {
     if (!inviteUrl) return;
     if (navigator.share) {
-      try { await navigator.share({ title: 'Add me on Overload', url: inviteUrl }); return; } catch { /* fall through */ }
+      try { await navigator.share({ title: 'Add me on Pushed', url: inviteUrl }); return; } catch { /* fall through */ }
     }
     try {
       await navigator.clipboard.writeText(inviteUrl);
