@@ -11,6 +11,8 @@ import type { WeightUnit, WeekStartDay } from '../hooks/useSettings';
 import type { useCompetitions } from '../hooks/useCompetitions';
 import type { useFistBumps, BumpSender } from '../hooks/useFistBumps';
 import Avatar from '../components/Avatar';
+import WeekCalendar from '../components/WeekCalendar';
+import { addDays, dowMon, isSameDay, keyOf, startOfDay, startOfWeekFor } from '../lib/calendarDays';
 import { feedback } from '../lib/feedback';
 import { loadDaySet, saveDaySet, saveWorkoutDoneAt, isWorkoutDone } from '../lib/skips';
 import { dayCompletionPct } from '../lib/streak';
@@ -70,44 +72,6 @@ function SetBadge({ kind }: { kind: 'warmup' | 'drop' | 'pr' }) {
   );
 }
 
-// ── Date helpers ──────────────────────────────────────────────
-// Single-letter weekday initial, read directly off the date (not a
-// Monday-anchored array) so it stays correct regardless of the configured
-// week-start day.
-const DAY_INITIALS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']; // indexed by Date#getDay()
-function dayInitial(d: Date): string {
-  return DAY_INITIALS[d.getDay()];
-}
-
-function startOfDay(d: Date): Date {
-  const n = new Date(d); n.setHours(0, 0, 0, 0); return n;
-}
-function addDays(d: Date, days: number): Date {
-  const n = new Date(d); n.setDate(n.getDate() + days); return n;
-}
-// Monday = 0 … Sunday = 6 — the schedule's canonical day-of-week index. This
-// is a fixed data-model convention (matches ScheduleDay.day_of_week) and is
-// independent of the user's display "start week on" preference.
-function dowMon(d: Date): number {
-  return (d.getDay() + 6) % 7;
-}
-
-const WEEK_START_JSDAY: Record<WeekStartDay, number> = { sunday: 0, monday: 1, saturday: 6 };
-
-// Start of the visual week strip containing `d`, anchored to the configured
-// start-of-week day (purely a display concern — the underlying schedule
-// day-of-week indices above are unaffected).
-function startOfWeekFor(d: Date, startDay: WeekStartDay): Date {
-  const diff = (d.getDay() - WEEK_START_JSDAY[startDay] + 7) % 7;
-  return addDays(startOfDay(d), -diff);
-}
-function isSameDay(a: Date, b: Date): boolean {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-}
-function keyOf(d: Date): string {
-  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-}
-
 function formatTime(dateStr: string): string {
   return new Date(dateStr).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
 }
@@ -119,190 +83,6 @@ function groupByExercise(logs: WorkoutLog[]): Map<string, WorkoutLog[]> {
     map.get(log.exercise_id)!.push(log);
   }
   return map;
-}
-
-// ── Single day ring — track + progress arc + centered initial ──
-function DayRing({
-  date, initial, progress, isToday, isSelected, hasSchedule, onSelect,
-}: {
-  date: Date;
-  initial: string;
-  progress: number;      // 0…1
-  isToday: boolean;
-  isSelected: boolean;
-  hasSchedule: boolean;  // a routine is scheduled for this day-of-week
-  onSelect: (d: Date) => void;
-}) {
-  const size = 38;
-  const stroke = 3;
-  const r = (size - stroke) / 2;
-  const c = 2 * Math.PI * r;
-  const dash = c * Math.max(0, Math.min(1, progress));
-
-  const arcColor = isToday ? 'var(--te-accent)' : 'var(--te-text-1)';
-  // White initial marks a day that's on the routine (or the selected day);
-  // other days stay dim.
-  const letterColor = isToday
-    ? 'var(--te-accent)'
-    : hasSchedule || isSelected
-    ? 'var(--te-text-1)'
-    : 'var(--te-text-4)';
-
-  return (
-    <button
-      onClick={() => onSelect(date)}
-      className="relative flex items-center justify-center shrink-0 active:opacity-70 transition-opacity"
-      style={{ width: size, height: size }}
-      aria-label={date.toDateString()}
-    >
-      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-        <circle
-          cx={size / 2} cy={size / 2} r={r}
-          fill="none" stroke="var(--te-border-strong)" strokeWidth={stroke}
-        />
-        {progress > 0 && (
-          <circle
-            cx={size / 2} cy={size / 2} r={r}
-            fill="none" stroke={arcColor} strokeWidth={stroke}
-            strokeLinecap="round"
-            strokeDasharray={`${dash} ${c}`}
-          />
-        )}
-      </svg>
-      <span
-        className="absolute select-none"
-        style={{ fontSize: 10, fontWeight: 600, letterSpacing: '-0.01em', color: letterColor }}
-      >
-        {initial}
-      </span>
-      {/* Dot below the ring (outside the circle) — the accent marks today,
-          plain off-white marks the selected day */}
-      {(isToday || isSelected) && (
-        <span
-          className="absolute rounded-full"
-          style={{ width: 4, height: 4, background: isToday ? 'var(--te-accent)' : 'var(--te-text-1)', bottom: -7, left: '50%', transform: 'translateX(-50%)' }}
-        />
-      )}
-    </button>
-  );
-}
-
-// One week's row of 7 day rings
-function WeekRow({
-  weekStart, selectedDate, today, onSelect, progressFor, hasScheduleFor,
-}: {
-  weekStart: Date;
-  selectedDate: Date;
-  today: Date;
-  onSelect: (d: Date) => void;
-  progressFor: (d: Date) => number;
-  hasScheduleFor: (d: Date) => boolean;
-}) {
-  const days = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
-  return (
-    // justify-around (not justify-between) so the half-gap at each week's edge
-    // combines with the neighbour's to make the spacing across the week seam
-    // match the spacing within a week when swiping between weeks.
-    <div className="flex items-center justify-around shrink-0" style={{ width: '33.3333%' }}>
-      {days.map(d => (
-        <DayRing
-          key={keyOf(d)}
-          date={d}
-          initial={dayInitial(d)}
-          progress={progressFor(d)}
-          isToday={isSameDay(d, today)}
-          isSelected={isSameDay(d, selectedDate)}
-          hasSchedule={hasScheduleFor(d)}
-          onSelect={onSelect}
-        />
-      ))}
-    </div>
-  );
-}
-
-// ── 7-day week strip — swipe left/right to change weeks ────────
-// A three-week track (prev · current · next) that follows the finger and
-// snaps continuously into the neighbouring week based on swipe direction.
-function WeekCalendar({
-  weekStart, selectedDate, today, onSelect, onShiftWeek, progressFor, hasScheduleFor,
-}: {
-  weekStart: Date;
-  selectedDate: Date;
-  today: Date;
-  onSelect: (d: Date) => void;
-  onShiftWeek: (delta: number) => void;
-  progressFor: (d: Date) => number;
-  hasScheduleFor: (d: Date) => boolean;
-}) {
-  const [dx, setDx] = useState(0);
-  const [snapping, setSnapping] = useState(false);
-  const startX = useRef(0);
-  const startY = useRef(0);
-  const active = useRef(false);
-  const width = useRef(0);
-  const pendingShift = useRef(0);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const THRESHOLD = 55;
-
-  const prevWeek = useMemo(() => addDays(weekStart, -7), [weekStart]);
-  const nextWeek = useMemo(() => addDays(weekStart, 7), [weekStart]);
-
-  function onTouchStart(e: React.TouchEvent) {
-    startX.current = e.touches[0].clientX;
-    startY.current = e.touches[0].clientY;
-    active.current = true;
-    width.current = containerRef.current?.offsetWidth ?? 0;
-    setSnapping(false);
-  }
-  function onTouchMove(e: React.TouchEvent) {
-    if (!active.current) return;
-    const deltaX = e.touches[0].clientX - startX.current;
-    const deltaY = e.touches[0].clientY - startY.current;
-    if (Math.abs(deltaY) > Math.abs(deltaX) + 6) { active.current = false; return; }
-    setDx(deltaX);
-  }
-  function onTouchEnd() {
-    if (!active.current) return;
-    active.current = false;
-    const w = width.current || 1;
-    setSnapping(true);
-    if (dx <= -THRESHOLD) { pendingShift.current = 1; setDx(-w); }        // reveal next week
-    else if (dx >= THRESHOLD) { pendingShift.current = -1; setDx(w); }    // reveal prev week
-    else { pendingShift.current = 0; setDx(0); }                          // snap back
-  }
-  function onTransitionEnd(e: React.TransitionEvent) {
-    if (e.target !== e.currentTarget || e.propertyName !== 'transform') return;
-    if (!snapping) return;
-    const shift = pendingShift.current;
-    pendingShift.current = 0;
-    setSnapping(false);
-    setDx(0);                                  // recenter without animation
-    if (shift !== 0) onShiftWeek(shift);       // adopt the revealed week as current
-  }
-
-  return (
-    // paddingBottom leaves room for the day dots that sit outside the rings so
-    // overflow-hidden (which masks the neighbouring weeks) doesn't clip them.
-    <div ref={containerRef} className="overflow-hidden" style={{ touchAction: 'pan-y', paddingBottom: 10 }}>
-      <div
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
-        onTransitionEnd={onTransitionEnd}
-        className="flex items-center"
-        style={{
-          width: '300%',
-          transform: `translateX(calc(-33.3333% + ${dx}px))`,
-          transition: snapping ? 'transform 0.3s cubic-bezier(0.22,1,0.36,1)' : 'none',
-          willChange: 'transform',
-        }}
-      >
-        <WeekRow weekStart={prevWeek} selectedDate={selectedDate} today={today} onSelect={onSelect} progressFor={progressFor} hasScheduleFor={hasScheduleFor} />
-        <WeekRow weekStart={weekStart} selectedDate={selectedDate} today={today} onSelect={onSelect} progressFor={progressFor} hasScheduleFor={hasScheduleFor} />
-        <WeekRow weekStart={nextWeek} selectedDate={selectedDate} today={today} onSelect={onSelect} progressFor={progressFor} hasScheduleFor={hasScheduleFor} />
-      </div>
-    </div>
-  );
 }
 
 // ── Swipeable row — swipe right to skip, swipe right again to un-skip ──
@@ -958,7 +738,7 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
   const showCompletePrompt = routineComplete && !workoutDone && !promptDismissed;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 soft-borders">
 
       <div
         className="grid"

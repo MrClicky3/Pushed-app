@@ -6,21 +6,21 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   LinkIcon, MagnifyingGlassIcon, CheckIcon, ClockIcon, UserPlusIcon,
   Cog6ToothIcon, ChevronRightIcon, CameraIcon, PhotoIcon,
-  QueueListIcon, PlusIcon,
 } from '@heroicons/react/24/outline';
 import { FireIcon } from '@heroicons/react/24/solid';
 import Avatar, { AVATAR_PRESETS, presetKeyOf } from '../components/Avatar';
 import Modal from '../components/Modal';
 import ReportBugSheet from '../components/ReportBugSheet';
+import RoutinesSection from '../components/Routines';
 import { CompetitionsSection, BadgeShelf } from '../components/Competitions';
 import FriendProfile, { type FriendProfileTarget } from '../components/FriendProfile';
 import { ToggleButton } from '../components/SheetControls';
-import type { Profile, LeaderboardRow, VolumeRow, Badge, Routine, ScheduleDay } from '../types';
+import type { Profile, LeaderboardRow, VolumeRow, Badge, Routine, ScheduleDay, Exercise } from '../types';
 import type { useFriends, ProfileLite } from '../hooks/useFriends';
 import type { useCompetitions } from '../hooks/useCompetitions';
 import type { useFistBumps } from '../hooks/useFistBumps';
 import type { useProfile } from '../hooks/useProfile';
-import type { WeightUnit } from '../hooks/useSettings';
+import type { WeightUnit, WeekStartDay } from '../hooks/useSettings';
 
 type FriendsApi = ReturnType<typeof useFriends>;
 type CompetitionsApi = ReturnType<typeof useCompetitions>;
@@ -37,7 +37,15 @@ interface Props {
   inviteUrl: string;
   routines: Routine[];
   schedule: ScheduleDay[];
-  onManageRoutines: () => void;
+  exercises: Exercise[];
+  onAddRoutine: (name: string, exercise_ids: string[]) => Routine | Promise<Routine>;
+  onUpdateRoutine: (id: string, name: string, exercise_ids: string[]) => void;
+  onDeleteRoutine: (id: string) => void;
+  onAssignDay: (day_of_week: number, routine_id: string | null) => void;
+  onCreateExercise: () => void;
+  weekStartDay: WeekStartDay;
+  pendingEditorOpen: boolean;
+  onPendingEditorConsumed: () => void;
   onOpenSettings: () => void;
   setAvatar: ProfileApi['setAvatar'];
   uploadAvatarFile: ProfileApi['uploadAvatarFile'];
@@ -326,67 +334,6 @@ function Leaderboard({
 }
 
 // ── Find friends + invite ───────────────────────────────────────
-// Routines live here now, not buried in Settings — the same bare-header +
-// flat-panel shape as Competitions and Leaderboard above.
-function RoutinesSection({ routines, schedule, onManage }: {
-  routines: Routine[];
-  schedule: ScheduleDay[];
-  onManage: () => void;
-}) {
-  const daysFor = (id: string) => schedule.filter(s => s.routine_id === id).length;
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-3 px-0.5">
-        <p className="text-[17px] font-bold te-t1 tracking-tight" style={{ letterSpacing: '-0.02em' }}>
-          Routines
-        </p>
-        <button
-          onClick={onManage}
-          className="flex items-center gap-1 te-label active:opacity-60 transition-opacity"
-          style={{ color: 'var(--te-text-2)' }}
-        >
-          <PlusIcon className="w-3.5 h-3.5" /> {routines.length > 0 ? 'Manage' : 'New'}
-        </button>
-      </div>
-
-      {routines.length === 0 ? (
-        <button onClick={onManage} className="te-panel w-full rounded-te-md px-5 py-8 text-center active:bg-[color:var(--te-fill-subtle)] transition-colors">
-          <div className="w-10 h-10 rounded-full mx-auto mb-2.5 flex items-center justify-center" style={{ background: 'var(--te-border)' }}>
-            <QueueListIcon className="w-5 h-5 te-t3" />
-          </div>
-          <p className="text-[17px] font-semibold te-t1 tracking-tight">Plan your week</p>
-          <p className="text-[13px] te-t3 mt-1 leading-snug">Build a routine and assign it to your training days.</p>
-        </button>
-      ) : (
-        <div className="te-panel rounded-te-md overflow-hidden divide-y divide-[color:var(--te-border)]">
-          {routines.map(r => {
-            const d = daysFor(r.id);
-            return (
-              <button
-                key={r.id}
-                onClick={onManage}
-                className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:bg-[color:var(--te-fill-subtle)] transition-colors"
-              >
-                <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: 'var(--te-border)' }}>
-                  <QueueListIcon className="w-4 h-4 te-t3" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[15px] font-semibold te-t1 tracking-tight truncate">{r.name}</p>
-                  <p className="te-label mt-0.5">
-                    {r.exercise_ids.length} exercise{r.exercise_ids.length === 1 ? '' : 's'}
-                    {d > 0 ? ` · ${d} day${d === 1 ? '' : 's'} a week` : ' · unscheduled'}
-                  </p>
-                </div>
-                <ChevronRightIcon className="w-3.5 h-3.5 te-t4 shrink-0" />
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
 function FriendsSection({ friends, inviteUrl }: { friends: FriendsApi; inviteUrl: string }) {
   const { incoming, outgoing, relationFor, searchUsers, sendRequest, acceptRequest, declineRequest } = friends;
   const [query, setQuery] = useState('');
@@ -465,23 +412,21 @@ function FriendsSection({ friends, inviteUrl }: { friends: FriendsApi; inviteUrl
       <div>
         <p className="te-label mb-2 px-0.5">Find friends</p>
         <div className="te-panel rounded-te-md overflow-hidden">
-          <div className="px-4 pt-3 pb-2.5">
-            <div
-              className="flex items-center rounded-te-md px-3.5 gap-2"
-              style={{ background: 'var(--te-well)', border: '1px solid var(--te-border)', height: 42 }}
-            >
-              <MagnifyingGlassIcon className="w-4 h-4 te-t4 shrink-0" />
-              <input
-                data-no-drag
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-                placeholder="Search by username"
-                autoCapitalize="none"
-                autoCorrect="off"
-                spellCheck={false}
-                className="flex-1 bg-transparent outline-none text-[15px] te-t1 placeholder-white/25 tracking-tight"
-              />
-            </div>
+          {/* Search sits as a full-width row — no inset box — so it reads as one
+              list with the invite-link / results rows below it, all sharing the
+              same px-4 icon column. */}
+          <div className="flex items-center gap-3 px-4" style={{ height: 52 }}>
+            <MagnifyingGlassIcon className="w-4 h-4 te-t4 shrink-0" />
+            <input
+              data-no-drag
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Search by username"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              className="flex-1 bg-transparent outline-none text-[15px] te-t1 placeholder-white/25 tracking-tight"
+            />
           </div>
 
           <div className="border-t border-[color:var(--te-border)]">
@@ -587,7 +532,9 @@ function FriendsSection({ friends, inviteUrl }: { friends: FriendsApi; inviteUrl
 // ── Profile tab ─────────────────────────────────────────────────
 export default function ProfileView({
   profile, friends, competitions, fistBumps, unit, toDisplay, inviteUrl,
-  routines, schedule, onManageRoutines,
+  routines, schedule, exercises,
+  onAddRoutine, onUpdateRoutine, onDeleteRoutine, onAssignDay, onCreateExercise,
+  weekStartDay, pendingEditorOpen, onPendingEditorConsumed,
   onOpenSettings, setAvatar, uploadAvatarFile, updateBio,
 }: Props) {
   const name = profile?.display_name || profile?.username || 'You';
@@ -669,7 +616,21 @@ export default function ProfileView({
 
       <FriendsSection friends={friends} inviteUrl={inviteUrl} />
 
-      <RoutinesSection routines={routines} schedule={schedule} onManage={onManageRoutines} />
+      <RoutinesSection
+        routines={routines}
+        schedule={schedule}
+        exercises={exercises}
+        onAddRoutine={onAddRoutine}
+        onUpdateRoutine={onUpdateRoutine}
+        onDeleteRoutine={onDeleteRoutine}
+        onAssignDay={onAssignDay}
+        onCreateExercise={onCreateExercise}
+        unit={unit}
+        toDisplay={toDisplay}
+        weekStartDay={weekStartDay}
+        pendingEditorOpen={pendingEditorOpen}
+        onPendingEditorConsumed={onPendingEditorConsumed}
+      />
 
       {/* Utility rows */}
       <div className="te-panel rounded-te-md overflow-hidden divide-y divide-[color:var(--te-border)]">

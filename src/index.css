@@ -14,6 +14,13 @@
   /* Faintest tint used for pressed/hover washes and inner fills — below border
      strength, so it reads as a surface change rather than an edge. */
   --te-fill-subtle: rgba(255, 255, 255, 0.04);
+
+  /* Softer card edges for the list-heavy Exercises and Log pages: those views
+     opt in with the `.soft-borders` class, which restates the two border tokens
+     for its subtree only, so every card outline, divider and inline
+     var(--te-border) inside them eases off without touching the rest of the app. */
+  --te-border-soft: rgba(255, 255, 255, 0.05);
+  --te-border-soft-strong: rgba(255, 255, 255, 0.065);
   /* Accent — overridden at runtime by lib/accent.ts (default: red) */
   --te-accent: #ff453a;
   --te-accent-contrast: #ffffff;
@@ -104,6 +111,8 @@
   --te-border:        rgba(35, 30, 22, 0.13);
   --te-border-strong: rgba(35, 30, 22, 0.16);
   --te-fill-subtle:   rgba(35, 30, 22, 0.04);
+  --te-border-soft:        rgba(35, 30, 22, 0.08);
+  --te-border-soft-strong: rgba(35, 30, 22, 0.10);
 
   /* Stronger than a straight inversion — the first pass read faint. */
   --te-text-1: #1c1a17;                    /* warm near-black */
@@ -232,6 +241,15 @@ body {
      turn — every value in that direction reads *sharper* than a circle, which
      is the opposite of what was wanted. Roundness comes from the radius scale
      above instead. */
+
+  /* Opt-in softer borders for a whole page subtree (Exercises, Log). Restating
+     the tokens here means class="te-panel", divide-[color:var(--te-border)] and
+     any inline var(--te-border) inside all resolve to the gentler value with no
+     per-element edits. */
+  .soft-borders {
+    --te-border: var(--te-border-soft);
+    --te-border-strong: var(--te-border-soft-strong);
+  }
 
   /* Shared bento surface, so the analytics cards stay on the radius scale
      rather than carrying their own inline value. */

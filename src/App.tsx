@@ -296,10 +296,10 @@ function FocusModeSwitch({ active, onToggle }: { active: boolean; onToggle: () =
       style={{ padding: '5px 9px 5px 5px', background: 'transparent' }}
       aria-label="Focus mode"
     >
-      <div className="te-unit-track" style={{ transform: 'scale(1.08)', transformOrigin: 'center' }}>
+      <div className="te-unit-track" style={{ transform: 'scale(0.94)', transformOrigin: 'center' }}>
         <div className={`te-unit-lever ${active ? 'te-unit-lever-right' : ''}`} />
       </div>
-      <ViewfinderCircleIcon className="w-[15px] h-[15px] transition-opacity" style={{ color: 'var(--te-text-1)', opacity: active ? 1 : 0.25 }} />
+      <ViewfinderCircleIcon className="w-[14px] h-[14px] transition-opacity" style={{ color: 'var(--te-text-1)', opacity: active ? 1 : 0.25 }} />
     </button>
   );
 }
@@ -422,12 +422,20 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
   const [extraRepsToast, setExtraRepsToast] = useState<{ exerciseName: string; extra: number } | null>(null);
   const [prToast, setPrToast] = useState<{ exerciseName: string; detail: string } | null>(null);
   const [scheduleOpen, setScheduleOpen] = useState(false);
-  // Set when the schedule sheet should jump straight to routine creation
-  // (the Logs page's no-routine prompt), instead of the main settings list.
-  const [scheduleInitialView, setScheduleInitialView] = useState<'routine' | undefined>(undefined);
+  // Set to open a fresh New-routine editor on the Profile page's Routines
+  // section — used by the Logs page's no-routine prompt and by the return trip
+  // after creating an exercise for a routine. The Routines section clears it
+  // once consumed, so it never re-fires when the Profile tab remounts.
+  const [pendingRoutineEditor, setPendingRoutineEditor] = useState(false);
   /** Set when the user leaves the routine builder to go make an exercise, so
       saving it carries them back instead of stranding them on Exercises. */
   const [returnToRoutineBuilder, setReturnToRoutineBuilder] = useState(false);
+
+  // Jump to the Profile tab and pop open a fresh routine editor.
+  function openRoutineBuilder() {
+    switchTab('profile');
+    setPendingRoutineEditor(true);
+  }
 
   const profileName = profileRow?.display_name || profileRow?.username || userName || 'You';
 
@@ -604,8 +612,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
       // rather than leaving them on a tab they did not ask for.
       if (returnToRoutineBuilder) {
         setReturnToRoutineBuilder(false);
-        setScheduleInitialView('routine');
-        setScheduleOpen(true);
+        openRoutineBuilder();
       }
     }
   }
@@ -812,7 +819,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
             schedule={schedule}
             focusMode={focusMode}
             weekStartDay={weekStartDay}
-            onCreateRoutine={() => { setScheduleInitialView('routine'); setScheduleOpen(true); }}
+            onCreateRoutine={openRoutineBuilder}
             onCreateExercise={() => {
               switchTab('exercises');
               setExercisePrefill(undefined);
@@ -841,8 +848,21 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
             inviteUrl={inviteUrl}
             routines={routines}
             schedule={schedule}
-            onManageRoutines={() => { setScheduleInitialView('routine'); setScheduleOpen(true); }}
-            onOpenSettings={() => { setScheduleInitialView(undefined); setScheduleOpen(true); }}
+            exercises={exercises}
+            onAddRoutine={addRoutine}
+            onUpdateRoutine={updateRoutine}
+            onDeleteRoutine={deleteRoutine}
+            onAssignDay={assignDay}
+            onCreateExercise={() => {
+              setReturnToRoutineBuilder(true);
+              switchTab('exercises');
+              setExercisePrefill(undefined);
+              setExerciseModal({ open: true, exercise: null });
+            }}
+            weekStartDay={weekStartDay}
+            pendingEditorOpen={pendingRoutineEditor}
+            onPendingEditorConsumed={() => setPendingRoutineEditor(false)}
+            onOpenSettings={() => setScheduleOpen(true)}
             setAvatar={setAvatar}
             uploadAvatarFile={uploadAvatarFile}
             updateBio={updateBio}
@@ -1226,23 +1246,8 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
 
       <ScheduleModal
         open={scheduleOpen}
-        onClose={() => { setScheduleOpen(false); setScheduleInitialView(undefined); }}
-        initialView={scheduleInitialView}
-        routines={routines}
-        schedule={schedule}
+        onClose={() => setScheduleOpen(false)}
         exercises={exercises}
-        onAddRoutine={addRoutine}
-        onUpdateRoutine={updateRoutine}
-        onDeleteRoutine={deleteRoutine}
-        onAssignDay={assignDay}
-        onCreateExercise={() => {
-          setReturnToRoutineBuilder(true);
-          setScheduleOpen(false);
-          setScheduleInitialView(undefined);
-          switchTab('exercises');
-          setExercisePrefill(undefined);
-          setExerciseModal({ open: true, exercise: null });
-        }}
         onSignOut={onSignOut}
         userName={userName}
         onUpdateName={onUpdateName}

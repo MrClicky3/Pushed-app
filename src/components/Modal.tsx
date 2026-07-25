@@ -218,8 +218,10 @@ export default function Modal({ open, onClose, title, children, onBack, noPadTop
           // The safe-area inset is *added* to the padding rather than max()'d
           // with it: on a device with a home indicator the inset is entirely
           // consumed by that indicator, so max() left the last row sitting
-          // under it with no visual clearance at all.
-          className={`flex-1 min-h-0 pl-[max(16px,env(safe-area-inset-left))] pr-[max(16px,env(safe-area-inset-right))] ${noPadTop ? 'pt-0' : 'pt-2.5'} ${noPadBottom ? 'pb-[env(safe-area-inset-bottom)]' : 'pb-[calc(env(safe-area-inset-bottom,0px)+34px)]'} overflow-y-auto overscroll-contain`}
+          // under it with no visual clearance at all. The added breathing room
+          // above that is kept small so sheets don't trail a tall empty gap
+          // under their last control.
+          className={`flex-1 min-h-0 pl-[max(16px,env(safe-area-inset-left))] pr-[max(16px,env(safe-area-inset-right))] ${noPadTop ? 'pt-0' : 'pt-2.5'} ${noPadBottom ? 'pb-[env(safe-area-inset-bottom)]' : 'pb-[calc(env(safe-area-inset-bottom,0px)+16px)]'} overflow-y-auto overscroll-contain`}
           style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
         >
           {children}
