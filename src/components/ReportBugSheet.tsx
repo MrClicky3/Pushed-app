@@ -3,6 +3,8 @@ import Modal from './Modal';
 import { sendBugReport, buildBugReportUrl } from '../lib/bugReport';
 
 // One-step in-app bug report: write it, hit send, it emails the maintainer.
+// Beta feedback has its own structured form in FeedbackSheet, but both share
+// this delivery path (auth, rate limit, honeypot, email).
 export default function ReportBugSheet({
   open, onClose, context,
 }: {

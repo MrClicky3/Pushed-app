@@ -6,6 +6,14 @@ import { supabase } from './supabase';
 
 export const BUG_REPORT_EMAIL = 'jans@leiterts.com';
 
+// Just the first word of a display name — "Jan Sleiterts" → "Jan". Feedback
+// copy addresses testers by name, and a full name mid-sentence reads like a
+// form letter. Falls back to '' so callers can drop the name cleanly.
+export function firstName(name?: string | null): string {
+  const first = (name ?? '').trim().split(/\s+/)[0] ?? '';
+  return first.toLowerCase() === 'you' ? '' : first;
+}
+
 function gatherDiagnostics(): string {
   const parts: string[] = [];
   try {
@@ -17,8 +25,15 @@ function gatherDiagnostics(): string {
   return parts.join('\n');
 }
 
-// In-app send — one step, no email client. Throws with a friendly message on failure.
-export async function sendBugReport(message: string, context?: string): Promise<void> {
+// In-app send — one step, no email client. Throws with a friendly message on
+// failure. `kind` only steers the email subject so bugs and beta feedback are
+// filterable in the inbox; both share this one delivery path.
+export async function sendBugReport(
+  message: string,
+  context?: string,
+  kind: 'bug' | 'feedback' = 'bug',
+  honeypot = '',
+): Promise<void> {
   let token: string | undefined;
   try {
     const { data } = await supabase.auth.getSession();
@@ -36,8 +51,9 @@ export async function sendBugReport(message: string, context?: string): Promise<
       body: JSON.stringify({
         message,
         context: context ?? '',
+        kind,
         diagnostics: gatherDiagnostics(),
-        honeypot: '',
+        honeypot,
       }),
     });
   } catch {
@@ -45,10 +61,24 @@ export async function sendBugReport(message: string, context?: string): Promise<
   }
 
   if (!res.ok) {
-    let msg = 'Could not send your report.';
+    let msg = kind === 'feedback' ? 'Could not send your feedback.' : 'Could not send your report.';
     try { const j = await res.json(); if (j?.error) msg = j.error; } catch { /* ignore */ }
     throw new Error(msg);
   }
+}
+
+// Fallback for the feedback form: the answers the tester already typed, kept
+// intact in a mailto so a failed send never costs them their writing.
+export function buildFeedbackUrl(message: string, context?: string): string {
+  const lines = [
+    message,
+    '',
+    '──────────────',
+    ...(context ? [`Context: ${context}`] : []),
+    gatherDiagnostics(),
+  ];
+
+  return `mailto:${BUG_REPORT_EMAIL}?subject=${encodeURIComponent('Pushed – Beta feedback')}&body=${encodeURIComponent(lines.join('\n'))}`;
 }
 
 // Fallback: a pre-filled mailto with the same diagnostics attached.

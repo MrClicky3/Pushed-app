@@ -30,6 +30,8 @@ import Avatar from './components/Avatar';
 import EdgeSwipePeek from './components/EdgeSwipePeek';
 import UsernameSetupModal from './components/UsernameSetupModal';
 import ExerciseLibraryModal from './components/ExerciseLibraryModal';
+import FeedbackPrompt from './components/FeedbackPrompt';
+import FeedbackSheet from './components/FeedbackSheet';
 import { calcStreak, calcConsistency } from './lib/streak';
 import { loadWorkoutDoneAt, skipDayKey } from './lib/skips';
 import { feedback } from './lib/feedback';
@@ -437,6 +439,28 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
   }
 
   const profileName = profileRow?.display_name || profileRow?.username || userName || 'You';
+
+  // Beta feedback. The structured sheet opens either from the once-a-day
+  // centered prompt or from the Settings row. The prompt self-shows once per
+  // calendar day until the tester has interacted with it.
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [promptOpen, setPromptOpen] = useState(false);
+
+  useEffect(() => {
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      if (localStorage.getItem('feedback_prompt_date') !== today) {
+        // Let the app settle before nudging.
+        const t = setTimeout(() => setPromptOpen(true), 900);
+        return () => clearTimeout(t);
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  function dismissPrompt() {
+    try { localStorage.setItem('feedback_prompt_date', new Date().toISOString().slice(0, 10)); } catch { /* ignore */ }
+    setPromptOpen(false);
+  }
 
   // Earliest log created today → the current session's start (null when there
   // is no workout logged today).
@@ -862,6 +886,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
             pendingEditorOpen={pendingRoutineEditor}
             onPendingEditorConsumed={() => setPendingRoutineEditor(false)}
             onOpenSettings={() => setScheduleOpen(true)}
+            onOpenFeedback={() => setFeedbackOpen(true)}
             setAvatar={setAvatar}
             uploadAvatarFile={uploadAvatarFile}
             updateBio={updateBio}
@@ -1242,6 +1267,20 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
           </div>
         </div>
       )}
+
+      <FeedbackPrompt
+        open={promptOpen && !feedbackOpen}
+        name={profileName}
+        onOpen={() => { dismissPrompt(); setFeedbackOpen(true); }}
+        onDismiss={dismissPrompt}
+      />
+
+      <FeedbackSheet
+        open={feedbackOpen}
+        onClose={() => setFeedbackOpen(false)}
+        context={tabTitles[tab]}
+        name={profileName}
+      />
 
       <ScheduleModal
         open={scheduleOpen}
