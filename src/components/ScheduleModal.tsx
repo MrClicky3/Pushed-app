@@ -13,7 +13,8 @@ import {
   CATEGORY_LABELS, CATEGORY_PALETTE,
   type CategoryColors, type CategoryKey,
 } from '../lib/categoryColors';
-import ReportBugSheet from './ReportBugSheet';
+import FeedbackSheet from './FeedbackSheet';
+import FeedbackCard from './FeedbackCard';
 
 // Only Upper and Lower are offered: they're the two halves the Add Exercise
 // sheet actually assigns, so the rest of the palette keys have nothing to
@@ -276,7 +277,7 @@ export default function ScheduleModal({
 }: Props) {
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [signOutConfirm, setSignOutConfirm] = useState(false);
-  const [reportOpen, setReportOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [dataMenuOpen, setDataMenuOpen] = useState(false);
 
   // Reset transient state when the sheet closes.
@@ -286,6 +287,7 @@ export default function ScheduleModal({
         setEditProfileOpen(false);
         setSignOutConfirm(false);
         setDataMenuOpen(false);
+        setFeedbackOpen(false);
       }, 300);
     }
   }, [open]);
@@ -294,32 +296,11 @@ export default function ScheduleModal({
     <FullPageSheet open={open} onClose={onClose} title="Settings" padded>
       <div className="space-y-6">
 
-        {/* Report a bug — still the first thing in Settings during the beta,
-            but carried by position and the accent-tinted icon rather than by
-            a saturated blue slab. It matches every other settings row now,
-            so the page reads as one list instead of a banner plus a list. */}
-        <button
-          onClick={() => setReportOpen(true)}
-          className="te-panel w-full flex items-center gap-3 px-4 py-4 rounded-te-md active:bg-white/[0.04] transition-colors text-left"
-        >
-          <div
-            className="shrink-0 flex items-center justify-center rounded-full"
-            style={{ width: 36, height: 36, background: 'var(--te-surface-3)' }}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--te-text-2)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M8 2l1.5 2.5M16 2l-1.5 2.5" />
-              <rect x="7" y="6" width="10" height="12" rx="5" />
-              <path d="M12 6v12M3 10h4M17 10h4M3 15h4M17 15h4M4 6l3 2M20 6l-3 2M4 19l3-2M20 19l-3-2" />
-            </svg>
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-[15px] font-semibold te-t1 tracking-tight">Report a bug</p>
-            <p className="text-[13px] mt-0.5 te-t3 leading-snug">
-              Tell me what went wrong — it helps.
-            </p>
-          </div>
-          <ChevronRightIcon className="w-4 h-4 te-t4 shrink-0" />
-        </button>
+        {/* Beta feedback — the same card as the Profile view. It replaces the
+            old bug-report row: the feedback form's "what should I fix" already
+            covers bug reports, so there's one clear place to reach me. Once
+            sent for the day it flips to a quiet "done" state. */}
+        <FeedbackCard onClick={() => setFeedbackOpen(true)} />
 
         {/* Preferences */}
         <div>
@@ -576,7 +557,13 @@ export default function ScheduleModal({
         </div>
 
       </div>
-      <ReportBugSheet open={reportOpen} onClose={() => setReportOpen(false)} context="Settings" />
+
+      <FeedbackSheet
+        open={feedbackOpen}
+        onClose={() => setFeedbackOpen(false)}
+        context="Settings"
+        name={userName}
+      />
 
       <EditProfileSheet
         open={editProfileOpen}

@@ -10,11 +10,11 @@ import {
 import { FireIcon } from '@heroicons/react/24/solid';
 import Avatar, { AVATAR_PRESETS, presetKeyOf } from '../components/Avatar';
 import Modal from '../components/Modal';
-import ReportBugSheet from '../components/ReportBugSheet';
 import RoutinesSection from '../components/Routines';
 import { CompetitionsSection, BadgeShelf } from '../components/Competitions';
 import FriendProfile, { type FriendProfileTarget } from '../components/FriendProfile';
 import { ToggleButton } from '../components/SheetControls';
+import FeedbackCard from '../components/FeedbackCard';
 import type { Profile, LeaderboardRow, VolumeRow, Badge, Routine, ScheduleDay, Exercise } from '../types';
 import type { useFriends, ProfileLite } from '../hooks/useFriends';
 import type { useCompetitions } from '../hooks/useCompetitions';
@@ -47,6 +47,7 @@ interface Props {
   pendingEditorOpen: boolean;
   onPendingEditorConsumed: () => void;
   onOpenSettings: () => void;
+  onOpenFeedback: () => void;
   setAvatar: ProfileApi['setAvatar'];
   uploadAvatarFile: ProfileApi['uploadAvatarFile'];
   updateBio: ProfileApi['updateBio'];
@@ -535,14 +536,13 @@ export default function ProfileView({
   routines, schedule, exercises,
   onAddRoutine, onUpdateRoutine, onDeleteRoutine, onAssignDay, onCreateExercise,
   weekStartDay, pendingEditorOpen, onPendingEditorConsumed,
-  onOpenSettings, setAvatar, uploadAvatarFile, updateBio,
+  onOpenSettings, onOpenFeedback, setAvatar, uploadAvatarFile, updateBio,
 }: Props) {
   const name = profile?.display_name || profile?.username || 'You';
   const [badges, setBadges] = useState<Badge[]>([]);
   const [friendTarget, setFriendTarget] = useState<FriendProfileTarget | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [bioOpen, setBioOpen] = useState(false);
-  const [reportOpen, setReportOpen] = useState(false);
 
   // Own badge case — refreshed when a competition completes (list changes).
   useEffect(() => {
@@ -632,28 +632,22 @@ export default function ProfileView({
         onPendingEditorConsumed={onPendingEditorConsumed}
       />
 
-      {/* Utility rows */}
-      <div className="te-panel rounded-te-md overflow-hidden divide-y divide-[color:var(--te-border)]">
-        <button
-          onClick={onOpenSettings}
-          className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-white/[0.04] transition-colors text-left"
-        >
-          <Cog6ToothIcon className="w-4 h-4 te-t4 shrink-0" />
-          <span className="flex-1 text-[15px] font-medium te-t1 tracking-tight">Settings</span>
-          <ChevronRightIcon className="w-3.5 h-3.5 te-t4 shrink-0" />
-        </button>
-        <button
-          onClick={() => setReportOpen(true)}
-          className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-white/[0.04] transition-colors text-left"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--te-text-4)" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
-            <path d="M8 2l1.5 2.5M16 2l-1.5 2.5" />
-            <rect x="7" y="6" width="10" height="12" rx="5" />
-            <path d="M12 6v12M3 10h4M17 10h4M3 15h4M17 15h4M4 6l3 2M20 6l-3 2M4 19l3-2M20 19l-3-2" />
-          </svg>
-          <span className="flex-1 text-[15px] font-medium te-t1 tracking-tight">Report a bug</span>
-          <ChevronRightIcon className="w-3.5 h-3.5 te-t4 shrink-0" />
-        </button>
+      {/* Beta feedback + Settings, grouped tightly so the feedback card reads
+          as part of the same block as the Settings row rather than floating
+          apart from it. The card stands in for the old "Report a bug" row. */}
+      <div className="space-y-2">
+        <FeedbackCard onClick={onOpenFeedback} />
+
+        <div className="te-panel rounded-te-md overflow-hidden">
+          <button
+            onClick={onOpenSettings}
+            className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-white/[0.04] transition-colors text-left"
+          >
+            <Cog6ToothIcon className="w-4 h-4 te-t4 shrink-0" />
+            <span className="flex-1 text-[15px] font-medium te-t1 tracking-tight">Settings</span>
+            <ChevronRightIcon className="w-3.5 h-3.5 te-t4 shrink-0" />
+          </button>
+        </div>
       </div>
 
       {/* Legal */}
@@ -681,7 +675,6 @@ export default function ProfileView({
         bio={profile?.bio ?? null}
         updateBio={updateBio}
       />
-      <ReportBugSheet open={reportOpen} onClose={() => setReportOpen(false)} context="Profile" />
 
       <FriendProfile
         open={friendTarget !== null}

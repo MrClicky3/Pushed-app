@@ -16,7 +16,7 @@ interface Res {
 }
 
 const REPORT_TO = 'jans@leiterts.com';
-const FROM = 'Overload Bugs <onboarding@resend.dev>';
+const FROM = 'Pushed <onboarding@resend.dev>';
 
 function safeParse(s: string): Record<string, unknown> {
   try { return JSON.parse(s); } catch { return {}; }
@@ -28,14 +28,21 @@ export default async function handler(req: Req, res: Res) {
   const body = (typeof req.body === 'string' ? safeParse(req.body) : (req.body ?? {})) as Record<string, unknown>;
   const message = String(body.message ?? '');
   const context = String(body.context ?? '');
+  // Only steers the subject line — anything unrecognised falls back to 'bug'.
+  const kind = body.kind === 'feedback' ? 'feedback' : 'bug';
   const diagnostics = String(body.diagnostics ?? '');
   const honeypot = String(body.honeypot ?? '');
 
   // Bot trap — pretend success so scripts get no signal.
   if (honeypot.trim()) { res.status(200).json({ ok: true }); return; }
 
+  const isFeedback = kind === 'feedback';
+
   const trimmed = message.trim();
-  if (trimmed.length < 3) { res.status(400).json({ error: 'Please describe the bug first.' }); return; }
+  if (trimmed.length < 3) {
+    res.status(400).json({ error: isFeedback ? 'Please write your feedback first.' : 'Please describe the bug first.' });
+    return;
+  }
   if (trimmed.length > 5000) { res.status(400).json({ error: 'That message is too long.' }); return; }
 
   // Verify the reporter is signed in (only authenticated users can report).
@@ -43,12 +50,15 @@ export default async function handler(req: Req, res: Res) {
   const SUPABASE_ANON = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
   const authHeader = (req.headers['authorization'] || req.headers['Authorization']) as string | undefined;
 
-  if (!authHeader) { res.status(401).json({ error: 'Please sign in to report a bug.' }); return; }
+  if (!authHeader) {
+    res.status(401).json({ error: isFeedback ? 'Please sign in to send feedback.' : 'Please sign in to report a bug.' });
+    return;
+  }
 
   // Fail closed: without these we cannot verify anyone, so accepting the
   // report would mean emailing on behalf of an unauthenticated stranger.
   if (!SUPABASE_URL || !SUPABASE_ANON) {
-    res.status(503).json({ error: 'Bug reporting isn\'t configured yet.' }); return;
+    res.status(503).json({ error: isFeedback ? 'Feedback isn\'t configured yet.' : 'Bug reporting isn\'t configured yet.' }); return;
   }
 
   let reporter = 'unknown';
@@ -81,7 +91,7 @@ export default async function handler(req: Req, res: Res) {
     if (recent.ok) {
       const rows = (await recent.json()) as unknown[];
       if (Array.isArray(rows) && rows.length >= REPORTS_PER_HOUR) {
-        res.status(429).json({ error: 'You\'ve sent a few reports already — try again in an hour.' });
+        res.status(429).json({ error: 'You\'ve sent a few already — try again in an hour.' });
         return;
       }
     }
@@ -91,14 +101,17 @@ export default async function handler(req: Req, res: Res) {
   }
 
   const RESEND_API_KEY = process.env.RESEND_API_KEY;
-  if (!RESEND_API_KEY) { res.status(503).json({ error: 'Bug reporting isn\'t configured yet.' }); return; }
+  if (!RESEND_API_KEY) {
+    res.status(503).json({ error: isFeedback ? 'Feedback isn\'t configured yet.' : 'Bug reporting isn\'t configured yet.' }); return;
+  }
 
   const replyTo = /@/.test(reporter) ? reporter : undefined;
   const text = [
     trimmed,
     '',
     '──────────────',
-    `Reporter: ${reporter}`,
+    `Type: ${isFeedback ? 'Beta feedback' : 'Bug report'}`,
+    `${isFeedback ? 'From' : 'Reporter'}: ${reporter}`,
     context ? `Context: ${context}` : '',
     diagnostics || '',
   ].filter(Boolean).join('\n');
@@ -110,7 +123,7 @@ export default async function handler(req: Req, res: Res) {
       body: JSON.stringify({
         from: FROM,
         to: [REPORT_TO],
-        subject: `Overload bug report${replyTo ? ` — ${reporter}` : ''}`,
+        subject: `Pushed ${kind === 'feedback' ? 'beta feedback' : 'bug report'}${replyTo ? ` – ${reporter}` : ''}`,
         text,
         ...(replyTo ? { reply_to: replyTo } : {}),
       }),
@@ -119,7 +132,7 @@ export default async function handler(req: Req, res: Res) {
       // Resend's own error text can name the account and key state — log it
       // server-side, return something generic to the browser.
       console.error('resend send failed', r.status, (await r.text().catch(() => '')).slice(0, 300));
-      res.status(502).json({ error: 'Couldn\'t send the report.' }); return;
+      res.status(502).json({ error: isFeedback ? 'Couldn\'t send your feedback.' : 'Couldn\'t send the report.' }); return;
     }
     // Record the accepted report so it counts against the caller's hourly limit.
     await fetch(`${SUPABASE_URL}/rest/v1/bug_reports`, {
@@ -129,6 +142,6 @@ export default async function handler(req: Req, res: Res) {
     }).catch(() => {});
     res.status(200).json({ ok: true });
   } catch {
-    res.status(502).json({ error: 'Couldn\'t send the report.' });
+    res.status(502).json({ error: isFeedback ? 'Couldn\'t send your feedback.' : 'Couldn\'t send the report.' });
   }
 }

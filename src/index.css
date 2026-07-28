@@ -770,3 +770,16 @@ input, textarea, select {
 .animate-float-pill-in {
   animation: float-pill-in 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+
+/* Wizard step transitions — a short horizontal glide so advancing feels like
+   turning a page. Forward slides in from the right, back from the left. */
+@keyframes step-in-next {
+  from { opacity: 0; transform: translateX(22px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes step-in-back {
+  from { opacity: 0; transform: translateX(-22px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.animate-step-next { animation: step-in-next 0.34s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-step-back { animation: step-in-back 0.34s cubic-bezier(0.22, 1, 0.36, 1) both; }
