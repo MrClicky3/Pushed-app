@@ -252,10 +252,13 @@ body {
   }
 
   /* Shared bento surface, so the analytics cards stay on the radius scale
-     rather than carrying their own inline value. */
+     rather than carrying their own inline value. Border is pinned to the soft
+     token so every bento card — Progress, Profile, anywhere — matches the
+     Exercises cards' gentle stroke regardless of whether its page opted into
+     `.soft-borders`. */
   .te-bento {
     background: var(--te-surface-1);
-    border: 1px solid var(--te-border);
+    border: 1px solid var(--te-border-soft);
     border-radius: var(--te-radius-md);
   }
 
@@ -269,7 +272,7 @@ body {
   /* ─── TE Panel Dark: slightly deeper matte surface for analytics bento cards ─── */
   .te-panel-dark {
     background: var(--te-surface-1);
-    border: 1px solid var(--te-border);
+    border: 1px solid var(--te-border-soft);
     border-radius: var(--te-radius-md);
   }
 
