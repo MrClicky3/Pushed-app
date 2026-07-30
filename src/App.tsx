@@ -450,8 +450,8 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
     try {
       const today = new Date().toISOString().slice(0, 10);
       if (localStorage.getItem('feedback_prompt_date') !== today) {
-        // Let the app settle before nudging.
-        const t = setTimeout(() => setPromptOpen(true), 900);
+        // Once per day, but only after 3 minutes of use — never immediately.
+        const t = setTimeout(() => setPromptOpen(true), 3 * 60 * 1000);
         return () => clearTimeout(t);
       }
     } catch { /* ignore */ }
