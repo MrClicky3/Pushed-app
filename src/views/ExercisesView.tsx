@@ -2,8 +2,6 @@ import { useEffect, useRef, useMemo } from 'react';
 import { FireIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import Model from '@phelian/react-body-highlighter';
 import ExerciseCard from '../components/ExerciseCard';
-import { accentHex } from '../lib/accent';
-import { EXERCISE_LIBRARY } from '../data/exerciseLibrary';
 import type { Exercise, WorkoutLog } from '../types';
 import type { WeightUnit } from '../hooks/useSettings';
 
@@ -23,9 +21,9 @@ export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, 
   const containerRef = useRef<HTMLDivElement>(null);
 
   const PREVIEW_FIGURES = [
-    { view: 'posterior' as const, muscles: ['upper-back', 'trapezius'] as never[], isUpper: true,  w: 52, h: 94,  opacity: 0.72 },
-    { view: 'anterior' as const,  muscles: ['chest', 'front-deltoids'] as never[], isUpper: true,  w: 66, h: 118, opacity: 1.00 },
-    { view: 'anterior' as const,  muscles: ['quadriceps', 'hamstring'] as never[], isUpper: false, w: 52, h: 90,  opacity: 0.72 },
+    { view: 'posterior' as const, muscles: ['upper-back', 'trapezius'] as never[], isUpper: true,  w: 44, h: 80 },
+    { view: 'anterior' as const,  muscles: ['chest', 'front-deltoids'] as never[], isUpper: true,  w: 52, h: 92 },
+    { view: 'anterior' as const,  muscles: ['quadriceps', 'hamstring'] as never[], isUpper: false, w: 44, h: 80 },
   ];
 
   useEffect(() => {
@@ -112,56 +110,31 @@ export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, 
   const libraryCard = (
     <button
       onClick={onOpenLibrary}
-      className="w-full rounded-te-md overflow-hidden active:opacity-80 transition-opacity"
-      style={{ display: 'block', textAlign: 'left', position: 'relative', border: '1px solid var(--te-border)', boxShadow: '0 0 15px rgba(0,0,0,0.25)' }}
+      className="w-full overflow-hidden active:opacity-80 transition-opacity"
+      style={{ display: 'block', textAlign: 'left', position: 'relative', background: '#010101', border: '1px solid #2c2c2c', borderRadius: 20, boxShadow: '0 0 15px rgba(0,0,0,0.25)' }}
     >
-      {/* The card's wash is mixed from --te-accent rather than a baked-in red,
-          so it follows the user's accent along with the muscle figures. */}
-      <div style={{
-        height: 164,
-        background: `linear-gradient(124.9deg,
-          color-mix(in srgb, var(--te-accent) var(--te-lib-1), var(--te-surface-1)) 8%,
-          color-mix(in srgb, var(--te-accent) var(--te-lib-2), var(--te-surface-1)) 52%,
-          color-mix(in srgb, var(--te-accent) var(--te-lib-3), var(--te-surface-1)) 92%,
-          color-mix(in srgb, var(--te-accent) var(--te-lib-4), var(--te-surface-1)) 120%)`,
-        position: 'relative', overflow: 'hidden',
-      }}>
-        <div style={{
-          position: 'absolute', inset: 0, pointerEvents: 'none',
-          background: `radial-gradient(ellipse 62% 88% at 78% 60%,
-            color-mix(in srgb, var(--te-accent) var(--te-lib-r1), transparent) 0%,
-            color-mix(in srgb, var(--te-accent) var(--te-lib-r2), transparent) 45%,
-            transparent 72%)`,
-        }} />
-
-        {/* Affordance chevron — the card is a doorway into the library, but
-            nothing else on it says so. Tinted to the accent like the title
-            rather than the usual grey, so it belongs to the wash. */}
+      <div style={{ height: 132, position: 'relative', overflow: 'hidden' }}>
+        {/* Affordance chevron — a thin doorway marker, top-right per the design. */}
         <ChevronRightIcon
-          className="w-[13px] h-[13px]"
-          style={{ position: 'absolute', top: 23, right: 18, color: 'var(--te-accent)', opacity: 0.6 }}
+          className="w-[10px] h-[16px]"
+          style={{ position: 'absolute', top: 20, right: 20, color: '#ffffff', opacity: 0.5 }}
         />
 
-        <div style={{ position: 'absolute', top: 20, left: 20 }}>
-          <p style={{ fontFamily: "'Geist Mono', monospace", fontSize: 21, fontWeight: 600, letterSpacing: '-0.3px', textTransform: 'uppercase', color: 'var(--te-accent)', lineHeight: 1 }}>
-            Exercise Library
-          </p>
-          {/* The app's tertiary text grey — the same step used for captions
-              and meta everywhere else, so the subtitle sits back from the
-              title without inventing a one-off colour. */}
-          <p style={{ fontFamily: "'Geist', sans-serif", fontSize: 12, fontWeight: 500, letterSpacing: '-0.1px', color: 'var(--te-text-3)', marginTop: 9, lineHeight: 1 }}>
-            Form guides, muscle maps
-          </p>
-        </div>
+        {/* EXERCISE LIBRARY — Geist Mono SemiBold, wraps to two lines. */}
+        <p style={{
+          position: 'absolute', top: 20, left: 20, maxWidth: 190,
+          fontFamily: "'Geist Mono', monospace", fontSize: 34, fontWeight: 600,
+          letterSpacing: '-0.17px', lineHeight: '32px', textTransform: 'uppercase',
+          color: '#ffffff',
+        }}>
+          Exercise library
+        </p>
 
-        <div style={{ position: 'absolute', bottom: 20, left: 20 }}>
-          <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: 40, fontWeight: 600, color: 'var(--te-text-1)', lineHeight: 1, letterSpacing: '-2.2px', display: 'block' }}>{EXERCISE_LIBRARY.length}</span>
-          <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: 15, fontWeight: 600, letterSpacing: '-0.5px', textTransform: 'uppercase', color: 'var(--te-text-1)', marginTop: 9, display: 'block', lineHeight: 1 }}>exercises</span>
-        </div>
-
-        <div style={{ position: 'absolute', bottom: 0, right: 6, display: 'flex', alignItems: 'flex-end', gap: 0 }}>
+        {/* Three muscle figures, centre-right, tallest in the middle — grey
+            bodies with white-highlighted muscles, matching the design. */}
+        <div style={{ position: 'absolute', bottom: 0, left: 186, right: 20, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: 0 }}>
           {PREVIEW_FIGURES.map((fig, i) => (
-            <div key={i} style={{ position: 'relative', width: fig.w, height: fig.h, flexShrink: 0, opacity: fig.opacity }}>
+            <div key={i} style={{ position: 'relative', width: fig.w, height: fig.h, flexShrink: 0, marginLeft: -8 }}>
               <div style={{
                 position: 'absolute',
                 [fig.isUpper ? 'top' : 'bottom']: -6,
@@ -171,8 +144,8 @@ export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, 
                 <Model
                   type={fig.view}
                   data={[{ name: 'p', muscles: fig.muscles }]}
-                  bodyColor="#181818"
-                  highlightedColors={[accentHex()]}
+                  bodyColor="#333333"
+                  highlightedColors={['#ffffff']}
                   style={{ width: '100%' }}
                 />
               </div>
