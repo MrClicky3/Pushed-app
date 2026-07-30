@@ -987,9 +987,14 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
               className="flex flex-col items-center"
               style={{
                 position: 'absolute', left: 0, right: 0, bottom: '100%',
-                paddingBottom: 4, pointerEvents: 'none', gap: 1,
+                paddingTop: 18, paddingBottom: 4, pointerEvents: 'none', gap: 1,
                 opacity: swipeDrag > 2 ? 0 : 1,
                 transition: 'opacity 0.2s ease',
+                // Scrim of the page colour pooled behind the hint so it stays
+                // legible when a card scrolls up underneath it: an opaque core
+                // right behind the chevron + label fully masks whatever's there,
+                // fading to nothing before the edges. Theme-aware via --te-bg.
+                background: 'radial-gradient(66% 140% at 50% 80%, var(--te-bg) 0%, color-mix(in srgb, var(--te-bg) 82%, transparent) 46%, transparent 74%)',
               }}
             >
               {/* iOS-style chevron: rounded caps and joins, drawn rather than

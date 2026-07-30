@@ -1385,8 +1385,10 @@ export default function AnalyticsView({ logs, exercises, unit, toDisplay, routin
 
       {pageView === 'overall' ? (
         <div>
-          {/* This week — the page's headline: effort vs plan, not raw % */}
-          <div className="mb-4">
+          {/* This week — the page's headline: effort vs plan, not raw %. A
+              little extra breathing room up top and a hair inset on the sides
+              so the headline card sits slightly proud of the rest. */}
+          <div className="mt-2 mb-4 mx-[3px]">
             <ThisWeekCard logs={logs} schedule={schedule} routines={routines} exercises={exercises} noData={noData} />
           </div>
 
