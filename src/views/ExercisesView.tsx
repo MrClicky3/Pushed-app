@@ -21,9 +21,9 @@ export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, 
   const containerRef = useRef<HTMLDivElement>(null);
 
   const PREVIEW_FIGURES = [
-    { view: 'posterior' as const, muscles: ['upper-back', 'trapezius'] as never[], isUpper: true,  w: 44, h: 80 },
-    { view: 'anterior' as const,  muscles: ['chest', 'front-deltoids'] as never[], isUpper: true,  w: 52, h: 92 },
-    { view: 'anterior' as const,  muscles: ['quadriceps', 'hamstring'] as never[], isUpper: false, w: 44, h: 80 },
+    { view: 'posterior' as const, muscles: ['upper-back', 'trapezius'] as never[], isUpper: true,  w: 48, h: 88 },
+    { view: 'anterior' as const,  muscles: ['chest', 'front-deltoids'] as never[], isUpper: true,  w: 56, h: 100 },
+    { view: 'anterior' as const,  muscles: ['quadriceps', 'hamstring'] as never[], isUpper: false, w: 48, h: 88 },
   ];
 
   useEffect(() => {
@@ -111,7 +111,7 @@ export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, 
     <button
       onClick={onOpenLibrary}
       className="w-full overflow-hidden active:opacity-80 transition-opacity"
-      style={{ display: 'block', textAlign: 'left', position: 'relative', background: '#010101', border: '1px solid #2c2c2c', borderRadius: 20, boxShadow: '0 0 15px rgba(0,0,0,0.25)' }}
+      style={{ display: 'block', textAlign: 'left', position: 'relative', background: '#010101', border: '1px solid var(--te-border)', borderRadius: 20, boxShadow: '0 0 15px rgba(0,0,0,0.25)' }}
     >
       <div style={{ height: 132, position: 'relative', overflow: 'hidden' }}>
         {/* Affordance chevron — a thin doorway marker, top-right per the design. */}
@@ -122,9 +122,9 @@ export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, 
 
         {/* EXERCISE LIBRARY — Geist Mono SemiBold, wraps to two lines. */}
         <p style={{
-          position: 'absolute', top: 20, left: 20, maxWidth: 190,
-          fontFamily: "'Geist Mono', monospace", fontSize: 34, fontWeight: 600,
-          letterSpacing: '-0.17px', lineHeight: '32px', textTransform: 'uppercase',
+          position: 'absolute', top: 20, left: 20, maxWidth: 150,
+          fontFamily: "'Geist Mono', monospace", fontSize: 26, fontWeight: 600,
+          letterSpacing: '-0.17px', lineHeight: '25px', textTransform: 'uppercase',
           color: '#ffffff',
         }}>
           Exercise library
@@ -132,9 +132,9 @@ export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, 
 
         {/* Three muscle figures, centre-right, tallest in the middle — grey
             bodies with white-highlighted muscles, matching the design. */}
-        <div style={{ position: 'absolute', bottom: 0, left: 186, right: 20, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: 0 }}>
+        <div style={{ position: 'absolute', bottom: 0, left: 135, right: 36, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: 9 }}>
           {PREVIEW_FIGURES.map((fig, i) => (
-            <div key={i} style={{ position: 'relative', width: fig.w, height: fig.h, flexShrink: 0, marginLeft: -8 }}>
+            <div key={i} style={{ position: 'relative', width: fig.w, height: fig.h, flexShrink: 0 }}>
               <div style={{
                 position: 'absolute',
                 [fig.isUpper ? 'top' : 'bottom']: -6,
