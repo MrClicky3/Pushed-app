@@ -129,10 +129,14 @@ export default async function handler(req: Req, res: Res) {
       }),
     });
     if (!r.ok) {
-      // Resend's own error text can name the account and key state — log it
-      // server-side, return something generic to the browser.
-      console.error('resend send failed', r.status, (await r.text().catch(() => '')).slice(0, 300));
-      res.status(502).json({ error: isFeedback ? 'Couldn\'t send your feedback.' : 'Couldn\'t send the report.' }); return;
+      // Resend's error text names the exact cause (unverified sender, wrong
+      // recipient for the test domain, bad key). Log it server-side, and during
+      // the beta surface a trimmed version to the browser so config problems
+      // are diagnosable without digging through Vercel logs.
+      const detail = (await r.text().catch(() => '')).slice(0, 300);
+      console.error('resend send failed', r.status, detail);
+      const generic = isFeedback ? 'Couldn\'t send your feedback.' : 'Couldn\'t send the report.';
+      res.status(502).json({ error: `${generic} (Resend ${r.status}: ${detail || 'no detail'})` }); return;
     }
     // Record the accepted report so it counts against the caller's hourly limit.
     await fetch(`${SUPABASE_URL}/rest/v1/bug_reports`, {
