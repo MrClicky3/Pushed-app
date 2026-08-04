@@ -157,14 +157,18 @@ export function calcStreak(
     // neutral → keep walking
   }
 
-  // Longest streak — same walk across the whole log history.
+  // Longest streak — same walk across the whole log history. totalDays is
+  // counted in the same pass: a scheduled day only adds to the total once its
+  // full routine is done, same rule the streak itself uses — a day with only
+  // some of the routine's exercises logged is "credited" for neither.
   let longest = 0;
   let run = 0;
+  let totalDays = 0;
   if (earliest) {
     const start = new Date(earliest.getFullYear(), earliest.getMonth(), earliest.getDate());
     for (let d = new Date(start); d <= now; d.setDate(d.getDate() + 1)) {
       const s = stateOf(d);
-      if (s === 'credited') { run++; longest = Math.max(longest, run); }
+      if (s === 'credited') { run++; longest = Math.max(longest, run); totalDays++; }
       else if (s === 'breaking') run = 0;
     }
   }
@@ -179,7 +183,6 @@ export function calcStreak(
     if (stateOf(d) === 'credited') thisWeek++;
   }
 
-  const totalDays = new Set([...completedDays, ...trainedDays]).size;
   return { current, longest, thisWeek, totalDays };
 }
 
