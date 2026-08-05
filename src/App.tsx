@@ -6,9 +6,9 @@ import {
   ChartBarSquareIcon,
   ChartBarIcon,
   TrophyIcon,
-  ViewfinderCircleIcon,
   PlusIcon,
 } from '@heroicons/react/24/outline';
+import { LockClosedIcon, LockOpenIcon } from '@heroicons/react/24/solid';
 
 import { useWorkoutData } from './hooks/useWorkoutData';
 import { useSettings } from './hooks/useSettings';
@@ -156,7 +156,7 @@ function WideScreenNote() {
   const style: React.CSSProperties = {
     color: 'rgba(244,241,236,0.035)',
     fontSize: 13,
-    fontFamily: "'Geist Mono', monospace",
+    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, system-ui, 'Helvetica Neue', Arial, sans-serif",
     fontWeight: 700,
     letterSpacing: '0.18em',
     whiteSpace: 'nowrap',
@@ -290,18 +290,32 @@ function ExtraRepsToast({ exerciseName, extra, onDone }: { exerciseName: string;
 }
 
 function FocusModeSwitch({ active, onToggle }: { active: boolean; onToggle: () => void }) {
+  const Icon = active ? LockClosedIcon : LockOpenIcon;
   return (
     <button
       type="button"
       onClick={onToggle}
-      className="flex items-center gap-2.5 select-none rounded-full transition-colors"
-      style={{ padding: '5px 9px 5px 5px', background: 'transparent' }}
+      className="flex items-center gap-2.5 select-none"
+      style={{ background: 'transparent' }}
       aria-label="Focus mode"
     >
-      <div className="te-unit-track" style={{ transform: 'scale(0.94)', transformOrigin: 'center' }}>
-        <div className={`te-unit-lever ${active ? 'te-unit-lever-right' : ''}`} />
+      <Icon className="w-[16px] h-[16px] transition-colors" style={{ color: active ? 'var(--te-accent)' : 'var(--te-text-4)' }} />
+      {/* Plain iOS-style pill switch — a simpler, bigger control than the
+          gain-lever style used for the unit toggle elsewhere in the app. */}
+      <div
+        className="relative rounded-full shrink-0 transition-colors"
+        style={{ width: 45, height: 24, background: active ? 'var(--te-accent)' : 'rgba(120,120,128,0.32)' }}
+      >
+        <div
+          className="absolute rounded-full"
+          style={{
+            width: 20, height: 20, top: 2, left: 2, background: '#ffffff',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.4)',
+            transform: active ? 'translateX(21px)' : 'translateX(0)',
+            transition: 'transform 160ms cubic-bezier(0.4, 0, 0.2, 1)',
+          }}
+        />
       </div>
-      <ViewfinderCircleIcon className="w-[14px] h-[14px] transition-opacity" style={{ color: 'var(--te-text-1)', opacity: active ? 1 : 0.25 }} />
     </button>
   );
 }
@@ -801,23 +815,21 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
           </div>
         </div>
         <div
-          className="flex items-end justify-between"
+          className="flex items-center justify-between"
           style={{ marginBottom: tab === 'log' ? 12 : 24 }}
         >
           <h1 className="text-[32px] font-bold te-t1 leading-none" style={{ letterSpacing: '-0.04em' }}>
             {tabTitles[tab]}
           </h1>
-          {/* Nudge down so the switch track sits on the title's baseline,
-              compensating for the switch's own bottom padding. */}
-          <div style={{ transform: 'translateY(5px)' }}>
-            <FocusModeSwitch active={focusMode} onToggle={toggleFocus} />
-          </div>
+          <FocusModeSwitch active={focusMode} onToggle={toggleFocus} />
         </div>
 
         {tab === 'exercises' ? (
           <ExercisesView
             exercises={exercises}
             logs={logs}
+            routines={routines}
+            schedule={schedule}
             onEdit={ex => setExerciseModal({ open: true, exercise: ex })}
             onDelete={deleteExercise}
             onOpenLibrary={() => setLibraryOpen(true)}
@@ -966,7 +978,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
                   />
                 </div>
                 <span style={{
-                  fontFamily: "'Geist Mono', monospace", fontSize: 10, fontWeight: 700,
+                  fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, system-ui, 'Helvetica Neue', Arial, sans-serif", fontSize: 10, fontWeight: 700,
                   letterSpacing: '0.14em', textTransform: 'uppercase', whiteSpace: 'nowrap',
                   color: gray, transition: 'color 0.15s ease',
                 }}>
@@ -994,7 +1006,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
                 // legible when a card scrolls up underneath it: an opaque core
                 // right behind the chevron + label fully masks whatever's there,
                 // fading to nothing before the edges. Theme-aware via --te-bg.
-                background: 'radial-gradient(66% 140% at 50% 80%, var(--te-bg) 0%, color-mix(in srgb, var(--te-bg) 82%, transparent) 46%, transparent 74%)',
+                background: 'radial-gradient(38% 90% at 50% 80%, var(--te-bg) 0%, color-mix(in srgb, var(--te-bg) 82%, transparent) 40%, transparent 68%)',
               }}
             >
               {/* iOS-style chevron: rounded caps and joins, drawn rather than
@@ -1013,11 +1025,11 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
                 />
               </svg>
               <span style={{
-                fontFamily: "'Geist Mono', monospace", fontSize: 9, fontWeight: 600,
+                fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, system-ui, 'Helvetica Neue', Arial, sans-serif", fontSize: 9, fontWeight: 600,
                 letterSpacing: '0.12em', textTransform: 'uppercase',
                 color: 'var(--te-text-4)',
               }}>
-                {tab === 'exercises' ? 'swipe to add' : 'swipe to log'}
+                {tab === 'exercises' ? 'swipe to add exercise' : 'swipe to log'}
               </span>
             </div>
           )}
@@ -1221,7 +1233,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
           <span
             className="animate-fade-out-late"
             style={{
-              fontFamily: "'Geist Mono', monospace", fontSize: 11, fontWeight: 600,
+              fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, system-ui, 'Helvetica Neue', Arial, sans-serif", fontSize: 11, fontWeight: 600,
               letterSpacing: '0.06em', textTransform: 'uppercase',
               color: 'var(--te-danger)', textShadow: '0 2px 12px rgba(0,0,0,0.8)',
               whiteSpace: 'nowrap',

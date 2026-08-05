@@ -2,13 +2,12 @@
 // (New exercise / Add log) — matches the Figma "menu" designs.
 import type { CSSProperties } from 'react';
 
-// Section heading — Geist Mono, uppercase, dim white.
+// Section heading — Inter, sentence case, dim white.
 export const SECTION_LABEL: CSSProperties = {
-  fontFamily: "'Geist Mono', 'SF Mono', ui-monospace, monospace",
+  fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, system-ui, 'Helvetica Neue', Arial, sans-serif",
   fontSize: 13,
   lineHeight: '12px',
   fontWeight: 500,
-  textTransform: 'uppercase',
   color: 'var(--te-text-4)',
   letterSpacing: '-0.17px',
 };

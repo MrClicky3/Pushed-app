@@ -35,7 +35,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   core: 'Core',
 };
 
-const MONO = "'Geist Mono', 'SF Mono', ui-monospace, monospace";
+const MONO = "'Inter', -apple-system, BlinkMacSystemFont, system-ui, 'Helvetica Neue', Arial, sans-serif";
 
 // Stand-in for a reading there is no data for yet. The page keeps its full
 // shape when empty — every card, meter and chart frame still renders — so a

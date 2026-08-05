@@ -8,9 +8,11 @@
   --te-pr:    #7fd57f;
   --te-warn:  #ff6b5e;   /* was orange; unified with the app's red */
   /* Single source of truth for every bento/card border — keep card borders on
-     this token so they stay uniform in opacity and thickness. */
-  --te-border: rgba(255, 255, 255, 0.085);
-  --te-border-strong: rgba(255, 255, 255, 0.10);
+     this token so they stay uniform in opacity and thickness. Softened app-
+     wide (was 0.085/0.10) — the previous values read as harsh hairlines
+     against these near-black surfaces. */
+  --te-border: rgba(255, 255, 255, 0.055);
+  --te-border-strong: rgba(255, 255, 255, 0.07);
   /* Faintest tint used for pressed/hover washes and inner fills — below border
      strength, so it reads as a surface change rather than an edge. */
   --te-fill-subtle: rgba(255, 255, 255, 0.04);
@@ -19,8 +21,8 @@
      opt in with the `.soft-borders` class, which restates the two border tokens
      for its subtree only, so every card outline, divider and inline
      var(--te-border) inside them eases off without touching the rest of the app. */
-  --te-border-soft: rgba(255, 255, 255, 0.05);
-  --te-border-soft-strong: rgba(255, 255, 255, 0.065);
+  --te-border-soft: rgba(255, 255, 255, 0.03);
+  --te-border-soft-strong: rgba(255, 255, 255, 0.04);
   /* Accent — overridden at runtime by lib/accent.ts (default: red) */
   --te-accent: #ff453a;
   --te-accent-contrast: #ffffff;
@@ -284,9 +286,12 @@ body {
     border-radius: var(--te-radius-sm);
   }
 
-  /* ─── TE Mono: Geist Mono utility ─── */
+  /* ─── TE Mono: tabular-figure utility ─── */
+  /* No longer an actual monospace face — Inter's tabular-figure OpenType
+     feature keeps digits column-aligned without needing a separate mono
+     typeface loaded app-wide. */
   .te-mono {
-    font-family: 'Geist Mono', 'SF Mono', ui-monospace, monospace;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, 'Helvetica Neue', Arial, sans-serif;
     font-feature-settings: 'tnum';
   }
 
@@ -494,21 +499,21 @@ body {
   }
 
   /* ─── TE Label ─── */
-  /* Micro-label: mono, uppercase, tracked out. Sized for two or three words —
+  /* Micro-label: sentence case, quiet tracking. Sized for two or three words —
      it is not a body style, so anything that runs to a full sentence belongs in
-     te-caption instead (uppercase mono wraps badly and reads slowly). */
+     te-caption instead. No longer uppercase — the wide 0.12em tracking was
+     tuned for all-caps letterforms, so it's tightened to suit mixed case. */
   .te-label {
-    font-family: 'Geist Mono', 'SF Mono', ui-monospace, monospace;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, 'Helvetica Neue', Arial, sans-serif;
     font-size: 10px;
     line-height: 1;
     font-weight: 500;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+    letter-spacing: 0.02em;
     color: var(--te-text-4);
   }
 
   .te-digit {
-    font-family: 'Geist Mono', 'SF Mono', ui-monospace, monospace;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, 'Helvetica Neue', Arial, sans-serif;
     font-variant-numeric: tabular-nums;
     font-feature-settings: 'tnum';
     letter-spacing: -0.01em;

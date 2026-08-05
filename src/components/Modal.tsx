@@ -13,10 +13,10 @@ interface Props {
 const DISMISS_THRESHOLD = 160;
 const VELOCITY_THRESHOLD = 900;
 const START_THRESHOLD = 6;
-// Height of the bottom nav dock (NAV_DOCK_H in App.tsx). The sheet still runs
-// to the very bottom of the screen — behind the dock — so only its *content*
-// needs this much bottom padding for the last row to clear the nav.
-const NAV_DOCK_H = 89;
+// Flat bottom margin for sheet content. The sheet's opaque background covers
+// the full screen height (the nav dock never actually shows through it), so
+// this is just breathing room under the last row — not nav-dock clearance.
+const CONTENT_BOTTOM_PAD = 20;
 
 export default function Modal({ open, onClose, title, children, onBack, noPadTop, noPadBottom }: Props) {
   const sheetRef = useRef<HTMLDivElement>(null);
@@ -202,7 +202,16 @@ export default function Modal({ open, onClose, title, children, onBack, noPadTop
           willChange: 'transform',
           background: 'var(--te-surface-3)',
           boxShadow: '0 2px 34px rgba(0,0,0,0.55)',
-        }}
+          // Without these, a horizontal or long-press touch on the sheet falls
+          // through to the browser's own gesture recognizer (native page pan,
+          // text-selection drag) fighting the pointer-based vertical drag
+          // below — the "feels like a website, not an app" / "glitchy" pull-
+          // to-dismiss reports. pan-y still permits the content area's own
+          // native vertical scroll.
+          touchAction: 'pan-y',
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
+        } as React.CSSProperties}
         onClick={e => e.stopPropagation()}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
@@ -219,19 +228,15 @@ export default function Modal({ open, onClose, title, children, onBack, noPadTop
         )}
         <div
           ref={contentRef}
-          // The sheet runs to the very bottom of the screen, passing behind the
-          // nav dock, so the last row needs exactly the dock's height (plus the
-          // home-indicator inset) of padding to sit clear of it — no more, so
-          // short sheets don't trail an empty gap.
           className={`flex-1 min-h-0 pl-[max(16px,env(safe-area-inset-left))] pr-[max(16px,env(safe-area-inset-right))] ${noPadTop ? 'pt-0' : 'pt-2.5'} overflow-y-auto overscroll-contain`}
           style={{
             WebkitOverflowScrolling: 'touch',
-            // Set inline rather than as a Tailwind class: the dock height is a
-            // JS constant, and Tailwind only generates classes it can see as
-            // literal strings when it scans the source.
+            // Set inline rather than as a Tailwind class: Tailwind only
+            // generates classes it can see as literal strings when it scans
+            // the source.
             paddingBottom: noPadBottom
               ? 'env(safe-area-inset-bottom, 0px)'
-              : `calc(${NAV_DOCK_H}px + env(safe-area-inset-bottom, 0px))`,
+              : `calc(${CONTENT_BOTTOM_PAD}px + env(safe-area-inset-bottom, 0px))`,
           } as React.CSSProperties}
         >
           {children}

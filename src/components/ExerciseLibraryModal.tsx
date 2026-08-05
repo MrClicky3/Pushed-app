@@ -207,7 +207,7 @@ const CarouselCard = React.memo(function CarouselCard({ exercise, onTap, onToggl
         <span className="te-label" style={{
           display: 'inline-block', maxWidth: '100%',
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-          color: 'rgba(255,255,255,0.88)', fontSize: 10,
+          color: 'rgba(255,255,255,0.88)', fontSize: 10, textTransform: 'capitalize',
           padding: '3px 8px', borderRadius: 9999, border: '1px solid rgba(255,255,255,0.12)',
           background: 'rgba(10,10,12,0.82)',
         }}>
@@ -581,7 +581,7 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, onQuickA
               {selected.instructions.map((step, i) => (
                 <div key={i} style={{ display: 'flex', gap: 13, padding: '3px 0' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <span style={{ width: 26, height: 26, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Geist Mono', monospace", fontSize: 10, fontWeight: 600, color: 'var(--te-text-1)', background: 'color-mix(in srgb, var(--te-text-1) 11%, transparent)', border: '1px solid color-mix(in srgb, var(--te-text-1) 27%, transparent)' }}>{i + 1}</span>
+                    <span style={{ width: 26, height: 26, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, system-ui, 'Helvetica Neue', Arial, sans-serif", fontSize: 10, fontWeight: 600, color: 'var(--te-text-1)', background: 'color-mix(in srgb, var(--te-text-1) 11%, transparent)', border: '1px solid color-mix(in srgb, var(--te-text-1) 27%, transparent)' }}>{i + 1}</span>
                     {i < selected.instructions.length - 1 && <span style={{ flex: 1, width: 1.5, background: 'var(--te-border)', margin: '4px 0' }} />}
                   </div>
                   <p className="text-[13px] leading-relaxed" style={{ color: 'var(--te-text-2)', paddingBottom: 11 }}>{step}</p>
@@ -610,8 +610,10 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, onQuickA
 
           <div style={{ height: 88 }} />
 
-          {/* Sticky CTA — same button as "Complete workout" / "Log set" */}
-          <div style={{ position: 'sticky', bottom: 0, margin: '0 -19px', padding: '12px 19px calc(14px + env(safe-area-inset-bottom, 0px))', background: 'var(--te-surface-3)' }}>
+          {/* Sticky CTA — same button as "Complete workout" / "Log set".
+              Standalone: no backing panel behind it, so it floats over the
+              scrolled content rather than sitting on its own footer bar. */}
+          <div style={{ position: 'sticky', bottom: 0, padding: '12px 0 calc(14px + env(safe-area-inset-bottom, 0px))' }}>
             <button
               onClick={() => { if (!added) { quickAdd(selected); closeDetail(); } }}
               disabled={added}

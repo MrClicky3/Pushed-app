@@ -40,9 +40,12 @@ function DayRing({
       aria-label={date.toDateString()}
     >
       <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+        {/* A progress-ring track needs more visible contrast than a card edge
+            — kept independent of --te-border-strong, which was just softened
+            app-wide for card borders and left this ring nearly invisible. */}
         <circle
           cx={size / 2} cy={size / 2} r={r}
-          fill="none" stroke="var(--te-border-strong)" strokeWidth={stroke}
+          fill="none" stroke="rgba(255,255,255,0.34)" strokeWidth={stroke}
         />
         {progress > 0 && (
           <circle

@@ -134,7 +134,7 @@ export default function ExerciseModal({ open, onClose, onSave, onDelete, exercis
                 active={group === g.key}
                 onClick={() => setGroup(g.key)}
                 label={g.label}
-                heightPx={36}
+                heightPx={42}
               />
             ))}
           </div>
@@ -149,7 +149,7 @@ export default function ExerciseModal({ open, onClose, onSave, onDelete, exercis
           <p style={SECTION_LABEL}>Type</p>
           <div className="grid grid-cols-3 gap-2.5">
             {LOAD_TYPES.map(({ key, label }) => (
-              <ToggleButton key={key} active={loadType === key} onClick={() => setLoadType(key)} label={label} heightPx={36} />
+              <ToggleButton key={key} active={loadType === key} onClick={() => setLoadType(key)} label={label} heightPx={42} />
             ))}
           </div>
         </div>

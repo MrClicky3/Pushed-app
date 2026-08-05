@@ -130,7 +130,7 @@ function SwipeableRow({ skipped, onToggle, children }: { skipped: boolean; onTog
       }}>
         <ForwardIcon style={{ width: 14, height: 14, color: 'var(--te-text-4)', strokeWidth: 2 }} />
         <span style={{
-          fontFamily: "'Geist Mono', monospace", fontSize: 10, fontWeight: 600,
+          fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, system-ui, 'Helvetica Neue', Arial, sans-serif", fontSize: 10, fontWeight: 600,
           letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--te-text-4)',
         }}>{skipped ? 'Unskip' : 'Skip'}</span>
       </div>
@@ -746,7 +746,7 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
       >
         <div style={{ overflow: 'hidden', opacity: focusMode ? 0 : 1, transition: `opacity ${focusMode ? '0.15s ease' : '0.3s ease 0.08s'}` }}>
           {/* 7-day calendar — replaces the Upper/Lower filter */}
-          <div className="pt-0.5 pb-4">
+          <div className="pt-0.5" style={{ paddingBottom: 11 }}>
             <WeekCalendar
               weekStart={weekStart}
               selectedDate={selectedDate}
@@ -759,13 +759,13 @@ export default function LogsView({ logs, exercises, onAdd: _onAdd, onAddForExerc
           </div>
 
           {/* Selected date + session info */}
-          <div className="flex items-center gap-2 pb-2 mb-3" style={{ borderBottom: '1px solid var(--te-border)' }}>
-            <p className="te-label" style={{ color: isToday ? 'var(--te-accent)' : 'var(--te-text-3)' }}>
+          <div className="flex items-center gap-2 mb-3">
+            <p className="te-label" style={{ fontSize: 13, color: isToday ? 'var(--te-accent)' : 'var(--te-text-3)' }}>
               {isToday ? 'Today' : selectedLabel}
             </p>
             <div className="flex items-center gap-2 ml-auto">
               {selectedRoutine && (
-                <p className="te-label" style={{ color: 'var(--te-text-1)' }}>{selectedRoutine.name}</p>
+                <p className="te-label" style={{ fontSize: 13, color: 'var(--te-text-1)' }}>{selectedRoutine.name}</p>
               )}
             </div>
           </div>

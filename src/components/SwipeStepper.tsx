@@ -86,7 +86,7 @@ export default function SwipeStepper({
       {/* shrink-0 is load-bearing: `overflow-hidden` clears the default
           min-height:auto, so without it the flex column collapsed this label to
           zero height and the Reps/Sets/Weight fields rendered unlabelled. */}
-      <p className="te-label shrink-0 whitespace-nowrap overflow-hidden text-ellipsis">{label}</p>
+      <p className="te-label shrink-0 whitespace-nowrap overflow-hidden text-ellipsis" style={{ fontSize: 11 }}>{label}</p>
       <input
         type="number"
         value={value}
@@ -95,7 +95,7 @@ export default function SwipeStepper({
         min={min}
         step={step}
         inputMode="decimal"
-        className={`w-full bg-transparent te-t1 !text-[42px] font-bold te-mono focus:outline-none tabular-nums !leading-[32px] tracking-[-1px] text-left ${animClass}`}
+        className={`w-full bg-transparent te-t1 !text-[46px] font-bold te-mono focus:outline-none tabular-nums !leading-[36px] tracking-[-1px] text-left ${animClass}`}
         style={{ touchAction: 'none' }}
       />
       {/* Centred on the value's line rather than on the whole field, so the

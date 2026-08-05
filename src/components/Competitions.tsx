@@ -30,7 +30,7 @@ export function makeVolFmt(unit: WeightUnit, toDisplay: (kg: number) => number):
   return kg => `${Math.round(toDisplay(kg))}${unit.toUpperCase()}`;
 }
 
-// Geist Mono advance width is 0.6em, so a value's pixel width is
+// Inter's tabular-figure digits advance at ~0.6em too, so a value's pixel width is
 // len × 0.6 × fontSize. Competition volumes run to five and six digits, which
 // overflow the fixed-width duel/grid columns at the design size — step the
 // size down for long values rather than truncating the number.

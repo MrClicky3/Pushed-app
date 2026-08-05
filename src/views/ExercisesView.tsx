@@ -2,12 +2,14 @@ import { useEffect, useRef, useMemo } from 'react';
 import { FireIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import Model from '@phelian/react-body-highlighter';
 import ExerciseCard from '../components/ExerciseCard';
-import type { Exercise, WorkoutLog } from '../types';
+import type { Exercise, WorkoutLog, Routine, ScheduleDay } from '../types';
 import type { WeightUnit } from '../hooks/useSettings';
 
 interface Props {
   exercises: Exercise[];
   logs: WorkoutLog[];
+  routines: Routine[];
+  schedule: ScheduleDay[];
   onEdit: (exercise: Exercise) => void;
   onDelete: (id: string) => void;
   onOpenLibrary: () => void;
@@ -17,8 +19,17 @@ interface Props {
 
 const GROUP_ORDER = ['upper', 'lower', 'push', 'pull', 'legs', 'core'];
 
-export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, unit, toDisplay }: Props) {
+export default function ExercisesView({ exercises, logs, routines, schedule, onEdit, onOpenLibrary, unit, toDisplay }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Today's scheduled routine's exercises — drives both the accent-bar state
+  // and the sort (today's exercises float to the top of each muscle group).
+  const todaysExerciseIds = useMemo(() => {
+    const dow = (new Date().getDay() + 6) % 7; // Mon=0…Sun=6, matches lib/streak.ts
+    const entry = schedule.find(s => s.day_of_week === dow);
+    const routine = entry?.routine_id ? routines.find(r => r.id === entry.routine_id) : null;
+    return new Set(routine?.exercise_ids ?? []);
+  }, [schedule, routines]);
 
   // Sized down and shifted right (from the original flat-grid card's
   // left:135) to clear room for the wider two-line "Browse Exercises" title —
@@ -69,7 +80,14 @@ export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, 
     return () => { scrollEl!.removeEventListener('scroll', update); cancelAnimationFrame(raf); };
   }, [exercises]);
 
-  const sortedExercises = useMemo(() => exercises.slice().sort((a, b) => a.name.localeCompare(b.name)), [exercises]);
+  // Today's-schedule exercises sort first (alphabetically among themselves),
+  // then everything else (also alphabetical) — within each muscle group.
+  const sortedExercises = useMemo(() => exercises.slice().sort((a, b) => {
+    const aToday = todaysExerciseIds.has(a.id) ? 0 : 1;
+    const bToday = todaysExerciseIds.has(b.id) ? 0 : 1;
+    if (aToday !== bToday) return aToday - bToday;
+    return a.name.localeCompare(b.name);
+  }), [exercises, todaysExerciseIds]);
 
   const groups = useMemo(() => sortedExercises.reduce<Record<string, Exercise[]>>((acc, ex) => {
     const g = ex.muscle_group;
@@ -77,10 +95,6 @@ export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, 
     acc[g].push(ex);
     return acc;
   }, {}), [sortedExercises]);
-
-  function getLastLog(exerciseId: string): WorkoutLog | undefined {
-    return logs.find(l => l.exercise_id === exerciseId);
-  }
 
   // Month-over-month strength trend per exercise: best est. 1RM (Epley) in the
   // last 30 days vs the 30 days before. Null until both windows have data.
@@ -115,9 +129,9 @@ export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, 
     <button
       onClick={onOpenLibrary}
       className="w-full overflow-hidden active:opacity-80 transition-opacity"
-      style={{ display: 'block', textAlign: 'left', position: 'relative', background: '#010101', border: '1px solid var(--te-border)', borderRadius: 20, boxShadow: '0 0 15px rgba(0,0,0,0.25)' }}
+      style={{ display: 'block', textAlign: 'left', position: 'relative', background: '#010101', border: '1px solid var(--te-border)', borderRadius: 35, boxShadow: '0 0 15px rgba(0,0,0,0.25)' }}
     >
-      <div style={{ height: 132, position: 'relative', overflow: 'hidden' }}>
+      <div style={{ height: 112, position: 'relative', overflow: 'hidden' }}>
         {/* Affordance chevron — a thin doorway marker, top-right per the design. */}
         <ChevronRightIcon
           className="w-[10px] h-[16px]"
@@ -136,7 +150,7 @@ export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, 
 
         {/* Three muscle figures, centre-right, tallest in the middle — grey
             bodies with white-highlighted muscles, matching the design. */}
-        <div style={{ position: 'absolute', bottom: 0, left: 165, right: 30, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: 7 }}>
+        <div style={{ position: 'absolute', bottom: 0, left: 157, right: 30, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: 7 }}>
           {PREVIEW_FIGURES.map((fig, i) => (
             <div key={i} style={{ position: 'relative', width: fig.w, height: fig.h, flexShrink: 0 }}>
               <div style={{
@@ -187,7 +201,7 @@ export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, 
         return (
           <div key={group}>
             <div className="flex items-baseline gap-2 mb-3 px-0.5">
-              <span className="text-[13px] font-medium te-t3" style={{ textTransform: 'capitalize' }}>{group}</span>
+              <span className="text-[13px] font-medium te-t1" style={{ textTransform: 'capitalize' }}>{group}</span>
               <span className="te-mono text-[11px] te-t4">{groupExercises.length}</span>
             </div>
             <div className="space-y-1.5">
@@ -200,7 +214,7 @@ export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, 
                 >
                   <ExerciseCard
                     exercise={ex}
-                    lastLog={getLastLog(ex.id)}
+                    inTodaysSchedule={todaysExerciseIds.has(ex.id)}
                     onEdit={() => onEdit(ex)}
                     unit={unit}
                     toDisplay={toDisplay}
