@@ -486,21 +486,19 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, onQuickA
             <StaticHeroCard selected={selected} />
           </div>
 
-          {/* Equipment / Region — its own card */}
-          <div className="te-panel rounded-te-md" style={{ marginTop: 16, overflow: 'hidden' }}>
-            <div style={{ display: 'flex' }}>
-              <div style={{ flex: 1, padding: '12px 14px' }}>
-                <p className="te-label mb-1.5">Equipment</p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                  <EquipIcon type={selected.equipment} size={14} color="var(--te-text-1)" />
-                  <span className="text-[15px] font-semibold te-t1">{EQUIPMENT_LABELS[selected.equipment]}</span>
-                </div>
+          {/* Equipment and Region — two independent cards, not one panel
+              split by an internal divider. */}
+          <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+            <div className="te-panel rounded-te-md" style={{ flex: 1, padding: '12px 14px' }}>
+              <p className="te-label mb-1.5">Equipment</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                <EquipIcon type={selected.equipment} size={14} color="var(--te-text-1)" />
+                <span className="text-[15px] font-semibold te-t1">{EQUIPMENT_LABELS[selected.equipment]}</span>
               </div>
-              <div style={{ width: 1, background: HAIRLINE }} />
-              <div style={{ flex: 1, padding: '12px 14px' }}>
-                <p className="te-label mb-1.5">Region</p>
-                <span className="text-[15px] font-semibold te-t1">{selected.muscleGroup === 'upper' ? 'Upper body' : 'Lower body'}</span>
-              </div>
+            </div>
+            <div className="te-panel rounded-te-md" style={{ flex: 1, padding: '12px 14px' }}>
+              <p className="te-label mb-1.5">Region</p>
+              <span className="text-[15px] font-semibold te-t1">{selected.muscleGroup === 'upper' ? 'Upper body' : 'Lower body'}</span>
             </div>
           </div>
 
