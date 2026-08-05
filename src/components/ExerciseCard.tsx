@@ -10,8 +10,6 @@ interface Props {
   onEdit: () => void;
   unit: WeightUnit;
   toDisplay: (kg: number) => number;
-  /** Est-1RM change vs the previous month, in % (null = not enough history). */
-  trendPct?: number | null;
 }
 
 // Right-hand load label: "30kg" | "BW" | "BW +10kg"
@@ -23,23 +21,7 @@ function loadLabel(ex: Exercise, unit: WeightUnit, toDisplay: (kg: number) => nu
   return `${toDisplay(ex.weight)}${unit}`;
 }
 
-// ▲/▼ month-over-month strength trend (est. 1RM). Quietly omitted until two
-// months of history exist — a missing chip is neutral, a wrong one is noise.
-function TrendChip({ pct }: { pct: number }) {
-  const up = pct >= 0;
-  const color = up ? 'var(--te-pr)' : 'var(--te-warn)';
-  const shown = Math.abs(Math.round(pct * 10) / 10);
-  return (
-    <span
-      className="te-mono shrink-0 tabular-nums"
-      style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.02em', color }}
-    >
-      {up ? '▲' : '▼'} {shown}%
-    </span>
-  );
-}
-
-export default function ExerciseCard({ exercise, inTodaysSchedule, onEdit, unit, toDisplay, trendPct }: Props) {
+export default function ExerciseCard({ exercise, inTodaysSchedule, onEdit, unit, toDisplay }: Props) {
   const lineColor = inTodaysSchedule ? 'var(--te-text-1)' : 'var(--te-text-4)';
 
   return (
@@ -64,7 +46,6 @@ export default function ExerciseCard({ exercise, inTodaysSchedule, onEdit, unit,
             <span className="te-mono text-[13px] leading-none shrink-0" style={{ color: 'var(--te-text-4)', fontFeatureSettings: '"tnum"' }}>
               {exercise.target_reps} x {exercise.sets}
             </span>
-            {trendPct !== null && trendPct !== undefined && <TrendChip pct={trendPct} />}
           </div>
           <p className="te-mono text-[13px] leading-none mt-[6px]" style={{ color: 'var(--te-text-4)', fontFeatureSettings: '"tnum"' }}>
             {loadLabel(exercise, unit, toDisplay)}

@@ -23,7 +23,7 @@ function DayRing({
   const c = 2 * Math.PI * r;
   const dash = c * Math.max(0, Math.min(1, progress));
 
-  const arcColor = isToday ? 'var(--te-accent)' : 'var(--te-text-1)';
+  const arcColor = isToday ? 'var(--te-accent)' : '#ffffff';
   // White initial marks a day that's on the routine (or the selected day);
   // other days stay dim.
   const letterColor = isToday
@@ -40,12 +40,11 @@ function DayRing({
       aria-label={date.toDateString()}
     >
       <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-        {/* A progress-ring track needs more visible contrast than a card edge
-            — kept independent of --te-border-strong, which was just softened
-            app-wide for card borders and left this ring nearly invisible. */}
+        {/* Dark, subtle track — the fill (pure white / accent) is what should
+            read as bright and visible, not the empty/incomplete portion. */}
         <circle
           cx={size / 2} cy={size / 2} r={r}
-          fill="none" stroke="rgba(255,255,255,0.34)" strokeWidth={stroke}
+          fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth={stroke}
         />
         {progress > 0 && (
           <circle

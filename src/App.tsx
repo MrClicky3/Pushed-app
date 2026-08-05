@@ -827,7 +827,6 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
         {tab === 'exercises' ? (
           <ExercisesView
             exercises={exercises}
-            logs={logs}
             routines={routines}
             schedule={schedule}
             onEdit={ex => setExerciseModal({ open: true, exercise: ex })}

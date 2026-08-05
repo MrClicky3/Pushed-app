@@ -5,7 +5,7 @@ import type { Muscle } from '@phelian/react-body-highlighter';
 import FullPageSheet from './FullPageSheet';
 import Modal from './Modal';
 import SearchField from './SearchField';
-import { accentHex, accentAlpha } from '../lib/accent';
+import { accentHex } from '../lib/accent';
 import {
   EXERCISE_LIBRARY,
   EQUIPMENT_LABELS,
@@ -292,7 +292,7 @@ function CategoryCarousel({ category, exercises, onTap, isAdded, sectionRef }: {
   return (
     <div ref={sectionRef}>
       <div className="flex items-baseline gap-2 mb-3 px-5">
-        <span className="text-[13px] font-medium te-t3">{category}</span>
+        <span className="text-[13px] font-medium te-t1">{category}</span>
         <span className="te-mono text-[11px] te-t4">{exercises.length}</span>
       </div>
       <div
@@ -331,13 +331,15 @@ function CategoryCarousel({ category, exercises, onTap, isAdded, sectionRef }: {
 }
 
 // ── Detail – muscle chip ──────────────────────────────────────
-function MuscleChip({ label, primary }: { label: string; primary?: boolean }) {
+// Primary and secondary read identically per the reference — no accent
+// tinting on primary, just the same neutral pill both rows share.
+function MuscleChip({ label }: { label: string; primary?: boolean }) {
   return (
     <span className="te-label" style={{
       padding: '4px 9px', borderRadius: 9999, whiteSpace: 'nowrap',
-      color: primary ? accentHex() : 'var(--te-text-2)',
-      background: primary ? accentAlpha(0.14) : 'var(--te-border)',
-      border: `1px solid ${primary ? accentAlpha(0.32) : HAIRLINE}`,
+      color: 'var(--te-text-2)',
+      background: 'var(--te-border)',
+      border: `1px solid ${HAIRLINE}`,
     }}>
       {label.replace(/-/g, ' ')}
     </span>
@@ -357,78 +359,14 @@ function CueLine({ text, good }: { text: string; good?: boolean }) {
   );
 }
 
-// ── Swipeable video + muscle model card ──────────────────────
-function SwipeableHeroCard({ selected }: { selected: LibraryExercise }) {
-  const [slide, setSlide] = useState(0);
-  const touchStartX = useRef(0);
-  const hasVideo = !!selected.gifUrl;
-  const totalSlides = hasVideo ? 2 : 1;
-
-  useEffect(() => { setSlide(0); }, [selected.id]);
-
-  const mapData = useMemo(() => [
-    { name: 'p1', muscles: selected.primaryMuscles },
-    { name: 'p2', muscles: selected.primaryMuscles },
-    ...(selected.secondaryMuscles.length ? [{ name: 's1', muscles: selected.secondaryMuscles }] : []),
-  ], [selected.primaryMuscles, selected.secondaryMuscles]);
-
+// ── Hero — static poster/video, no swipe/toggle per the reference ────
+function StaticHeroCard({ selected }: { selected: LibraryExercise }) {
   return (
     <div style={{ borderRadius: 'var(--te-radius-md)', overflow: 'hidden', border: `1px solid ${HAIRLINE}` }}>
-      <div
-        style={{ overflow: 'hidden' }}
-        onTouchStart={e => { touchStartX.current = e.touches[0].clientX; }}
-        onTouchEnd={e => {
-          const dx = touchStartX.current - e.changedTouches[0].clientX;
-          if (Math.abs(dx) > 40)
-            setSlide(s => Math.max(0, Math.min(totalSlides - 1, s + (dx > 0 ? 1 : -1))));
-        }}
-      >
-        <div style={{
-          display: 'flex',
-          transform: `translateX(-${slide * 100}%)`,
-          transition: 'transform 0.32s cubic-bezier(0.4,0,0.2,1)',
-        }}>
-          {/* Slide 0 — form video (autoplays) */}
-          {hasVideo && (
-            <div style={{ flexShrink: 0, width: '100%' }}>
-              <ExerciseAnimation gifUrl={selected.gifUrl!} inline />
-            </div>
-          )}
-          {/* Slide 1 (or 0) — muscle model */}
-          <div style={{
-            flexShrink: 0, width: '100%',
-            background: 'radial-gradient(130% 90% at 50% 0%, var(--te-fill-subtle), transparent 65%), var(--te-surface-1)',
-            display: 'flex', height: 180, padding: '10px 12px',
-          }}>
-            {(['anterior', 'posterior'] as const).map(v => (
-              <div key={v} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                <span className="te-label" style={{ color: 'var(--te-text-4)' }}>
-                  {v === 'anterior' ? 'FRONT' : 'BACK'}
-                </span>
-                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Model type={v} data={mapData} bodyColor="#181818" highlightedColors={[accentAlpha(0.28), accentHex()]}
-                    style={{ height: '100%', width: 'auto', maxWidth: '90%' }} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom bar: video ↔ model toggle dots only */}
-      {totalSlides > 1 && (
-        <div style={{ background: 'var(--te-surface-1)', padding: '9px 14px 11px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, borderTop: '1px solid var(--te-border)' }}>
-          {(['Video', 'Muscles'] as const).map((label, i) => (
-            <button key={label} onClick={() => setSlide(i)} className="te-label" style={{
-              padding: '3px 9px', borderRadius: 9999, border: 'none', cursor: 'pointer',
-              color: i === slide ? 'var(--te-surface-1)' : 'rgba(255,255,255,0.4)',
-              background: i === slide ? 'var(--te-text-1)' : 'var(--te-border)',
-              transition: 'all 0.2s ease',
-            }}>
-              {label}
-            </button>
-          ))}
-        </div>
+      {selected.gifUrl ? (
+        <ExerciseAnimation gifUrl={selected.gifUrl} inline />
+      ) : (
+        <div style={{ height: 180, background: 'var(--te-surface-1)' }} />
       )}
     </div>
   );
@@ -528,8 +466,8 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, onQuickA
       {selected && (
         <div className="animate-detail-enter" style={{ paddingTop: 4 }}>
 
-          {/* Hero — autoplaying video ↔ muscle model */}
-          <SwipeableHeroCard selected={selected} />
+          {/* Hero — static poster/video, no swipe toggle (matches reference) */}
+          <StaticHeroCard selected={selected} />
 
           {/* Title + summary */}
           <div style={{ paddingTop: 16 }}>
@@ -579,9 +517,10 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, onQuickA
             <p className="te-label mb-3.5" style={{ letterSpacing: '0.12em' }}>How to perform</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {selected.instructions.map((step, i) => (
+                // Plain numeral, no circle badge, per the reference.
                 <div key={i} style={{ display: 'flex', gap: 13, padding: '3px 0' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <span style={{ width: 26, height: 26, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, system-ui, 'Helvetica Neue', Arial, sans-serif", fontSize: 10, fontWeight: 600, color: 'var(--te-text-1)', background: 'color-mix(in srgb, var(--te-text-1) 11%, transparent)', border: '1px solid color-mix(in srgb, var(--te-text-1) 27%, transparent)' }}>{i + 1}</span>
+                  <div style={{ width: 14, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <span className="te-mono" style={{ fontSize: 13, fontWeight: 600, color: 'var(--te-text-4)', lineHeight: '20px' }}>{i + 1}</span>
                     {i < selected.instructions.length - 1 && <span style={{ flex: 1, width: 1.5, background: 'var(--te-border)', margin: '4px 0' }} />}
                   </div>
                   <p className="text-[13px] leading-relaxed" style={{ color: 'var(--te-text-2)', paddingBottom: 11 }}>{step}</p>
@@ -665,8 +604,6 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, onQuickA
           >
             <SvgBookmark c={savedOnly ? 'var(--te-text-1)' : 'var(--te-text-4)'} />
           </button>
-          {/* Divider — centred between the bookmark and the previews */}
-          <div style={{ flexShrink: 0, width: 1, height: 38, background: 'rgba(255,255,255,0.18)', marginLeft: 2, marginRight: 11 }} />
           {availableFilters.map(f => (
             <MiniMuscleCard
               key={f.cat}
