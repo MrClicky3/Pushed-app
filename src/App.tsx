@@ -1036,7 +1036,7 @@ function MainApp({ userId, onSignOut, userName, onUpdateName }: {
           {/* Tabs — hidden in focus mode */}
           {/* Swipe-up line — the grabber you drag up on to add. */}
           <div className="flex justify-center" style={{ paddingTop: 6, paddingBottom: 10 }}>
-            <div style={{ width: 68, height: 4, borderRadius: 9999, background: 'var(--te-border-strong)' }} />
+            <div style={{ width: 68, height: 4, borderRadius: 9999, background: 'rgba(255,255,255,0.16)' }} />
           </div>
 
           {/* Tabs — plain flat bar (no skeuomorphic panel), hidden in focus mode. */}

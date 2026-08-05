@@ -128,7 +128,7 @@ const MiniMuscleCard = React.memo(function MiniMuscleCard({ filter, active, onTo
       title={filter.cat}
       className="active:opacity-70 transition-all"
       style={{
-        flexShrink: 0, width: 56, height: 65, borderRadius: 'var(--te-radius-md)',
+        flexShrink: 0, width: 56, height: 65, borderRadius: 12,
         position: 'relative', overflow: 'hidden', cursor: 'pointer',
         background: active ? 'var(--te-border)' : MINI_BG,
         border: `1px solid ${active ? 'var(--te-text-1)' : HAIRLINE}`,
@@ -145,7 +145,7 @@ const MiniMuscleCard = React.memo(function MiniMuscleCard({ filter, active, onTo
           type={filter.view}
           data={data}
           bodyColor={active ? '#333333' : '#2b2b2b'}
-          highlightedColors={[accentHex()]}
+          highlightedColors={['#ffffff']}
           style={{ width: '100%' }}
         />
       </div>
@@ -196,9 +196,6 @@ const CarouselCard = React.memo(function CarouselCard({ exercise, onTap, onToggl
           <Model type={view} data={mapData} bodyColor="#343434" highlightedColors={[accentHex()]} style={{ width: '100%' }} />
         </div>
       )}
-      {/* Single gradient — solid card fading up from behind the title */}
-      <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 118, background: 'linear-gradient(to top, var(--te-surface-3) 30%, rgba(20,20,20,0) 100%)' }} />
-
       {/* Tag */}
       <div style={{ position: 'relative', padding: '11px 46px 0 11px' }}>
         {/* Sits over the card art, which is light — so the pill carries its own
@@ -226,8 +223,11 @@ const CarouselCard = React.memo(function CarouselCard({ exercise, onTap, onToggl
         {added ? <SvgCheck c="var(--te-surface-1)" /> : <SvgPlus c="rgba(255,255,255,0.8)" />}
       </button>
 
-      {/* Title */}
-      <div style={{ position: 'relative', padding: '0 12px 13px' }}>
+      {/* Title — carries its own solid backing, sized to its actual content
+          instead of a separate absolutely-positioned panel guessing a fixed
+          height (that guess was too tall, leaving dead space above the
+          text). */}
+      <div style={{ position: 'relative', padding: '10px 12px 13px', background: 'var(--te-surface-3)' }}>
         <p className="text-[15px] font-semibold te-t1" style={{ letterSpacing: '-0.01em', lineHeight: 1.2 }}>
           {exercise.name}
         </p>
@@ -302,7 +302,14 @@ function CategoryCarousel({ category, exercises, onTap, isAdded, sectionRef }: {
         style={{
           gap: 10, scrollSnapType: 'x mandatory', scrollbarWidth: 'none',
           WebkitOverflowScrolling: 'touch' as never, padding: '0 20px',
-        }}
+          // scroll-snap-align:start on the first card snaps it to the
+          // *snapport*, which defaults to the unpadded scrollport — not this
+          // container's own CSS padding. Without scroll-padding matching the
+          // visual padding, the initial resting scroll position auto-adjusts
+          // to cancel the left padding out, so the first card rendered flush
+          // against the true screen edge instead of the page's 20px margin.
+          scrollPaddingLeft: 20, scrollPaddingRight: 20,
+        } as React.CSSProperties}
       >
         {exercises.map(ex => (
           <div key={ex.id} style={{ flex: '0 0 calc(50% - 5px)', scrollSnapAlign: 'start', minWidth: 0 }}>
@@ -321,7 +328,7 @@ function CategoryCarousel({ category, exercises, onTap, isAdded, sectionRef }: {
             <span
               key={i}
               className="rounded-full"
-              style={{ width: 6, height: 6, background: i === page ? 'var(--te-text-2)' : 'var(--te-border-strong)' }}
+              style={{ width: 6, height: 6, background: i === page ? 'var(--te-text-2)' : 'rgba(255,255,255,0.18)' }}
             />
           ))}
         </div>
@@ -336,7 +343,7 @@ function CategoryCarousel({ category, exercises, onTap, isAdded, sectionRef }: {
 function MuscleChip({ label }: { label: string; primary?: boolean }) {
   return (
     <span className="te-label" style={{
-      padding: '4px 9px', borderRadius: 9999, whiteSpace: 'nowrap',
+      padding: '4px 9px', borderRadius: 9999, whiteSpace: 'nowrap', textTransform: 'capitalize',
       color: 'var(--te-text-2)',
       background: 'var(--te-border)',
       border: `1px solid ${HAIRLINE}`,
@@ -466,18 +473,20 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, onQuickA
       {selected && (
         <div className="animate-detail-enter" style={{ paddingTop: 4 }}>
 
-          {/* Hero — static poster/video, no swipe toggle (matches reference) */}
-          <StaticHeroCard selected={selected} />
-
-          {/* Title + summary */}
-          <div style={{ paddingTop: 16 }}>
+          {/* Title + summary — above the hero, per the reference */}
+          <div>
             <h1 className="text-[20px] font-bold te-t1" style={{ letterSpacing: '-0.02em', lineHeight: 1.12 }}>{selected.name}</h1>
             {selected.summary && (
               <p className="text-[13px] leading-relaxed mt-2" style={{ color: 'var(--te-text-2)' }}>{selected.summary}</p>
             )}
           </div>
 
-          {/* Overview — equipment · region · muscles worked in one panel */}
+          {/* Hero — static poster/video, no swipe toggle (matches reference) */}
+          <div style={{ marginTop: 16 }}>
+            <StaticHeroCard selected={selected} />
+          </div>
+
+          {/* Equipment / Region — its own card */}
           <div className="te-panel rounded-te-md" style={{ marginTop: 16, overflow: 'hidden' }}>
             <div style={{ display: 'flex' }}>
               <div style={{ flex: 1, padding: '12px 14px' }}>
@@ -493,23 +502,25 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, onQuickA
                 <span className="text-[15px] font-semibold te-t1">{selected.muscleGroup === 'upper' ? 'Upper body' : 'Lower body'}</span>
               </div>
             </div>
-            <div style={{ height: 1, background: HAIRLINE }} />
-            <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 9 }}>
+          </div>
+
+          {/* Primary / Secondary muscles — a separate card, not merged into
+              the Equipment/Region one. */}
+          <div className="te-panel rounded-te-md" style={{ marginTop: 12, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 9 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span className="te-label" style={{ color: ACCENT_DIM, width: 66, flexShrink: 0 }}>Primary</span>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {selected.primaryMuscles.map(m => <MuscleChip key={m} label={m} primary />)}
+              </div>
+            </div>
+            {selected.secondaryMuscles.length > 0 && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span className="te-label" style={{ color: ACCENT_DIM, width: 66, flexShrink: 0 }}>Primary</span>
+                <span className="te-label" style={{ color: ACCENT_DIM, width: 66, flexShrink: 0 }}>Secondary</span>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                  {selected.primaryMuscles.map(m => <MuscleChip key={m} label={m} primary />)}
+                  {selected.secondaryMuscles.map(m => <MuscleChip key={m} label={m} />)}
                 </div>
               </div>
-              {selected.secondaryMuscles.length > 0 && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span className="te-label" style={{ color: ACCENT_DIM, width: 66, flexShrink: 0 }}>Secondary</span>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                    {selected.secondaryMuscles.map(m => <MuscleChip key={m} label={m} />)}
-                  </div>
-                </div>
-              )}
-            </div>
+            )}
           </div>
 
           {/* How to perform */}
@@ -556,7 +567,7 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, onQuickA
             <button
               onClick={() => { if (!added) { quickAdd(selected); closeDetail(); } }}
               disabled={added}
-              className="te-white-btn w-full h-[55px] rounded-te-md flex items-center justify-center gap-1.5 disabled:opacity-60"
+              className="te-white-btn w-full h-[55px] rounded-te-md flex items-center justify-center gap-1.5"
             >
               {added
                 ? <><CheckIcon className="w-[15px] h-[15px] text-black stroke-[2.5]" /><span className="text-[15px] font-semibold text-black tracking-[-0.17px]">Added to your exercises</span></>

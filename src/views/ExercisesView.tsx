@@ -103,7 +103,16 @@ export default function ExercisesView({ exercises, routines, schedule, onEdit, o
     <button
       onClick={onOpenLibrary}
       className="w-full overflow-hidden active:opacity-80 transition-opacity"
-      style={{ display: 'block', textAlign: 'left', position: 'relative', background: '#010101', border: '1px solid var(--te-border)', borderRadius: 35, boxShadow: '0 0 15px rgba(0,0,0,0.25)' }}
+      // The border-matching issue wasn't the border color (it was already
+      // identical to exercise cards) — it's that this card's fill was pure
+      // black (#010101), the same as the page background behind it. Regular
+      // cards sit on var(--te-card) (#101010), one step lighter than the
+      // page, so their edge gets a free tonal step in addition to the
+      // border; this card had none, so the same border stroke had nothing
+      // to contrast against and read as invisible. Matching the fill to
+      // var(--te-card) fixes that at the root instead of compensating with
+      // a stronger border.
+      style={{ display: 'block', textAlign: 'left', position: 'relative', background: 'var(--te-card)', border: '1px solid var(--te-border)', borderRadius: 35, boxShadow: '0 0 15px rgba(0,0,0,0.25)' }}
     >
       <div style={{ height: 112, position: 'relative', overflow: 'hidden' }}>
         {/* Affordance chevron — a thin doorway marker, top-right per the design. */}

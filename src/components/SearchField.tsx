@@ -1,9 +1,8 @@
-// The app's search input: a pill that takes the accent on focus and offers a
-// clear button once there's something to clear. Shared so every search box —
-// the exercise library, the log sheet's exercise picker — stays identical.
-import { useState } from 'react';
+// The app's search input: a pill that offers a clear button once there's
+// something to clear. Shared so every search box — the exercise library, the
+// log sheet's exercise picker — stays identical. Border/icon colour is fixed
+// regardless of focus, by design — no accent highlight on select.
 import { MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { accentHex } from '../lib/accent';
 
 const FIELD_BG = 'var(--te-surface-3)';
 const HAIRLINE = 'var(--te-border-strong)';
@@ -17,28 +16,23 @@ interface Props {
 }
 
 export default function SearchField({ value, onChange, placeholder = 'Search', autoFocus }: Props) {
-  const [focused, setFocused] = useState(false);
-
   return (
     <div
       style={{
         display: 'flex', alignItems: 'center', gap: 10,
         padding: '0 18px', height: 45,
         background: FIELD_BG, borderRadius: 9999,
-        border: `1px solid ${focused ? accentHex() : HAIRLINE}`,
+        border: `1px solid ${HAIRLINE}`,
         boxShadow: '0 0 7.5px rgba(0,0,0,0.25)',
-        transition: 'border-color .15s',
       }}
     >
       <MagnifyingGlassIcon
-        style={{ width: 16, height: 16, flexShrink: 0, color: focused ? accentHex() : PLACEHOLDER }}
+        style={{ width: 16, height: 16, flexShrink: 0, color: PLACEHOLDER }}
       />
       <input
         data-no-drag
         value={value}
         onChange={e => onChange(e.target.value)}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
         placeholder={placeholder}
         autoFocus={autoFocus}
         autoCapitalize="none"
