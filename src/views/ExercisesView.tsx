@@ -20,10 +20,14 @@ const GROUP_ORDER = ['upper', 'lower', 'push', 'pull', 'legs', 'core'];
 export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, unit, toDisplay }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Sized down and shifted right (from the original flat-grid card's
+  // left:135) to clear room for the wider two-line "Browse Exercises" title —
+  // the old uppercase-mono "EXERCISE LIBRARY" text was narrow enough to not
+  // need the room, but mixed-case bold sans at a readable size does.
   const PREVIEW_FIGURES = [
-    { view: 'posterior' as const, muscles: ['upper-back', 'trapezius'] as never[], isUpper: true,  w: 44, h: 80 },
-    { view: 'anterior' as const,  muscles: ['chest', 'front-deltoids'] as never[], isUpper: true,  w: 52, h: 92 },
-    { view: 'anterior' as const,  muscles: ['quadriceps', 'hamstring'] as never[], isUpper: false, w: 44, h: 80 },
+    { view: 'posterior' as const, muscles: ['upper-back', 'trapezius'] as never[], isUpper: true,  w: 41, h: 75 },
+    { view: 'anterior' as const,  muscles: ['chest', 'front-deltoids'] as never[], isUpper: true,  w: 48, h: 85 },
+    { view: 'anterior' as const,  muscles: ['quadriceps', 'hamstring'] as never[], isUpper: false, w: 41, h: 75 },
   ];
 
   useEffect(() => {
@@ -111,7 +115,7 @@ export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, 
     <button
       onClick={onOpenLibrary}
       className="w-full overflow-hidden active:opacity-80 transition-opacity"
-      style={{ display: 'block', textAlign: 'left', position: 'relative', background: '#010101', border: '1px solid #2c2c2c', borderRadius: 20, boxShadow: '0 0 15px rgba(0,0,0,0.25)' }}
+      style={{ display: 'block', textAlign: 'left', position: 'relative', background: '#010101', border: '1px solid var(--te-border)', borderRadius: 20, boxShadow: '0 0 15px rgba(0,0,0,0.25)' }}
     >
       <div style={{ height: 132, position: 'relative', overflow: 'hidden' }}>
         {/* Affordance chevron — a thin doorway marker, top-right per the design. */}
@@ -120,21 +124,21 @@ export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, 
           style={{ position: 'absolute', top: 20, right: 20, color: '#ffffff', opacity: 0.5 }}
         />
 
-        {/* EXERCISE LIBRARY — Geist Mono SemiBold, wraps to two lines. */}
+        {/* Browse Exercises — bold sans, two lines, mixed case. */}
         <p style={{
-          position: 'absolute', top: 20, left: 20, maxWidth: 190,
-          fontFamily: "'Geist Mono', monospace", fontSize: 34, fontWeight: 600,
-          letterSpacing: '-0.17px', lineHeight: '32px', textTransform: 'uppercase',
+          position: 'absolute', top: 20, left: 20, maxWidth: 140,
+          fontSize: 26, fontWeight: 700,
+          letterSpacing: '-0.02em', lineHeight: '28px',
           color: '#ffffff',
         }}>
-          Exercise library
+          Browse<br />Exercises
         </p>
 
         {/* Three muscle figures, centre-right, tallest in the middle — grey
             bodies with white-highlighted muscles, matching the design. */}
-        <div style={{ position: 'absolute', bottom: 0, left: 186, right: 20, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: 0 }}>
+        <div style={{ position: 'absolute', bottom: 0, left: 165, right: 30, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: 7 }}>
           {PREVIEW_FIGURES.map((fig, i) => (
-            <div key={i} style={{ position: 'relative', width: fig.w, height: fig.h, flexShrink: 0, marginLeft: -8 }}>
+            <div key={i} style={{ position: 'relative', width: fig.w, height: fig.h, flexShrink: 0 }}>
               <div style={{
                 position: 'absolute',
                 [fig.isUpper ? 'top' : 'bottom']: -6,
@@ -166,7 +170,7 @@ export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, 
           </div>
           <p className="te-t1 font-semibold text-[17px] mb-1.5 tracking-tight">Your exercises will appear here</p>
           <p className="te-t4 text-[13px] leading-relaxed" style={{ maxWidth: 220 }}>
-            Browse the library to find exercises, or add your own.
+            Browse Exercises to find what you need, or add your own.
           </p>
         </div>
       </div>
@@ -182,9 +186,9 @@ export default function ExercisesView({ exercises, logs, onEdit, onOpenLibrary, 
         const groupExercises = groups[group];
         return (
           <div key={group}>
-            <div className="flex items-center gap-2 mb-3 pb-2.5" style={{ borderBottom: '1px solid var(--te-surface-3)' }}>
-              <span className="te-label" style={{ color: 'var(--te-text-4)' }}>{group}</span>
-              <span className="ml-auto te-label">{groupExercises.length}</span>
+            <div className="flex items-baseline gap-2 mb-3 px-0.5">
+              <span className="text-[13px] font-medium te-t3" style={{ textTransform: 'capitalize' }}>{group}</span>
+              <span className="te-mono text-[11px] te-t4">{groupExercises.length}</span>
             </div>
             <div className="space-y-1.5">
               {groupExercises.map(ex => (

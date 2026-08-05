@@ -163,8 +163,8 @@ html, body {
 }
 
 body {
-  font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'SF Pro Display',
-    system-ui, 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui,
+    'Helvetica Neue', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background: var(--te-bg);
