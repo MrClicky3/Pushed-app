@@ -125,7 +125,10 @@ function RankBadge({ rank, side = 'right' }: { rank: number; side?: 'left' | 'ri
       style={{ width: RANK_BADGE_PX, height: RANK_BADGE_PX, top: -5, ...pos, background: 'var(--te-surface-2)' }}
     >
       {rank === 1 ? (
-        <Trophy style={{ width: 13, height: 13, color: 'var(--te-gold)' }} strokeWidth={2.25} />
+        // Medal, not the Trophy cup used elsewhere (badge tiers, invite card)
+        // — the reference cards show a small gold medal/ribbon on the leader's
+        // avatar rim, not a trophy.
+        <Medal style={{ width: 13, height: 13, color: 'var(--te-gold)' }} strokeWidth={2.25} />
       ) : (
         <span className="te-mono" style={{ fontSize: 9, fontWeight: 600, color: 'var(--te-text-4)' }}>
           #{rank}

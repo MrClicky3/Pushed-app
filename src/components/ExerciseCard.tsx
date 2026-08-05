@@ -49,28 +49,28 @@ export default function ExerciseCard({ exercise, lastLog, onEdit, unit, toDispla
   return (
     <button
       onClick={onEdit}
-      className="w-full h-[70px] flex items-center gap-4 px-[18px] text-left active:opacity-80 transition-opacity min-w-0"
+      className="w-full h-[70px] flex items-center gap-3 px-[18px] text-left active:opacity-80 transition-opacity min-w-0"
     >
-      <div className="w-[3px] h-[38px] rounded-full shrink-0" style={{ background: lineColor }} />
+      {/* Full-height, matches the iOS row's Capsule().frame(maxHeight: .infinity)
+          — was a short 38px floating segment before, which read thinner and
+          less anchored than the reference. */}
+      <div className="w-[4px] self-stretch my-[10px] rounded-full shrink-0" style={{ background: lineColor }} />
       <div className="flex-1 min-w-0">
-        <p className="text-[17px] font-semibold te-t1 truncate" style={{ letterSpacing: '-0.17px' }}>
-          {exercise.name}
-        </p>
-        <p className="te-mono text-[13px] mt-[1px] flex items-center gap-2" style={{ color: 'var(--te-text-4)', fontFeatureSettings: '"tnum"' }}>
-          {exercise.target_reps} x {exercise.sets}
+        <div className="flex items-baseline gap-2 min-w-0">
+          <p className="text-[17px] font-semibold te-t1 truncate" style={{ letterSpacing: '-0.17px' }}>
+            {exercise.name}
+          </p>
+          <span className="te-mono text-[13px] shrink-0" style={{ color: 'var(--te-text-4)', fontFeatureSettings: '"tnum"' }}>
+            {exercise.target_reps} x {exercise.sets}
+          </span>
           {trendPct !== null && trendPct !== undefined && <TrendChip pct={trendPct} />}
+        </div>
+        {/* Own line, natural case ("30kg" / "BW +10kg") — no longer forced
+            uppercase or crammed onto the name's line. */}
+        <p className="te-mono text-[13px] mt-[2px]" style={{ color: 'var(--te-text-4)', fontFeatureSettings: '"tnum"' }}>
+          {loadLabel(exercise, unit, toDisplay)}
         </p>
       </div>
-      {/* Same step as the exercise name: the load is the row's value, not its
-          headline. At 20px it outweighed the name it belongs to, so the list
-          scanned as a column of numbers with captions attached. The mono face
-          already sets it apart without needing extra size. */}
-      <span
-        className="te-mono text-[17px] font-semibold te-t1 tabular-nums uppercase shrink-0 leading-none"
-        style={{ letterSpacing: '-0.17px' }}
-      >
-        {loadLabel(exercise, unit, toDisplay)}
-      </span>
       <ChevronRightIcon className="w-[15px] h-[15px] te-t4 shrink-0" />
     </button>
   );

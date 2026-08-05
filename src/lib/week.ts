@@ -60,8 +60,13 @@ export function buildWeekSummary(
     const scheduled = isScheduledDay(d, schedule, routines);
     const isPast = d < today;
     const isToday = d.getTime() === today.getTime();
-    const done = completed.has(k);
+    // Deliberately looser than streak.ts's buildCompletedDays (which requires
+    // every routine exercise to hit its target): this widget is a "did you
+    // show up" week view, not the streak-breaking rule, so any set logged on
+    // a scheduled day counts it done — a partially-finished day shouldn't
+    // read as a missed one here even though it doesn't credit the streak.
     const didTrain = trained.has(k);
+    const done = completed.has(k) || didTrain;
     const label = WEEKDAY_ABBR[i];
 
     if (done || didTrain) trainedDays++;
