@@ -35,7 +35,6 @@ const ACCENT_DIM = 'var(--te-text-4)';
 const CARD_BG    = 'var(--te-surface-3)';
 const HAIRLINE   = 'var(--te-border-strong)';   // matches the app's border tokens
 const MINI_BG    = 'var(--te-surface-1)';   // muscle-filter previews sit darker than the fields
-const SAVED = '__saved__';   // sentinel filter for user-saved exercises
 
 const POSTERIOR = new Set<string>([
   'upper-back','lower-back','back-deltoids','trapezius',
@@ -269,6 +268,68 @@ function ExerciseGrid({ exercises, onTap, isAdded }: {
   );
 }
 
+// ── Category row — horizontal carousel + paging dots ─────────────
+// Default browse view: one of these per muscle category. Exactly two cards
+// fit the viewport at once (matches the Figma "Browse-exercises-page" Chest/
+// Back rows), scroll-snapped so a swipe always settles on a pair.
+function CategoryCarousel({ category, exercises, onTap, isAdded, sectionRef }: {
+  category: string;
+  exercises: LibraryExercise[];
+  onTap: (ex: LibraryExercise) => void;
+  isAdded: (ex: LibraryExercise) => boolean;
+  sectionRef: (el: HTMLDivElement | null) => void;
+}) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [page, setPage] = useState(0);
+  const pageCount = Math.ceil(exercises.length / 2);
+
+  function onScroll() {
+    const el = scrollRef.current;
+    if (!el || el.clientWidth === 0) return;
+    setPage(Math.round(el.scrollLeft / el.clientWidth));
+  }
+
+  return (
+    <div ref={sectionRef}>
+      <div className="flex items-baseline gap-2 mb-3 px-5">
+        <span className="text-[13px] font-medium te-t3">{category}</span>
+        <span className="te-mono text-[11px] te-t4">{exercises.length}</span>
+      </div>
+      <div
+        ref={scrollRef}
+        onScroll={onScroll}
+        className="flex overflow-x-auto"
+        style={{
+          gap: 10, scrollSnapType: 'x mandatory', scrollbarWidth: 'none',
+          WebkitOverflowScrolling: 'touch' as never, padding: '0 20px',
+        }}
+      >
+        {exercises.map(ex => (
+          <div key={ex.id} style={{ flex: '0 0 calc(50% - 5px)', scrollSnapAlign: 'start', minWidth: 0 }}>
+            <CarouselCard
+              exercise={ex}
+              onTap={() => onTap(ex)}
+              onToggleAdd={() => onTap(ex)}
+              added={isAdded(ex)}
+            />
+          </div>
+        ))}
+      </div>
+      {pageCount > 1 && (
+        <div className="flex items-center justify-center gap-1.5 mt-2.5">
+          {Array.from({ length: pageCount }).map((_, i) => (
+            <span
+              key={i}
+              className="rounded-full"
+              style={{ width: 6, height: 6, background: i === page ? 'var(--te-text-2)' : 'var(--te-border-strong)' }}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Detail – muscle chip ──────────────────────────────────────
 function MuscleChip({ label, primary }: { label: string; primary?: boolean }) {
   return (
@@ -375,16 +436,18 @@ function SwipeableHeroCard({ selected }: { selected: LibraryExercise }) {
 
 // ── Main component ────────────────────────────────────────────
 export default function ExerciseLibraryModal({ open, onClose, onSelect, onQuickAdd, existingNames, initialSelected }: Props) {
-  const [muscleCat, setMuscleCat] = useState<string | null>(null);
+  const [savedOnly, setSavedOnly] = useState(false);
   const [search, setSearch]       = useState('');
   const [selected, setSelected]   = useState<LibraryExercise | null>(initialSelected ?? null);
   const [addedIds, setAddedIds]   = useState<Set<string>>(new Set());
+  // Scroll targets for the muscle-icon "jump to category" row.
+  const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   useEffect(() => {
     if (open) {
       setSelected(initialSelected ?? null);
       setSearch('');
-      setMuscleCat(null);
+      setSavedOnly(false);
       setAddedIds(new Set());
     }
   }, [open]);
@@ -402,30 +465,57 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, onQuickA
     onQuickAdd(ex);
   };
 
-  const filtered = useMemo(() => {
+  // Search or the Saved filter collapse the browse view into one flat, A–Z
+  // grid — the per-category carousels below only make sense when browsing
+  // everything, per the redesigned "Browse Exercises" page.
+  const showGrid = savedOnly || search.trim().length > 0;
+
+  const gridList = useMemo(() => {
+    if (!showGrid) return [];
     let list = EXERCISE_LIBRARY;
-    if (muscleCat === SAVED) {
-      list = list.filter(e => addedIds.has(e.id) || existingNames.has(e.name.toLowerCase()));
-    } else if (muscleCat) {
-      list = list.filter(e => getCategory(e) === muscleCat);
-    }
-    if (search.trim()) {
-      const q = search.toLowerCase();
+    if (savedOnly) list = list.filter(e => addedIds.has(e.id) || existingNames.has(e.name.toLowerCase()));
+    const q = search.trim().toLowerCase();
+    if (q) {
       list = list.filter(e =>
         e.name.toLowerCase().includes(q) ||
         e.primaryMuscles.some(m => m.includes(q)) ||
         EQUIPMENT_LABELS[e.equipment].toLowerCase().includes(q)
       );
     }
-    // One flat A–Z list — no category grouping.
     return list.slice().sort((a, b) => a.name.localeCompare(b.name));
-  }, [muscleCat, search, addedIds, existingNames]);
+  }, [showGrid, savedOnly, search, addedIds, existingNames]);
+
+  // Default browse view: every exercise grouped by muscle category, each
+  // rendered as its own horizontally-scrolling carousel row (Figma
+  // "Browse-exercises-page" — Chest/Back/... rows with paging dots).
+  const byCategory = useMemo(() => {
+    if (showGrid) return [];
+    const groups = new Map<string, LibraryExercise[]>();
+    for (const ex of EXERCISE_LIBRARY) {
+      const cat = getCategory(ex);
+      const list = groups.get(cat) ?? [];
+      list.push(ex);
+      groups.set(cat, list);
+    }
+    for (const list of groups.values()) list.sort((a, b) => a.name.localeCompare(b.name));
+    const order = [...MUSCLE_FILTERS.map(f => f.cat), 'Other'];
+    return order.filter(cat => groups.has(cat)).map(cat => ({ cat, items: groups.get(cat)! }));
+  }, [showGrid]);
 
   // Only offer muscle filters that actually have exercises.
   const availableFilters = useMemo(() => {
     const present = new Set(EXERCISE_LIBRARY.map(getCategory));
     return MUSCLE_FILTERS.filter(f => present.has(f.cat));
   }, []);
+
+  // A muscle icon jumps to that category's row rather than filtering —
+  // categories are always visible as rows in the default browse view, so
+  // "jump to" reads more naturally than hiding every other row.
+  function jumpToCategory(cat: string) {
+    setSearch('');
+    setSavedOnly(false);
+    requestAnimationFrame(() => sectionRefs.current[cat]?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  }
 
   function handleClose() { setSelected(null); setSearch(''); onClose(); }
 
@@ -511,7 +601,7 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, onQuickA
 
           {selected.mistakes?.length > 0 && (
             <div style={{ paddingTop: 20 }}>
-              <p className="te-label mb-3.5" style={{ letterSpacing: '0.12em' }}>Common mistakes</p>
+              <p className="te-label mb-3.5" style={{ letterSpacing: '0.12em' }}>Common mistakes to avoid</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {selected.mistakes.map((m, i) => <CueLine key={i} text={m} />)}
               </div>
@@ -541,8 +631,18 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, onQuickA
   // ── Library list view (detail pops up on top) ────────────────
   return (
     <>
-    <FullPageSheet open={open} onClose={handleClose} title="Exercise Library">
+    <FullPageSheet open={open} onClose={handleClose} title="">
       <div style={{ margin: 0, position: 'relative' }}>
+
+        {/* Large page title — matches the tab-level title treatment
+            (ExercisesView's own "Exercises" heading), since this is now a
+            pushed page rather than a modal with an inline nav-bar title. */}
+        <h1
+          className="text-[32px] font-bold te-t1 leading-none px-5"
+          style={{ letterSpacing: '-0.04em', paddingTop: 4, paddingBottom: 20 }}
+        >
+          Browse Exercises
+        </h1>
 
         {/* Search — shared pill (see SearchField) */}
         <div style={{ padding: '0 20px 16px' }}>
@@ -555,13 +655,13 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, onQuickA
         >
           {/* Saved — a preview without the card box */}
           <button
-            onClick={() => setMuscleCat(c => c === SAVED ? null : SAVED)}
-            aria-pressed={muscleCat === SAVED}
+            onClick={() => setSavedOnly(v => !v)}
+            aria-pressed={savedOnly}
             title="Saved exercises"
             className="active:opacity-70 transition-opacity"
             style={{ flexShrink: 0, width: 40, height: 65, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}
           >
-            <SvgBookmark c={muscleCat === SAVED ? 'var(--te-text-1)' : 'var(--te-text-4)'} />
+            <SvgBookmark c={savedOnly ? 'var(--te-text-1)' : 'var(--te-text-4)'} />
           </button>
           {/* Divider — centred between the bookmark and the previews */}
           <div style={{ flexShrink: 0, width: 1, height: 38, background: 'rgba(255,255,255,0.18)', marginLeft: 2, marginRight: 11 }} />
@@ -569,25 +669,42 @@ export default function ExerciseLibraryModal({ open, onClose, onSelect, onQuickA
             <MiniMuscleCard
               key={f.cat}
               filter={f}
-              active={muscleCat === f.cat}
-              onToggle={() => setMuscleCat(c => c === f.cat ? null : f.cat)}
+              active={false}
+              onToggle={() => jumpToCategory(f.cat)}
             />
           ))}
         </div>
 
-        {/* One flat A–Z list of every matching exercise */}
-        {filtered.length === 0 ? (
-          <div style={{ padding: '40px 20px', textAlign: 'center' }}>
-            <p className="text-[17px] font-semibold te-t1 mb-2">No exercises found</p>
-            <p className="te-label">{muscleCat === SAVED ? 'Save exercises with the + button.' : 'Try a different search or muscle.'}</p>
-          </div>
+        {showGrid ? (
+          /* Search or Saved active — one flat A–Z grid of matches. */
+          gridList.length === 0 ? (
+            <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+              <p className="text-[17px] font-semibold te-t1 mb-2">No exercises found</p>
+              <p className="te-label">{savedOnly ? 'Save exercises with the + button.' : 'Try a different search or muscle.'}</p>
+            </div>
+          ) : (
+            <div style={{ paddingBottom: 24 }}>
+              <ExerciseGrid
+                exercises={gridList}
+                onTap={setSelected}
+                isAdded={isAdded}
+              />
+            </div>
+          )
         ) : (
-          <div style={{ paddingBottom: 24 }}>
-            <ExerciseGrid
-              exercises={filtered}
-              onTap={setSelected}
-              isAdded={isAdded}
-            />
+          /* Default browse view — one horizontally-scrolling carousel row
+             per muscle category. */
+          <div style={{ paddingBottom: 24, display: 'flex', flexDirection: 'column', gap: 28 }}>
+            {byCategory.map(({ cat, items }) => (
+              <CategoryCarousel
+                key={cat}
+                category={cat}
+                exercises={items}
+                onTap={setSelected}
+                isAdded={isAdded}
+                sectionRef={el => { sectionRefs.current[cat] = el; }}
+              />
+            ))}
           </div>
         )}
 
